@@ -1,0 +1,39 @@
+<.header>
+  Listing Videos
+  <:actions>
+    <.link patch={~p"/videos/new"}>
+      <.button>New Video</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="videos" rows={@videos} row_click={&JS.navigate(~p"/videos/#{&1}")}>
+  <:col :let={video} label="Location"><%= video.location %></:col>
+  <:col :let={video} label="Duration seconds"><%= video.duration_seconds %></:col>
+  <:col :let={video} label="Size mb"><%= video.size_mb %></:col>
+  <:col :let={video} label="Name"><%= video.name %></:col>
+  <:col :let={video} label="Description"><%= video.description %></:col>
+  <:col :let={video} label="Recorded on"><%= video.recorded_on %></:col>
+  <:action :let={video}>
+    <div class="sr-only">
+      <.link navigate={~p"/videos/#{video}"}>Show</.link>
+    </div>
+    <.link patch={~p"/videos/#{video}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={video}>
+    <.link phx-click={JS.push("delete", value: %{id: video.id})} data-confirm="Are you sure?">
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="video-modal" show on_cancel={JS.navigate(~p"/videos")}>
+  <.live_component
+    module={KartVidsWeb.VideoLive.FormComponent}
+    id={@video.id || :new}
+    title={@page_title}
+    action={@live_action}
+    video={@video}
+    navigate={~p"/videos"}
+  />
+</.modal>
