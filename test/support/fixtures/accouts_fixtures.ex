@@ -1,7 +1,7 @@
-defmodule KartVids.AccoutsFixtures do
+defmodule KartVids.AccountsFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `KartVids.Accouts` context.
+  entities via the `KartVids.Accounts` context.
   """
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
@@ -18,9 +18,13 @@ defmodule KartVids.AccoutsFixtures do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
-      |> KartVids.Accouts.register_user()
+      |> KartVids.Accounts.register_user()
 
     user
+  end
+
+  def create_user(attrs \\ %{}) do
+    %{user: user_fixture(attrs)}
   end
 
   def extract_user_token(fun) do

@@ -2,9 +2,9 @@ defmodule KartVidsWeb.UserForgotPasswordLiveTest do
   use KartVidsWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import KartVids.AccoutsFixtures
+  import KartVids.AccountsFixtures
 
-  alias KartVids.Accouts
+  alias KartVids.Accounts
   alias KartVids.Repo
 
   describe "Forgot password page" do
@@ -43,7 +43,7 @@ defmodule KartVidsWeb.UserForgotPasswordLiveTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
 
-      assert Repo.get_by!(Accouts.UserToken, user_id: user.id).context ==
+      assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context ==
                "reset_password"
     end
 
@@ -57,7 +57,7 @@ defmodule KartVidsWeb.UserForgotPasswordLiveTest do
         |> follow_redirect(conn, "/")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
-      assert Repo.all(Accouts.UserToken) == []
+      assert Repo.all(Accounts.UserToken) == []
     end
   end
 end

@@ -1,7 +1,7 @@
 defmodule KartVidsWeb.UserForgotPasswordLive do
   use KartVidsWeb, :live_view
 
-  alias KartVids.Accouts
+  alias KartVids.Accounts
 
   def render(assigns) do
     ~H"""
@@ -28,8 +28,8 @@ defmodule KartVidsWeb.UserForgotPasswordLive do
   end
 
   def handle_event("send_email", %{"user" => %{"email" => email}}, socket) do
-    if user = Accouts.get_user_by_email(email) do
-      Accouts.deliver_user_reset_password_instructions(
+    if user = Accounts.get_user_by_email(email) do
+      Accounts.deliver_user_reset_password_instructions(
         user,
         &url(~p"/users/reset_password/#{&1}")
       )

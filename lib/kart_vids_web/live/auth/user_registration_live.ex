@@ -1,8 +1,8 @@
 defmodule KartVidsWeb.UserRegistrationLive do
   use KartVidsWeb, :live_view
 
-  alias KartVids.Accouts
-  alias KartVids.Accouts.User
+  alias KartVids.Accounts
+  alias KartVids.Accounts.User
 
   def render(assigns) do
     ~H"""
@@ -49,21 +49,21 @@ defmodule KartVidsWeb.UserRegistrationLive do
   end
 
   def mount(_params, _session, socket) do
-    changeset = Accouts.change_user_registration(%User{})
+    changeset = Accounts.change_user_registration(%User{})
     socket = assign(socket, changeset: changeset, trigger_submit: false)
     {:ok, socket, temporary_assigns: [changeset: nil]}
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
-    case Accouts.register_user(user_params) do
+    case Accounts.register_user(user_params) do
       {:ok, user} ->
         {:ok, _} =
-          Accouts.deliver_user_confirmation_instructions(
+          Accounts.deliver_user_confirmation_instructions(
             user,
             &url(~p"/users/confirm/#{&1}")
           )
 
-        changeset = Accouts.change_user_registration(user)
+        changeset = Accounts.change_user_registration(user)
         {:noreply, assign(socket, trigger_submit: true, changeset: changeset)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -72,7 +72,7 @@ defmodule KartVidsWeb.UserRegistrationLive do
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
-    changeset = Accouts.change_user_registration(%User{}, user_params)
+    changeset = Accounts.change_user_registration(%User{}, user_params)
     {:noreply, assign(socket, changeset: Map.put(changeset, :action, :validate))}
   end
 end

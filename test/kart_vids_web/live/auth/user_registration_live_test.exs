@@ -2,7 +2,7 @@ defmodule KartVidsWeb.UserRegistrationLiveTest do
   use KartVidsWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import KartVids.AccoutsFixtures
+  import KartVids.AccountsFixtures
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do

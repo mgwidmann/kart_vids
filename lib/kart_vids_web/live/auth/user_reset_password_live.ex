@@ -1,7 +1,7 @@
 defmodule KartVidsWeb.UserResetPasswordLive do
   use KartVidsWeb, :live_view
 
-  alias KartVids.Accouts
+  alias KartVids.Accounts
 
   def render(assigns) do
     ~H"""
@@ -49,7 +49,7 @@ defmodule KartVidsWeb.UserResetPasswordLive do
     socket =
       case socket.assigns do
         %{user: user} ->
-          assign(socket, :changeset, Accouts.change_user_password(user))
+          assign(socket, :changeset, Accounts.change_user_password(user))
 
         _ ->
           socket
@@ -61,7 +61,7 @@ defmodule KartVidsWeb.UserResetPasswordLive do
   # Do not log in the user after reset password to avoid a
   # leaked token giving the user access to the account.
   def handle_event("reset_password", %{"user" => user_params}, socket) do
-    case Accouts.reset_user_password(socket.assigns.user, user_params) do
+    case Accounts.reset_user_password(socket.assigns.user, user_params) do
       {:ok, _} ->
         {:noreply,
          socket
@@ -74,12 +74,12 @@ defmodule KartVidsWeb.UserResetPasswordLive do
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
-    changeset = Accouts.change_user_password(socket.assigns.user, user_params)
+    changeset = Accounts.change_user_password(socket.assigns.user, user_params)
     {:noreply, assign(socket, changeset: Map.put(changeset, :action, :validate))}
   end
 
   defp assign_user_and_token(socket, %{"token" => token}) do
-    if user = Accouts.get_user_by_reset_password_token(token) do
+    if user = Accounts.get_user_by_reset_password_token(token) do
       assign(socket, user: user, token: token)
     else
       socket

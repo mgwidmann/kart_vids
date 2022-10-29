@@ -2,16 +2,16 @@ defmodule KartVidsWeb.UserResetPasswordLiveTest do
   use KartVidsWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import KartVids.AccoutsFixtures
+  import KartVids.AccountsFixtures
 
-  alias KartVids.Accouts
+  alias KartVids.Accounts
 
   setup do
     user = user_fixture()
 
     token =
       extract_user_token(fn url ->
-        Accouts.deliver_user_reset_password_instructions(user, url)
+        Accounts.deliver_user_reset_password_instructions(user, url)
       end)
 
     %{token: token, user: user}
@@ -65,7 +65,7 @@ defmodule KartVidsWeb.UserResetPasswordLiveTest do
 
       refute get_session(conn, :user_token)
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Password reset successfully"
-      assert Accouts.get_user_by_email_and_password(user.email, "new valid password")
+      assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
     end
 
     test "does not reset password on invalid data", %{conn: conn, token: token} do

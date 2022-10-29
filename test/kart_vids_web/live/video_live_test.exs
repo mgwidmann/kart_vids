@@ -2,6 +2,7 @@ defmodule KartVidsWeb.VideoLiveTest do
   use KartVidsWeb.ConnCase
 
   import Phoenix.LiveViewTest
+  import KartVids.AccountsFixtures
   import KartVids.ContentFixtures
 
   @create_attrs %{description: "some description", duration_seconds: 42, location: "some location", name: "some name", recorded_on: "2022-10-28T02:49:00Z", size_mb: 120.5}
@@ -14,17 +15,18 @@ defmodule KartVidsWeb.VideoLiveTest do
   end
 
   describe "Index" do
-    setup [:create_video]
+    setup [:create_user, :create_video]
 
-    test "lists all videos", %{conn: conn, video: video} do
-      {:ok, _index_live, html} = live(conn, ~p"/videos")
+    test "lists all videos", %{conn: conn, video: video, user: user} do
+      {:ok, _index_live, html} = conn |> log_in_user(user) |> live(~p"/videos")
 
       assert html =~ "Listing Videos"
       assert html =~ video.description
     end
 
-    test "saves new video", %{conn: conn} do
-      {:ok, index_live, _html} = live(conn, ~p"/videos")
+    test "saves new video", %{conn: conn, user: user} do
+      conn = conn |> log_in_user(user)
+      {:ok, index_live, _html} = conn |> live(~p"/videos")
 
       assert index_live |> element("a", "New Video") |> render_click() =~
                "New Video"
@@ -45,8 +47,9 @@ defmodule KartVidsWeb.VideoLiveTest do
       assert html =~ "some description"
     end
 
-    test "updates video in listing", %{conn: conn, video: video} do
-      {:ok, index_live, _html} = live(conn, ~p"/videos")
+    test "updates video in listing", %{conn: conn, video: video, user: user} do
+      conn = conn |> log_in_user(user)
+      {:ok, index_live, _html} = conn |> live(~p"/videos")
 
       assert index_live |> element("#videos-#{video.id} a", "Edit") |> render_click() =~
                "Edit Video"
@@ -67,8 +70,8 @@ defmodule KartVidsWeb.VideoLiveTest do
       assert html =~ "some updated description"
     end
 
-    test "deletes video in listing", %{conn: conn, video: video} do
-      {:ok, index_live, _html} = live(conn, ~p"/videos")
+    test "deletes video in listing", %{conn: conn, video: video, user: user} do
+      {:ok, index_live, _html} = conn |> log_in_user(user) |> live(~p"/videos")
 
       assert index_live |> element("#videos-#{video.id} a", "Delete") |> render_click()
       refute has_element?(index_live, "#video-#{video.id}")
@@ -76,17 +79,18 @@ defmodule KartVidsWeb.VideoLiveTest do
   end
 
   describe "Show" do
-    setup [:create_video]
+    setup [:create_user, :create_video]
 
-    test "displays video", %{conn: conn, video: video} do
-      {:ok, _show_live, html} = live(conn, ~p"/videos/#{video}")
+    test "displays video", %{conn: conn, video: video, user: user} do
+      {:ok, _show_live, html} = conn |> log_in_user(user) |> live(~p"/videos/#{video}")
 
       assert html =~ "Show Video"
       assert html =~ video.description
     end
 
-    test "updates video within modal", %{conn: conn, video: video} do
-      {:ok, show_live, _html} = live(conn, ~p"/videos/#{video}")
+    test "updates video within modal", %{conn: conn, video: video, user: user} do
+      conn = conn |> log_in_user(user)
+      {:ok, show_live, _html} = conn |> live(~p"/videos/#{video}")
 
       assert show_live |> element("a", "Edit") |> render_click() =~
                "Edit Video"

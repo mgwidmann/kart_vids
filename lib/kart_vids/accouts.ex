@@ -1,12 +1,12 @@
-defmodule KartVids.Accouts do
+defmodule KartVids.Accounts do
   @moduledoc """
-  The Accouts context.
+  The Accounts context.
   """
 
   import Ecto.Query, warn: false
   alias KartVids.Repo
 
-  alias KartVids.Accouts.{User, UserToken, UserNotifier}
+  alias KartVids.Accounts.{User, UserToken, UserNotifier}
 
   ## Database getters
 

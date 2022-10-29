@@ -84,6 +84,7 @@ defmodule KartVidsWeb do
     quote do
       # HTML escaping functionality
       import Phoenix.HTML
+      import Phoenix.HTML.Form
       # Core UI components and translation
       import KartVidsWeb.CoreComponents
       import KartVidsWeb.Gettext

@@ -2,7 +2,7 @@ defmodule KartVidsWeb.UserLoginLiveTest do
   use KartVidsWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import KartVids.AccoutsFixtures
+  import KartVids.AccountsFixtures
 
   describe "Log in page" do
     test "renders log in page", %{conn: conn} do

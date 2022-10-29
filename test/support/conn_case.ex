@@ -45,7 +45,7 @@ defmodule KartVidsWeb.ConnCase do
   test context.
   """
   def register_and_log_in_user(%{conn: conn}) do
-    user = KartVids.AccoutsFixtures.user_fixture()
+    user = KartVids.AccountsFixtures.user_fixture()
     %{conn: log_in_user(conn, user), user: user}
   end
 
@@ -55,7 +55,7 @@ defmodule KartVidsWeb.ConnCase do
   It returns an updated `conn`.
   """
   def log_in_user(conn, user) do
-    token = KartVids.Accouts.generate_user_session_token(user)
+    token = KartVids.Accounts.generate_user_session_token(user)
 
     conn
     |> Phoenix.ConnTest.init_test_session(%{})

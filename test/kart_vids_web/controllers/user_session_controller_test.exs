@@ -1,7 +1,7 @@
 defmodule KartVidsWeb.UserSessionControllerTest do
   use KartVidsWeb.ConnCase, async: true
 
-  import KartVids.AccoutsFixtures
+  import KartVids.AccountsFixtures
 
   setup do
     %{user: user_fixture()}

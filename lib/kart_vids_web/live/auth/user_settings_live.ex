@@ -1,7 +1,7 @@
 defmodule KartVidsWeb.UserSettingsLive do
   use KartVidsWeb, :live_view
 
-  alias KartVids.Accouts
+  alias KartVids.Accounts
 
   def render(assigns) do
     ~H"""
@@ -79,7 +79,7 @@ defmodule KartVidsWeb.UserSettingsLive do
 
   def mount(%{"token" => token}, _session, socket) do
     socket =
-      case Accouts.update_user_email(socket.assigns.current_user, token) do
+      case Accounts.update_user_email(socket.assigns.current_user, token) do
         :ok ->
           put_flash(socket, :info, "Email changed successfully.")
 
@@ -98,8 +98,8 @@ defmodule KartVidsWeb.UserSettingsLive do
       |> assign(:current_password, nil)
       |> assign(:email_form_current_password, nil)
       |> assign(:current_email, user.email)
-      |> assign(:email_changeset, Accouts.change_user_email(user))
-      |> assign(:password_changeset, Accouts.change_user_password(user))
+      |> assign(:email_changeset, Accounts.change_user_email(user))
+      |> assign(:password_changeset, Accounts.change_user_password(user))
       |> assign(:trigger_submit, false)
 
     {:ok, socket}
@@ -107,7 +107,7 @@ defmodule KartVidsWeb.UserSettingsLive do
 
   def handle_event("validate_email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
-    email_changeset = Accouts.change_user_email(socket.assigns.current_user, user_params)
+    email_changeset = Accounts.change_user_email(socket.assigns.current_user, user_params)
 
     socket =
       assign(socket,
@@ -122,9 +122,9 @@ defmodule KartVidsWeb.UserSettingsLive do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_user
 
-    case Accouts.apply_user_email(user, password, user_params) do
+    case Accounts.apply_user_email(user, password, user_params) do
       {:ok, applied_user} ->
-        Accouts.deliver_user_update_email_instructions(
+        Accounts.deliver_user_update_email_instructions(
           applied_user,
           user.email,
           &url(~p"/users/settings/confirm_email/#{&1}")
@@ -140,7 +140,7 @@ defmodule KartVidsWeb.UserSettingsLive do
 
   def handle_event("validate_password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
-    password_changeset = Accouts.change_user_password(socket.assigns.current_user, user_params)
+    password_changeset = Accounts.change_user_password(socket.assigns.current_user, user_params)
 
     {:noreply,
      socket
@@ -152,12 +152,12 @@ defmodule KartVidsWeb.UserSettingsLive do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_user
 
-    case Accouts.update_user_password(user, password, user_params) do
+    case Accounts.update_user_password(user, password, user_params) do
       {:ok, user} ->
         socket =
           socket
           |> assign(:trigger_submit, true)
-          |> assign(:password_changeset, Accouts.change_user_password(user, user_params))
+          |> assign(:password_changeset, Accounts.change_user_password(user, user_params))
 
         {:noreply, socket}
 

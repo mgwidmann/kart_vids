@@ -1,4 +1,4 @@
-defmodule KartVids.Accouts.UserNotifier do
+defmodule KartVids.Accounts.UserNotifier do
   import Swoosh.Email
 
   alias KartVids.Mailer

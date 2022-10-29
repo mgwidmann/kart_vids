@@ -2,9 +2,9 @@ defmodule KartVidsWeb.UserConfirmationInstructionsLiveTest do
   use KartVidsWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import KartVids.AccoutsFixtures
+  import KartVids.AccountsFixtures
 
-  alias KartVids.Accouts
+  alias KartVids.Accounts
   alias KartVids.Repo
 
   setup do
@@ -29,11 +29,11 @@ defmodule KartVidsWeb.UserConfirmationInstructionsLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
 
-      assert Repo.get_by!(Accouts.UserToken, user_id: user.id).context == "confirm"
+      assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context == "confirm"
     end
 
     test "does not send confirmation token if user is confirmed", %{conn: conn, user: user} do
-      Repo.update!(Accouts.User.confirm_changeset(user))
+      Repo.update!(Accounts.User.confirm_changeset(user))
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
@@ -46,7 +46,7 @@ defmodule KartVidsWeb.UserConfirmationInstructionsLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
 
-      refute Repo.get_by(Accouts.UserToken, user_id: user.id)
+      refute Repo.get_by(Accounts.UserToken, user_id: user.id)
     end
 
     test "does not send confirmation token if email is invalid", %{conn: conn} do
@@ -61,7 +61,7 @@ defmodule KartVidsWeb.UserConfirmationInstructionsLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
 
-      assert Repo.all(Accouts.UserToken) == []
+      assert Repo.all(Accounts.UserToken) == []
     end
   end
 end

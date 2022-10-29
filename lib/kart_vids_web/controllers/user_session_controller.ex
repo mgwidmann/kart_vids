@@ -1,7 +1,7 @@
 defmodule KartVidsWeb.UserSessionController do
   use KartVidsWeb, :controller
 
-  alias KartVids.Accouts
+  alias KartVids.Accounts
   alias KartVidsWeb.UserAuth
 
   def create(conn, %{"_action" => "registered"} = params) do
@@ -21,7 +21,7 @@ defmodule KartVidsWeb.UserSessionController do
   defp create(conn, %{"user" => user_params}, info) do
     %{"email" => email, "password" => password} = user_params
 
-    if user = Accouts.get_user_by_email_and_password(email, password) do
+    if user = Accounts.get_user_by_email_and_password(email, password) do
       conn
       |> put_flash(:info, info)
       |> UserAuth.log_in_user(user, user_params)
