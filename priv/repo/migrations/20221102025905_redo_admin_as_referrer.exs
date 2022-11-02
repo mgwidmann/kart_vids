@@ -2,27 +2,20 @@ defmodule KartVids.Repo.Migrations.RedoAdminAsReferrer do
   use Ecto.Migration
   alias KartVids.Accounts
 
-  if Mix.env() == :dev do
-    def up do
-      {:ok, user} =
-        Accounts.register_user(%{
-          email: System.get_env("ADMIN_EMAIL", "admin@kart-vids.com"),
-          password: System.get_env("ADMIN_PASSWORD", "AdminPa$$word"),
-          password_confirmation: System.get_env("ADMIN_PASSWORD", "AdminPa$$word"),
-          referred_by: System.get_env("ADMIN_EMAIL", "admin@kart-vids.com")
-        },
-        validate_referrer: false)
+  def up do
+    {:ok, user} =
+      Accounts.register_user(%{
+        email: System.get_env("ADMIN_EMAIL", "admin@kart-vids.com"),
+        password: System.get_env("ADMIN_PASSWORD", "AdminPa$$word"),
+        password_confirmation: System.get_env("ADMIN_PASSWORD", "AdminPa$$word"),
+        referred_by: System.get_env("ADMIN_EMAIL", "admin@kart-vids.com")
+      },
+      validate_referrer: false)
 
-        Accounts.make_admin!(user)
-    end
+      Accounts.make_admin!(user)
+  end
 
-    def down do
-      Accounts.delete_user(System.get_env("ADMIN_EMAIL", "admin@kart-vids.com"))
-    end
-  else
-    # Nothing for production
-    def change do
-
-    end
+  def down do
+    Accounts.delete_user(System.get_env("ADMIN_EMAIL", "admin@kart-vids.com"))
   end
 end
