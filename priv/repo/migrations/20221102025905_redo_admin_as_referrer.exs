@@ -12,7 +12,12 @@ defmodule KartVids.Repo.Migrations.RedoAdminAsReferrer do
       },
       validate_referrer: false)
 
-      Accounts.make_admin!(user)
+    # If it doesn't exist in production, thats ok
+    try do
+      apply(Accounts, :make_admin!, [user])
+    rescue
+      _ -> nil # Ignore error
+    end
   end
 
   def down do
