@@ -74,9 +74,9 @@ defmodule KartVids.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def register_user(attrs) do
+  def register_user(attrs, opts \\ []) do
     %User{}
-    |> User.registration_changeset(attrs)
+    |> User.registration_changeset(attrs, opts)
     |> Repo.insert()
   end
 
@@ -348,6 +348,25 @@ defmodule KartVids.Accounts do
     |> case do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Removes a user from the database. Shouldn't be used anywhere except in scripts and code that isn't used in production.
+  """
+  def delete_user(email) do
+    from(u in User, where: u.email == ^email)
+    |> Repo.delete_all()
+  end
+
+  if Mix.env() == :dev do
+    def make_admin!(%User{} = user) do
+      User.admin_changeset(user, %{
+        can_refer?: true,
+        admin?: true,
+        confirmed_at: NaiveDateTime.local_now()
+      })
+      |> Repo.update!()
     end
   end
 end

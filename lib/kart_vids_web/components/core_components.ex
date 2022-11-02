@@ -153,7 +153,12 @@ defmodule KartVidsWeb.CoreComponents do
         <%= @title %>
       </p>
       <p class="mt-2 text-[0.8125rem] leading-5"><%= msg %></p>
-      <button :if={@close} type="button" class="group absolute top-2 right-1 p-2" aria-label={gettext("close")}>
+      <button
+        :if={@close}
+        type="button"
+        class="group absolute top-2 right-1 p-2"
+        aria-label={gettext("close")}
+      >
         <Heroicons.x_mark solid class="h-5 w-5 stroke-current opacity-40 group-hover:opacity-70" />
       </button>
     </div>
@@ -320,7 +325,7 @@ defmodule KartVidsWeb.CoreComponents do
         ]}
         {@rest}
       >
-    
+
     <%= @value %></textarea>
       <.error :for={msg <- @errors} message={msg} />
     </div>

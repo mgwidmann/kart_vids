@@ -29,14 +29,25 @@ defmodule KartVidsWeb.UserRegistrationLive do
         method="post"
         as={:user}
       >
-        <.error :if={@changeset.action == :insert} message="Oops, something went wrong! Please check the errors below." />
+        <.error
+          :if={@changeset.action == :insert}
+          message="Oops, something went wrong! Please check the errors below."
+        />
 
         <.input field={{f, :email}} type="email" label="Email" required />
+        <.input field={{f, :referred_by}} type="email" label="Referred By" required />
         <.input
           field={{f, :password}}
           type="password"
           label="Password"
           value={input_value(f, :password)}
+          required
+        />
+        <.input
+          field={{f, :password_confirmation}}
+          type="password"
+          label="Confirm Password"
+          value={input_value(f, :confirm_password)}
           required
         />
 

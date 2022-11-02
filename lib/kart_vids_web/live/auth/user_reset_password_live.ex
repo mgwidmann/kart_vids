@@ -14,7 +14,10 @@ defmodule KartVidsWeb.UserResetPasswordLive do
       phx-submit="reset_password"
       phx-change="validate"
     >
-      <.error :if={@changeset.action == :insert} message="Oops, something went wrong! Please check the errors below." />
+      <.error
+        :if={@changeset.action == :insert}
+        message="Oops, something went wrong! Please check the errors below."
+      />
 
       <.input
         field={{f, :password}}

@@ -17,6 +17,13 @@ defmodule KartVids.Content.Video do
   def changeset(video, attrs) do
     video
     |> cast(attrs, [:location, :duration_seconds, :size_mb, :name, :description, :recorded_on])
-    |> validate_required([:location, :duration_seconds, :size_mb, :name, :description, :recorded_on])
+    |> validate_required([
+      :location,
+      :duration_seconds,
+      :size_mb,
+      :name,
+      :description,
+      :recorded_on
+    ])
   end
 end

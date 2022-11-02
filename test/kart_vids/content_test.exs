@@ -8,7 +8,14 @@ defmodule KartVids.ContentTest do
 
     import KartVids.ContentFixtures
 
-    @invalid_attrs %{description: nil, duration_seconds: nil, location: nil, name: nil, recorded_on: nil, size_mb: nil}
+    @invalid_attrs %{
+      description: nil,
+      duration_seconds: nil,
+      location: nil,
+      name: nil,
+      recorded_on: nil,
+      size_mb: nil
+    }
 
     test "list_videos/0 returns all videos" do
       video = video_fixture()
@@ -21,7 +28,14 @@ defmodule KartVids.ContentTest do
     end
 
     test "create_video/1 with valid data creates a video" do
-      valid_attrs = %{description: "some description", duration_seconds: 42, location: "some location", name: "some name", recorded_on: ~U[2022-10-28 02:49:00Z], size_mb: 120.5}
+      valid_attrs = %{
+        description: "some description",
+        duration_seconds: 42,
+        location: "some location",
+        name: "some name",
+        recorded_on: ~U[2022-10-28 02:49:00Z],
+        size_mb: 120.5
+      }
 
       assert {:ok, %Video{} = video} = Content.create_video(valid_attrs)
       assert video.description == "some description"
@@ -38,7 +52,15 @@ defmodule KartVids.ContentTest do
 
     test "update_video/2 with valid data updates the video" do
       video = video_fixture()
-      update_attrs = %{description: "some updated description", duration_seconds: 43, location: "some updated location", name: "some updated name", recorded_on: ~U[2022-10-29 02:49:00Z], size_mb: 456.7}
+
+      update_attrs = %{
+        description: "some updated description",
+        duration_seconds: 43,
+        location: "some updated location",
+        name: "some updated name",
+        recorded_on: ~U[2022-10-29 02:49:00Z],
+        size_mb: 456.7
+      }
 
       assert {:ok, %Video{} = video} = Content.update_video(video, update_attrs)
       assert video.description == "some updated description"

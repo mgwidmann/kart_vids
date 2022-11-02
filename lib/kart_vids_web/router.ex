@@ -29,7 +29,6 @@ defmodule KartVidsWeb.Router do
     get "/", PageController, :home
   end
 
-
   # Other scopes may use custom stacks.
   # scope "/api", KartVidsWeb do
   #   pipe_through :api

@@ -13,7 +13,10 @@ config :kart_vids,
 # Configures the endpoint
 config :kart_vids, KartVidsWeb.Endpoint,
   url: [host: "localhost"],
-  render_errors: [formats: [html: KartVidsWeb.ErrorHTML, json: KartVidsWeb.ErrorJSON], layout: false],
+  render_errors: [
+    formats: [html: KartVidsWeb.ErrorHTML, json: KartVidsWeb.ErrorJSON],
+    layout: false
+  ],
   pubsub_server: KartVids.PubSub,
   live_view: [signing_salt: "Wo9oMCGs"]
 

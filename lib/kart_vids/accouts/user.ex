@@ -5,13 +5,21 @@ defmodule KartVids.Accounts.User do
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
+    field :password_confirmation, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
+    field :referred_by, :string
 
+    field :can_refer?, :boolean, source: :can_refer, default: false
     field :admin?, :boolean, source: :admin, default: false
 
     timestamps()
   end
+
+  @email_regex ~r/^[^\s]+@[^\s]+$/
+  @max_length 160
+  @min_password 12
+  @max_password 72
 
   @doc """
   A user changeset for registration.
@@ -38,27 +46,39 @@ defmodule KartVids.Accounts.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [:email, :password, :referred_by])
     |> validate_email(opts)
     |> validate_password(opts)
+    |> validate_referred_by(opts)
   end
 
   defp validate_email(changeset, opts) do
     changeset
     |> validate_required([:email])
-    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
-    |> validate_length(:email, max: 160)
+    |> validate_format(:email, @email_regex, message: "must have the @ sign and no spaces")
+    |> validate_length(:email, max: @max_length)
     |> maybe_validate_unique_email(opts)
   end
 
   defp validate_password(changeset, opts) do
     changeset
     |> validate_required([:password])
-    |> validate_length(:password, min: 12, max: 72)
-    # |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
-    # |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
-    # |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/, message: "at least one digit or punctuation character")
+    |> validate_length(:password, min: @min_password, max: @max_password)
+    |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
+    |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
+    |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/,
+      message: "at least one digit or punctuation character"
+    )
+    |> validate_confirmation(:password, required: true, message: "does not match other password")
     |> maybe_hash_password(opts)
+  end
+
+  defp validate_referred_by(changeset, opts) do
+    changeset
+    |> validate_required([:referred_by])
+    |> validate_format(:referred_by, @email_regex, message: "must have the @ sign and no spaces")
+    |> validate_length(:referred_by, max: @max_length)
+    |> maybe_validate_referrer(opts)
   end
 
   defp maybe_hash_password(changeset, opts) do
@@ -86,13 +106,33 @@ defmodule KartVids.Accounts.User do
     end
   end
 
+  defp maybe_validate_referrer(changeset, opts) do
+    import Ecto.Query
+
+    if Keyword.get(opts, :validate_referrer, true) do
+      with referrer when not is_nil(referrer) <- get_field(changeset, :referred_by),
+           1 <-
+             from(u in __MODULE__,
+               where: u.email == ^referrer and u.can_refer? == true,
+               select: count(u.id)
+             )
+             |> KartVids.Repo.one() do
+        changeset
+      else
+        _ -> add_error(changeset, :referred_by, "was not an allowed referrer")
+      end
+    else
+      changeset
+    end
+  end
+
   if Mix.env() == :dev do
     @doc """
     Admin changeset which can change all fields. Not intended to be used within the codebase for production.
     """
     def admin_changeset(user, attrs) do
       user
-      |> cast(attrs, [:email, :hashed_password, :admin])
+      |> cast(attrs, [:email, :hashed_password, :confirmed_at, :referred_by, :admin?, :can_refer?])
       |> unique_constraint(:email, name: :users_email_index)
     end
   end

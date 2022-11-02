@@ -14,7 +14,10 @@ defmodule KartVidsWeb.UserSettingsLive do
       phx-submit="update_email"
       phx-change="validate_email"
     >
-      <.error :if={@email_changeset.action == :insert} message="Oops, something went wrong! Please check the errors below." />
+      <.error
+        :if={@email_changeset.action == :insert}
+        message="Oops, something went wrong! Please check the errors below."
+      />
 
       <.input field={{f, :email}} type="email" label="Email" required value={input_value(f, :email)} />
 
@@ -44,7 +47,10 @@ defmodule KartVidsWeb.UserSettingsLive do
       phx-submit="update_password"
       phx-trigger-action={@trigger_submit}
     >
-      <.error :if={@password_changeset.action == :insert} message="Oops, something went wrong! Please check the errors below." />
+      <.error
+        :if={@password_changeset.action == :insert}
+        message="Oops, something went wrong! Please check the errors below."
+      />
 
       <.input field={{f, :email}} type="hidden" value={@current_email} />
 

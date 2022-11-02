@@ -5,9 +5,30 @@ defmodule KartVidsWeb.VideoLiveTest do
   import KartVids.AccountsFixtures
   import KartVids.ContentFixtures
 
-  @create_attrs %{description: "some description", duration_seconds: 42, location: "some location", name: "some name", recorded_on: "2022-10-28T02:49:00Z", size_mb: 120.5}
-  @update_attrs %{description: "some updated description", duration_seconds: 43, location: "some updated location", name: "some updated name", recorded_on: "2022-10-29T02:49:00Z", size_mb: 456.7}
-  @invalid_attrs %{description: nil, duration_seconds: nil, location: nil, name: nil, recorded_on: nil, size_mb: nil}
+  @create_attrs %{
+    description: "some description",
+    duration_seconds: 42,
+    location: "some location",
+    name: "some name",
+    recorded_on: "2022-10-28T02:49:00Z",
+    size_mb: 120.5
+  }
+  @update_attrs %{
+    description: "some updated description",
+    duration_seconds: 43,
+    location: "some updated location",
+    name: "some updated name",
+    recorded_on: "2022-10-29T02:49:00Z",
+    size_mb: 456.7
+  }
+  @invalid_attrs %{
+    description: nil,
+    duration_seconds: nil,
+    location: nil,
+    name: nil,
+    recorded_on: nil,
+    size_mb: nil
+  }
 
   defp create_video(_) do
     video = video_fixture()
