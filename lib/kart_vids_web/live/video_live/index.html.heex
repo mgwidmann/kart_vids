@@ -1,31 +1,46 @@
 <.header>
   Listing Videos
-  <:actions>
-    <.link patch={~p"/videos/new"}>
+  <:actions class="flex items-center justify-center">
+    <.button_group class="mb-3 inline-block" />
+    <.link patch={~p"/videos/new"} class="inline-block">
       <.button>New Video</.button>
     </.link>
   </:actions>
 </.header>
 
-<.table id="videos" rows={@videos} row_click={&JS.navigate(~p"/videos/#{&1}")}>
-  <:col :let={video} label="Location"><%= video.location %></:col>
-  <:col :let={video} label="Duration seconds"><%= video.duration_seconds %></:col>
-  <:col :let={video} label="Size mb"><%= video.size_mb %></:col>
-  <:col :let={video} label="Name"><%= video.name %></:col>
-  <:col :let={video} label="Description"><%= video.description %></:col>
-  <:col :let={video} label="Recorded on"><%= video.recorded_on %></:col>
-  <:action :let={video}>
-    <div class="sr-only">
-      <.link navigate={~p"/videos/#{video}"}>Show</.link>
+<%= if @view == :grid do %>
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-10">
+    <div :for={video <- @videos}>
+      <a href={~p"/videos/#{video}"} class="flex flex-col bg-white drop-shadow hover:drop-shadow-lg hover:opacity-70 rounded-md w-426">
+        <img src="https://dummyimage.com/426x240/ddd/aaa" class="w-426 h-240 object-cover rounded-tl-md rounded-tr-md" />
+        <div class="px-3 py-2">
+          <h1 class="font-semibold"><%= video.name %></h1>
+          <p class="text-sm"><%= video.duration_seconds %></p>
+        </div>
+      </a>
     </div>
-    <.link patch={~p"/videos/#{video}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={video}>
-    <.link phx-click={JS.push("delete", value: %{id: video.id})} data-confirm="Are you sure?">
-      Delete
-    </.link>
-  </:action>
-</.table>
+  </div>
+<% else %>
+  <.table id="videos" rows={@videos} row_click={&JS.navigate(~p"/videos/#{&1}")}>
+    <:col :let={video} label="Location"><%= video.location %></:col>
+    <:col :let={video} label="Duration seconds"><%= video.duration_seconds %></:col>
+    <:col :let={video} label="Size mb"><%= video.size_mb %></:col>
+    <:col :let={video} label="Name"><%= video.name %></:col>
+    <:col :let={video} label="Description"><%= video.description %></:col>
+    <:col :let={video} label="Recorded on"><%= video.recorded_on %></:col>
+    <:action :let={video}>
+      <div class="sr-only">
+        <.link navigate={~p"/videos/#{video}"}>Show</.link>
+      </div>
+      <.link patch={~p"/videos/#{video}/edit"}>Edit</.link>
+    </:action>
+    <:action :let={video}>
+      <.link phx-click={JS.push("delete", value: %{id: video.id})} data-confirm="Are you sure?">
+        Delete
+      </.link>
+    </:action>
+  </.table>
+<% end %>
 
 <.modal
   :if={@live_action in [:new, :edit]}

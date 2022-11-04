@@ -41,7 +41,7 @@ defmodule KartVids.MixProject do
       {:phoenix_live_reload,
        github: "phoenixframework/phoenix_live_reload", override: true, only: :dev},
       {:phoenix_live_view,
-       github: "mgwidmann/phoenix_live_view", branch: "fix-redirect", override: true},
+       github: "mgwidmann/phoenix_live_view", branch: "fix-redirect-with-priv", override: true},
       {:heroicons, "~> 0.5"},
       {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard,

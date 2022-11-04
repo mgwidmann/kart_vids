@@ -119,7 +119,7 @@ defmodule KartVids.Accounts.User do
              |> KartVids.Repo.one() do
         changeset
       else
-        _ -> add_error(changeset, :referred_by, "was not an allowed referrer")
+        _ -> add_error(changeset, :referred_by, "is not an allowed referrer")
       end
     else
       changeset
