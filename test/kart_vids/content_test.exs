@@ -88,4 +88,70 @@ defmodule KartVids.ContentTest do
       assert %Ecto.Changeset{} = Content.change_video(video)
     end
   end
+
+  describe "locations" do
+    alias KartVids.Content.Location
+
+    import KartVids.ContentFixtures
+
+    @invalid_attrs %{city: nil, code: nil, country: nil, name: nil, state: nil, street: nil, street_2: nil}
+
+    test "list_locations/0 returns all locations" do
+      location = location_fixture()
+      assert Content.list_locations() == [location]
+    end
+
+    test "get_location!/1 returns the location with given id" do
+      location = location_fixture()
+      assert Content.get_location!(location.id) == location
+    end
+
+    test "create_location/1 with valid data creates a location" do
+      valid_attrs = %{city: "some city", code: "some code", country: "some country", name: "some name", state: "some state", street: "some street", street_2: "some street_2"}
+
+      assert {:ok, %Location{} = location} = Content.create_location(valid_attrs)
+      assert location.city == "some city"
+      assert location.code == "some code"
+      assert location.country == "some country"
+      assert location.name == "some name"
+      assert location.state == "some state"
+      assert location.street == "some street"
+      assert location.street_2 == "some street_2"
+    end
+
+    test "create_location/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Content.create_location(@invalid_attrs)
+    end
+
+    test "update_location/2 with valid data updates the location" do
+      location = location_fixture()
+      update_attrs = %{city: "some updated city", code: "some updated code", country: "some updated country", name: "some updated name", state: "some updated state", street: "some updated street", street_2: "some updated street_2"}
+
+      assert {:ok, %Location{} = location} = Content.update_location(location, update_attrs)
+      assert location.city == "some updated city"
+      assert location.code == "some updated code"
+      assert location.country == "some updated country"
+      assert location.name == "some updated name"
+      assert location.state == "some updated state"
+      assert location.street == "some updated street"
+      assert location.street_2 == "some updated street_2"
+    end
+
+    test "update_location/2 with invalid data returns error changeset" do
+      location = location_fixture()
+      assert {:error, %Ecto.Changeset{}} = Content.update_location(location, @invalid_attrs)
+      assert location == Content.get_location!(location.id)
+    end
+
+    test "delete_location/1 deletes the location" do
+      location = location_fixture()
+      assert {:ok, %Location{}} = Content.delete_location(location)
+      assert_raise Ecto.NoResultsError, fn -> Content.get_location!(location.id) end
+    end
+
+    test "change_location/1 returns a location changeset" do
+      location = location_fixture()
+      assert %Ecto.Changeset{} = Content.change_location(location)
+    end
+  end
 end

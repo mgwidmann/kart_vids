@@ -22,4 +22,24 @@ defmodule KartVids.ContentFixtures do
 
     video
   end
+
+  @doc """
+  Generate a location.
+  """
+  def location_fixture(attrs \\ %{}) do
+    {:ok, location} =
+      attrs
+      |> Enum.into(%{
+        city: "some city",
+        code: "some code",
+        country: "some country",
+        name: "some name",
+        state: "some state",
+        street: "some street",
+        street_2: "some street_2"
+      })
+      |> KartVids.Content.create_location()
+
+    location
+  end
 end

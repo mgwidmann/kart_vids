@@ -1,0 +1,37 @@
+<.header>
+  Location <%= @location.id %>
+  <:subtitle>This is a location record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/locations/#{@location}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit location</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Name"><%= @location.name %></:item>
+  <:item title="Street"><%= @location.street %></:item>
+  <:item title="Street 2"><%= @location.street_2 %></:item>
+  <:item title="City"><%= @location.city %></:item>
+  <:item title="State"><%= @location.state %></:item>
+  <:item title="Code"><%= @location.code %></:item>
+  <:item title="Country"><%= @location.country %></:item>
+</.list>
+
+<.back navigate={~p"/locations"}>Back to locations</.back>
+
+<.modal 
+  :if={@live_action == :edit} 
+  id="location-modal" 
+  show 
+  on_cancel={JS.patch(~p"/locations/#{@location}")}
+>
+  <.live_component
+    module={KartVidsWeb.LocationLive.FormComponent}
+    id={@location.id}
+    title={@page_title}
+    action={@live_action}
+    location={@location}
+    navigate={~p"/locations/#{@location}"}
+  />
+</.modal>
