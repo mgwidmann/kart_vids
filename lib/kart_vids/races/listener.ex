@@ -8,17 +8,42 @@ defmodule KartVids.Races.Listener do
   @min_lap_time 15.0
   @max_lap_time 30.0
 
-  def start_link(state) do
+  def start_link(location_id) do
     WebSockex.start_link(
       "ws://autobahn-livescore.herokuapp.com/?track=1&location=aisdulles",
       __MODULE__,
-      state
+      location_id
     )
   end
 
-  def handle_connect(_conn, state) do
-    Logger.info("Connected!")
-    {:ok, Map.merge(%{config: state}, @new_race)}
+  @doc false
+  def child_spec(location_id) do
+    %{
+      id: {KartVids.Races.Listener, location_id},
+      start: {KartVids.Races.Listener, :start_link, [location_id]},
+      restart: :transient,
+      # handle_stopped_children won't be invoked without this
+      ephemeral?: true
+    }
+    |> Supervisor.child_spec([])
+  end
+
+  @doc false
+  def child_spec(conn_info, location_id) do
+    %{
+      id: {KartVids.Races.Listener, location_id},
+      start: {KartVids.Races.Listener, :start_link, [conn_info, location_id]},
+      restart: :transient,
+      # handle_stopped_children won't be invoked without this
+      ephemeral?: true
+    }
+    |> Supervisor.child_spec([])
+  end
+
+  def handle_connect(_conn, location_id) do
+    Logger.info("Connected to websocket for location #{location_id}!")
+
+    {:ok, Map.merge(%{config: %{location_id: location_id}}, @new_race)}
   end
 
   def handle_frame({:text, "{" <> _ = json}, state) do

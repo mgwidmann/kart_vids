@@ -18,7 +18,7 @@ defmodule KartVids.Application do
       KartVidsWeb.Endpoint,
       # Start a worker by calling: KartVids.Worker.start_link(arg)
       # {KartVids.Worker, arg}
-      # {KartVids.Races.Listener, []}
+      {KartVids.Races.ListenerSupervisor, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
