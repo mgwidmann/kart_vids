@@ -138,8 +138,10 @@ defmodule KartVids.Races.Listener do
 
   def extract_scoreboard_data(results) when is_list(results) do
     Enum.reduce(results, %{}, fn %{"fastest_lap_time" => lap_time, "kart_num" => kart_num, "rpm" => rpm, "position" => position}, karts ->
-      {pos, ""} = Integer.parse(position)
-      Map.put(karts, kart_num, %{lap_time: lap_time, rpm: rpm, position: pos})
+      {position, ""} = Integer.parse(position)
+      {rpm, ""} = Integer.parse(rpm)
+      {lap_time, ""} = Float.parse(lap_time)
+      Map.put(karts, kart_num, %{lap_time: lap_time, rpm: rpm, position: position})
     end)
   end
 end
