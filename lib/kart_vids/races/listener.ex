@@ -42,7 +42,7 @@ defmodule KartVids.Races.Listener do
       Logger.info("Race (#{state[:current_race]}) #{name} Complete! Started at #{starts_at} with #{length(racers)} racers and scoreboard was ...")
       Logger.info("Scoreboard: #{inspect kart_performance}")
 
-      if state[:fasest_speed_level] == @fastest_speed_level do
+      if state[:fastest_speed_level] == @fastest_speed_level do
         for {kart_num, performance} <- kart_performance do
           kart = Races.find_kart_by_location_and_number(state[:config][:location_id], kart_num)
 
@@ -52,7 +52,7 @@ defmodule KartVids.Races.Listener do
               %{
                 average_fastest_lap_time: (kart.average_fastest_lap_time * kart.number_of_races + performance[:lap_time]) / (kart.number_of_races + 1),
                 average_rpms: performance[:rpm],
-                fasest_lap_time: min(kart[:fastest_lap_time], performance[:lap_time]),
+                fastest_lap_time: min(kart[:fastest_lap_time], performance[:lap_time]),
                 kart_num: kart_num,
                 number_of_races: kart.number_of_races + 1
               }
@@ -61,7 +61,7 @@ defmodule KartVids.Races.Listener do
             Races.create_kart(
               average_fastest_lap_time: performance[:lap_time],
               average_rpms: performance[:rpm],
-              fasest_lap_time: performance[:lap_time],
+              fastest_lap_time: performance[:lap_time],
               kart_num: kart_num,
               number_of_races: 1,
               location: state[:config][:location_id]
@@ -81,16 +81,16 @@ defmodule KartVids.Races.Listener do
       Logger.info("Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers with scoreboard ...")
 
       state
-      |> Map.merge(%{current_race: id, fasest_speed_level: speed})
+      |> Map.merge(%{current_race: id, fastest_speed_level: speed})
     else
-      new_speed = min(speed, state[:fasest_speed_level] || 99)
+      new_speed = min(speed, state[:fastest_speed_level] || 99)
 
       if new_speed != speed do
         Logger.info("Speed changed from #{speed} to #{new_speed}!")
       end
 
       state
-      |> Map.merge(%{current_race: id, fasest_speed_level: new_speed})
+      |> Map.merge(%{current_race: id, fastest_speed_level: new_speed})
     end
   end
 

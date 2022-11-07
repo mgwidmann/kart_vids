@@ -4,9 +4,9 @@ defmodule KartVidsWeb.KartLiveTest do
   import Phoenix.LiveViewTest
   import KartVids.RacesFixtures
 
-  @create_attrs %{average_fastest_lap_time: 120.5, average_rpms: 42, fasest_lap_time: 120.5, kart_num: "some kart_num", number_of_races: 42}
-  @update_attrs %{average_fastest_lap_time: 456.7, average_rpms: 43, fasest_lap_time: 456.7, kart_num: "some updated kart_num", number_of_races: 43}
-  @invalid_attrs %{average_fastest_lap_time: nil, average_rpms: nil, fasest_lap_time: nil, kart_num: nil, number_of_races: nil}
+  @create_attrs %{average_fastest_lap_time: 120.5, average_rpms: 42, fastest_lap_time: 120.5, kart_num: "some kart_num", number_of_races: 42}
+  @update_attrs %{average_fastest_lap_time: 456.7, average_rpms: 43, fastest_lap_time: 456.7, kart_num: "some updated kart_num", number_of_races: 43}
+  @invalid_attrs %{average_fastest_lap_time: nil, average_rpms: nil, fastest_lap_time: nil, kart_num: nil, number_of_races: nil}
 
   defp create_kart(_) do
     kart = kart_fixture()

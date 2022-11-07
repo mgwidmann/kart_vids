@@ -8,7 +8,7 @@ defmodule KartVids.RacesTest do
 
     import KartVids.RacesFixtures
 
-    @invalid_attrs %{average_fastest_lap_time: nil, average_rpms: nil, fasest_lap_time: nil, kart_num: nil, number_of_races: nil}
+    @invalid_attrs %{average_fastest_lap_time: nil, average_rpms: nil, fastest_lap_time: nil, kart_num: nil, number_of_races: nil}
 
     test "list_karts/0 returns all karts" do
       kart = kart_fixture()
@@ -21,12 +21,12 @@ defmodule KartVids.RacesTest do
     end
 
     test "create_kart/1 with valid data creates a kart" do
-      valid_attrs = %{average_fastest_lap_time: 120.5, average_rpms: 42, fasest_lap_time: 120.5, kart_num: "some kart_num", number_of_races: 42}
+      valid_attrs = %{average_fastest_lap_time: 120.5, average_rpms: 42, fastest_lap_time: 120.5, kart_num: "some kart_num", number_of_races: 42}
 
       assert {:ok, %Kart{} = kart} = Races.create_kart(valid_attrs)
       assert kart.average_fastest_lap_time == 120.5
       assert kart.average_rpms == 42
-      assert kart.fasest_lap_time == 120.5
+      assert kart.fastest_lap_time == 120.5
       assert kart.kart_num == "some kart_num"
       assert kart.number_of_races == 42
     end
@@ -37,12 +37,12 @@ defmodule KartVids.RacesTest do
 
     test "update_kart/2 with valid data updates the kart" do
       kart = kart_fixture()
-      update_attrs = %{average_fastest_lap_time: 456.7, average_rpms: 43, fasest_lap_time: 456.7, kart_num: "some updated kart_num", number_of_races: 43}
+      update_attrs = %{average_fastest_lap_time: 456.7, average_rpms: 43, fastest_lap_time: 456.7, kart_num: "some updated kart_num", number_of_races: 43}
 
       assert {:ok, %Kart{} = kart} = Races.update_kart(kart, update_attrs)
       assert kart.average_fastest_lap_time == 456.7
       assert kart.average_rpms == 43
-      assert kart.fasest_lap_time == 456.7
+      assert kart.fastest_lap_time == 456.7
       assert kart.kart_num == "some updated kart_num"
       assert kart.number_of_races == 43
     end

@@ -9,7 +9,7 @@
 
 <.table id="karts" rows={@karts} row_click={&JS.navigate(~p"/admin/locations/#{@location_id}/karts/#{&1}")}>
   <:col :let={kart} label="Kart num"><%= kart.kart_num %></:col>
-  <:col :let={kart} label="Fasest lap time"><%= kart.fasest_lap_time %></:col>
+  <:col :let={kart} label="Fasest lap time"><%= kart.fastest_lap_time %></:col>
   <:col :let={kart} label="Average fastest lap time"><%= kart.average_fastest_lap_time %></:col>
   <:col :let={kart} label="Number of races"><%= kart.number_of_races %></:col>
   <:col :let={kart} label="Average rpms"><%= kart.average_rpms %></:col>

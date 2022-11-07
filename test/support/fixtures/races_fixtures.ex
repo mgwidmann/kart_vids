@@ -13,7 +13,7 @@ defmodule KartVids.RacesFixtures do
       |> Enum.into(%{
         average_fastest_lap_time: 120.5,
         average_rpms: 42,
-        fasest_lap_time: 120.5,
+        fastest_lap_time: 120.5,
         kart_num: "some kart_num",
         number_of_races: 42
       })

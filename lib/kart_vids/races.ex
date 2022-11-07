@@ -17,8 +17,9 @@ defmodule KartVids.Races do
       [%Kart{}, ...]
 
   """
-  def list_karts do
-    Repo.all(Kart)
+  def list_karts(location_id) do
+    from(k in Kart, where: k.location_id == ^location_id, order_by: k.kart_num)
+    |> Repo.all()
   end
 
   @doc """
@@ -38,7 +39,7 @@ defmodule KartVids.Races do
   def get_kart!(id), do: Repo.get!(Kart, id)
 
   def find_kart_by_location_and_number(location_id, kart_num) do
-    Repo.get_by(%{location_id: location_id, kart_num: kart_num})
+    Repo.get_by(Kart, %{location_id: location_id, kart_num: kart_num})
   end
 
   @doc """
@@ -108,9 +109,22 @@ defmodule KartVids.Races do
     Kart.changeset(kart, attrs)
   end
 
-  def broadcast(item) do
-    IO.puts("KartVids.Endpoint.broadcast(#{inspect "location_1"}, #{inspect "kart_stats_1"}, item)")
+  def broadcast({:ok, %Kart{} = kart} = result) do
+    KartVidsWeb.Endpoint.broadcast!(kart_topic_name(kart.location_id, kart.kart_num), "update", kart)
+    KartVidsWeb.Endpoint.broadcast!(all_karts_topic_name(kart.location_id), "update", kart)
 
-    item
+    result
+  end
+
+  def broadcast({:error, _} = result) do
+    result
+  end
+
+  def all_karts_topic_name(location_id) do
+    "location:#{location_id}:kart_stats"
+  end
+
+  def kart_topic_name(location_id, kart_num) do
+    "location:#{location_id}:kart_stats:#{kart_num}"
   end
 end

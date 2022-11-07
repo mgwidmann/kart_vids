@@ -15,9 +15,6 @@
   <:col :let={location} label="State"><%= location.state %></:col>
   <:col :let={location} label="Code"><%= location.code %></:col>
   <:col :let={location} label="Country"><%= location.country %></:col>
-  <:col :let={location} label="Karts">
-    <.link navigate={~p"/admin/locations#{location}/karts"}>Karts</.link>
-  </:col>
   <:action :let={location}>
     <div class="sr-only">
       <.link navigate={~p"/admin/locations/#{location}"}>Show</.link>
