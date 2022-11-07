@@ -16,7 +16,7 @@ defmodule KartVids.Repo.Migrations.CreateFlamesTable do
 
       add :incidents, :json
 
-      timestamps
+      timestamps()
     end
 
     create index(:errors, [:hash])
