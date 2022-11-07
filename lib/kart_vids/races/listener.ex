@@ -71,26 +71,29 @@ defmodule KartVids.Races.Listener do
         for {kart_num, performance} <- kart_performance do
           kart = Races.find_kart_by_location_and_number(state[:config][:location_id], kart_num)
 
-          if kart && performance[:lap_time] > @min_lap_time && performance[:lap_time] < @max_lap_time do
-            Races.update_kart(
-              kart,
-              %{
-                average_fastest_lap_time: (kart.average_fastest_lap_time * kart.number_of_races + performance[:lap_time]) / (kart.number_of_races + 1),
-                average_rpms: (kart.average_rpms * kart.number_of_races + performance[:rpm]) / (kart.number_of_races + 1),
-                fastest_lap_time: min(kart[:fastest_lap_time], performance[:lap_time]),
+          cond do
+            kart && performance[:lap_time] > @min_lap_time && performance[:lap_time] < @max_lap_time ->
+              Races.update_kart(
+                kart,
+                %{
+                  average_fastest_lap_time: (kart.average_fastest_lap_time * kart.number_of_races + performance[:lap_time]) / (kart.number_of_races + 1),
+                  average_rpms: (kart.average_rpms * kart.number_of_races + performance[:rpm]) / (kart.number_of_races + 1),
+                  fastest_lap_time: min(kart[:fastest_lap_time], performance[:lap_time]),
+                  kart_num: kart_num,
+                  number_of_races: kart.number_of_races + 1
+                }
+              )
+            !kart && performance[:lap_time] > @min_lap_time && performance[:lap_time] < @max_lap_time ->
+              Races.create_kart(
+                average_fastest_lap_time: performance[:lap_time],
+                average_rpms: performance[:rpm],
+                fastest_lap_time: performance[:lap_time],
                 kart_num: kart_num,
-                number_of_races: kart.number_of_races + 1
-              }
-            )
-          else
-            Races.create_kart(
-              average_fastest_lap_time: performance[:lap_time],
-              average_rpms: performance[:rpm],
-              fastest_lap_time: performance[:lap_time],
-              kart_num: kart_num,
-              number_of_races: 1,
-              location: state[:config][:location_id]
-            )
+                number_of_races: 1,
+                location: state[:config][:location_id]
+              )
+            true ->
+              Logger.info("Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect performance}")
           end
         end
       else
