@@ -151,6 +151,12 @@ defmodule KartVids.Content do
     |> Repo.insert()
   end
 
+  def create_location!(attrs \\ %{}) do
+    %Location{}
+    |> Location.changeset(attrs)
+    |> Repo.insert!()
+  end
+
   @doc """
   Updates a location.
 

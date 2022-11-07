@@ -18,38 +18,13 @@ defmodule KartVidsWeb.UserRegistrationLive do
         </:subtitle>
       </.header>
 
-      <.simple_form
-        :let={f}
-        id="registration_form"
-        for={@changeset}
-        phx-submit="save"
-        phx-change="validate"
-        phx-trigger-action={@trigger_submit}
-        action={~p"/users/log_in?_action=registered"}
-        method="post"
-        as={:user}
-      >
-        <.error
-          :if={@changeset.action == :insert}
-          message="Oops, something went wrong! Please check the errors below."
-        />
+      <.simple_form :let={f} id="registration_form" for={@changeset} phx-submit="save" phx-change="validate" phx-trigger-action={@trigger_submit} action={~p"/users/log_in?_action=registered"} method="post" as={:user}>
+        <.error :if={@changeset.action == :insert} message="Oops, something went wrong! Please check the errors below." />
 
         <.input field={{f, :email}} type="email" label="Email" required />
         <.input field={{f, :referred_by}} type="email" label="Referred By" required />
-        <.input
-          field={{f, :password}}
-          type="password"
-          label="Password"
-          value={input_value(f, :password)}
-          required
-        />
-        <.input
-          field={{f, :password_confirmation}}
-          type="password"
-          label="Confirm Password"
-          value={input_value(f, :confirm_password)}
-          required
-        />
+        <.input field={{f, :password}} type="password" label="Password" value={input_value(f, :password)} required />
+        <.input field={{f, :password_confirmation}} type="password" label="Confirm Password" value={input_value(f, :confirm_password)} required />
 
         <:actions>
           <.button phx-disable-with="Creating account..." class="w-full">Create an account</.button>

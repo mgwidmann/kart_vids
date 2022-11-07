@@ -46,7 +46,6 @@ defmodule KartVidsWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
-
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
@@ -91,17 +90,28 @@ defmodule KartVidsWeb.Router do
   # Admin restricted routes
 
   scope "/admin", KartVidsWeb do
-    pipe_through [:browser, :admin]
+    pipe_through [:browser, :require_authenticated_user, :admin]
 
     live_dashboard "/dashboard", metrics: Telemetry
+    live_session :require_authenticated_user_admin,
+      on_mount: [{KartVidsWeb.UserAuth, :ensure_authenticated_admin}] do
 
-    # Locations
-    live "/locations", LocationLive.Index, :index
-    live "/locations/new", LocationLive.Index, :new
-    live "/locations/:id/edit", LocationLive.Index, :edit
+      # Locations
+      live "/locations", LocationLive.Index, :index
+      live "/locations/new", LocationLive.Index, :new
+      live "/locations/:id/edit", LocationLive.Index, :edit
 
-    live "/locations/:id", LocationLive.Show, :show
-    live "/locations/:id/show/edit", LocationLive.Show, :edit
+      live "/locations/:id", LocationLive.Show, :show
+      live "/locations/:id/show/edit", LocationLive.Show, :edit
+
+      # Karts
+      live "/locations/:location_id/karts", KartLive.Index, :index
+      live "/locations/:location_id/karts/new", KartLive.Index, :new
+      live "/locations/:location_id/karts/:id/edit", KartLive.Index, :edit
+
+      live "/locations/:location_id/karts/:id", KartLive.Show, :show
+      live "/locations/:location_id/karts/:id/show/edit", KartLive.Show, :edit
+    end
   end
 
   # Public routes which load the user if available
@@ -119,7 +129,7 @@ defmodule KartVidsWeb.Router do
   end
 
   def restrict_admin(conn, []) do
-    if conn.assigns.current_user.admin? do
+    if conn.assigns[:current_user] && conn.assigns.current_user.admin? do
       conn
     else
       conn

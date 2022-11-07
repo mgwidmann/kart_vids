@@ -46,7 +46,8 @@ defmodule KartVidsWeb.VideoLive.Index do
   end
 
   @view_style_strings @view_styles |> Enum.map(fn s -> Atom.to_string(s) end)
-  def handle_event("view", %{"style" => view_style}, socket) when view_style in @view_style_strings do
+  def handle_event("view", %{"style" => view_style}, socket)
+      when view_style in @view_style_strings do
     {:noreply,
      socket
      |> assign(:view, String.to_existing_atom(view_style))}
@@ -60,12 +61,26 @@ defmodule KartVidsWeb.VideoLive.Index do
 
   defp button_group(assigns) do
     ~H"""
-      <div class={@class}>
-        <div class="inline-flex shadow-md hover:shadow-lg focus:shadow-lg" role="group">
-          <button type="button" phx-click="view" phx-value-style="grid" class="rounded-l inline-block px-6 py-2.5 bg-sky-600 text-white font-medium text-xs leading-tight uppercase hover:bg-sky-700 focus:bg-sky-700 focus:outline-none focus:ring-0 active:bg-sky-800 transition duration-150 ease-in-out">Grid</button>
-          <button type="button" phx-click="view" phx-value-style="table" class="rounded-r inline-block px-6 py-2.5 bg-sky-600 text-white font-medium text-xs leading-tight uppercase hover:bg-sky-700 focus:bg-sky-700 focus:outline-none focus:ring-0 active:bg-sky-800 transition duration-150 ease-in-out">Table</button>
-        </div>
+    <div class={@class}>
+      <div class="inline-flex shadow-md hover:shadow-lg focus:shadow-lg" role="group">
+        <button
+          type="button"
+          phx-click="view"
+          phx-value-style="grid"
+          class="rounded-l inline-block px-6 py-2.5 bg-sky-600 text-white font-medium text-xs leading-tight uppercase hover:bg-sky-700 focus:bg-sky-700 focus:outline-none focus:ring-0 active:bg-sky-800 transition duration-150 ease-in-out"
+        >
+          Grid
+        </button>
+        <button
+          type="button"
+          phx-click="view"
+          phx-value-style="table"
+          class="rounded-r inline-block px-6 py-2.5 bg-sky-600 text-white font-medium text-xs leading-tight uppercase hover:bg-sky-700 focus:bg-sky-700 focus:outline-none focus:ring-0 active:bg-sky-800 transition duration-150 ease-in-out"
+        >
+          Table
+        </button>
       </div>
+    </div>
     """
   end
 end

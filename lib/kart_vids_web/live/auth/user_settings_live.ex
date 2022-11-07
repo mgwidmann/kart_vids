@@ -7,29 +7,12 @@ defmodule KartVidsWeb.UserSettingsLive do
     ~H"""
     <.header>Change Email</.header>
 
-    <.simple_form
-      :let={f}
-      id="email_form"
-      for={@email_changeset}
-      phx-submit="update_email"
-      phx-change="validate_email"
-    >
-      <.error
-        :if={@email_changeset.action == :insert}
-        message="Oops, something went wrong! Please check the errors below."
-      />
+    <.simple_form :let={f} id="email_form" for={@email_changeset} phx-submit="update_email" phx-change="validate_email">
+      <.error :if={@email_changeset.action == :insert} message="Oops, something went wrong! Please check the errors below." />
 
       <.input field={{f, :email}} type="email" label="Email" required value={input_value(f, :email)} />
 
-      <.input
-        field={{f, :current_password}}
-        name="current_password"
-        id="current_password_for_email"
-        type="password"
-        label="Current password"
-        value={@email_form_current_password}
-        required
-      />
+      <.input field={{f, :current_password}} name="current_password" id="current_password_for_email" type="password" label="Current password" value={@email_form_current_password} required />
       <:actions>
         <.button phx-disable-with="Changing...">Change Email</.button>
       </:actions>
@@ -37,45 +20,14 @@ defmodule KartVidsWeb.UserSettingsLive do
 
     <.header>Change Password</.header>
 
-    <.simple_form
-      :let={f}
-      id="password_form"
-      for={@password_changeset}
-      action={~p"/users/log_in?_action=password_updated"}
-      method="post"
-      phx-change="validate_password"
-      phx-submit="update_password"
-      phx-trigger-action={@trigger_submit}
-    >
-      <.error
-        :if={@password_changeset.action == :insert}
-        message="Oops, something went wrong! Please check the errors below."
-      />
+    <.simple_form :let={f} id="password_form" for={@password_changeset} action={~p"/users/log_in?_action=password_updated"} method="post" phx-change="validate_password" phx-submit="update_password" phx-trigger-action={@trigger_submit}>
+      <.error :if={@password_changeset.action == :insert} message="Oops, something went wrong! Please check the errors below." />
 
       <.input field={{f, :email}} type="hidden" value={@current_email} />
 
-      <.input
-        field={{f, :password}}
-        type="password"
-        label="New password"
-        value={input_value(f, :password)}
-        required
-      />
-      <.input
-        field={{f, :password_confirmation}}
-        type="password"
-        label="Confirm new password"
-        value={input_value(f, :password_confirmation)}
-      />
-      <.input
-        field={{f, :current_password}}
-        name="current_password"
-        type="password"
-        label="Current password"
-        id="current_password_for_password"
-        value={@current_password}
-        required
-      />
+      <.input field={{f, :password}} type="password" label="New password" value={input_value(f, :password)} required />
+      <.input field={{f, :password_confirmation}} type="password" label="Confirm new password" value={input_value(f, :password_confirmation)} />
+      <.input field={{f, :current_password}} name="current_password" type="password" label="Current password" id="current_password_for_password" value={@current_password} required />
       <:actions>
         <.button phx-disable-with="Changing...">Change Password</.button>
       </:actions>

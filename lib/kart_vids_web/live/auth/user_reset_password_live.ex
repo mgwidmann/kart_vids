@@ -7,32 +7,11 @@ defmodule KartVidsWeb.UserResetPasswordLive do
     ~H"""
     <.header>Reset Password</.header>
 
-    <.simple_form
-      :let={f}
-      for={@changeset}
-      id="reset_password_form"
-      phx-submit="reset_password"
-      phx-change="validate"
-    >
-      <.error
-        :if={@changeset.action == :insert}
-        message="Oops, something went wrong! Please check the errors below."
-      />
+    <.simple_form :let={f} for={@changeset} id="reset_password_form" phx-submit="reset_password" phx-change="validate">
+      <.error :if={@changeset.action == :insert} message="Oops, something went wrong! Please check the errors below." />
 
-      <.input
-        field={{f, :password}}
-        type="password"
-        label="New password"
-        value={input_value(f, :password)}
-        required
-      />
-      <.input
-        field={{f, :password_confirmation}}
-        type="password"
-        label="Confirm new password"
-        value={input_value(f, :password_confirmation)}
-        required
-      />
+      <.input field={{f, :password}} type="password" label="New password" value={input_value(f, :password)} required />
+      <.input field={{f, :password_confirmation}} type="password" label="Confirm new password" value={input_value(f, :password_confirmation)} required />
       <:actions>
         <.button phx-disable-with="Resetting...">Reset Password</.button>
       </:actions>

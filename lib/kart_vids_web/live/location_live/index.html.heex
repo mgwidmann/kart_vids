@@ -1,13 +1,13 @@
 <.header>
   Listing Locations
   <:actions>
-    <.link patch={~p"/locations/new"}>
+    <.link patch={~p"/admin/locations/new"}>
       <.button>New Location</.button>
     </.link>
   </:actions>
 </.header>
 
-<.table id="locations" rows={@locations} row_click={&JS.navigate(~p"/locations/#{&1}")}>
+<.table id="locations" rows={@locations} row_click={&JS.navigate(~p"/admin/locations/#{&1}")}>
   <:col :let={location} label="Name"><%= location.name %></:col>
   <:col :let={location} label="Street"><%= location.street %></:col>
   <:col :let={location} label="Street 2"><%= location.street_2 %></:col>
@@ -15,11 +15,14 @@
   <:col :let={location} label="State"><%= location.state %></:col>
   <:col :let={location} label="Code"><%= location.code %></:col>
   <:col :let={location} label="Country"><%= location.country %></:col>
+  <:col :let={location} label="Karts">
+    <.link navigate={~p"/admin/locations#{location}/karts"}>Karts</.link>
+  </:col>
   <:action :let={location}>
     <div class="sr-only">
-      <.link navigate={~p"/locations/#{location}"}>Show</.link>
+      <.link navigate={~p"/admin/locations/#{location}"}>Show</.link>
     </div>
-    <.link patch={~p"/locations/#{location}/edit"}>Edit</.link>
+    <.link patch={~p"/admin/locations/#{location}/edit"}>Edit</.link>
   </:action>
   <:action :let={location}>
     <.link phx-click={JS.push("delete", value: %{id: location.id})} data-confirm="Are you sure?">
@@ -28,13 +31,6 @@
   </:action>
 </.table>
 
-<.modal :if={@live_action in [:new, :edit]} id="location-modal" show on_cancel={JS.navigate(~p"/locations")}>
-  <.live_component
-    module={KartVidsWeb.LocationLive.FormComponent}
-    id={@location.id || :new}
-    title={@page_title}
-    action={@live_action}
-    location={@location}
-    navigate={~p"/locations"}
-  />
+<.modal :if={@live_action in [:new, :edit]} id="location-modal" show on_cancel={JS.navigate(~p"/admin/locations")}>
+  <.live_component module={KartVidsWeb.LocationLive.FormComponent} id={@location.id || :new} title={@page_title} action={@live_action} location={@location} navigate={~p"/admin/locations"} />
 </.modal>

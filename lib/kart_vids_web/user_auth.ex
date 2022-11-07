@@ -172,6 +172,18 @@ defmodule KartVidsWeb.UserAuth do
     end
   end
 
+  def on_mount(:ensure_authenticated_admin, params, session, socket) do
+    case on_mount(:ensure_authenticated, params, session, socket) do
+      {:cont, socket} ->
+        if socket.assigns.current_user.admin? do
+          {:cont, socket}
+        else
+          {:halt, socket}
+        end
+      other -> other
+    end
+  end
+
   defp mount_current_user(session, socket) do
     case session do
       %{"user_token" => user_token} ->

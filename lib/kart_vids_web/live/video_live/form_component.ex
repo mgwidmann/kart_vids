@@ -12,14 +12,7 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
         <:subtitle>Use this form to manage video records in your database.</:subtitle>
       </.header>
 
-      <.simple_form
-        :let={f}
-        for={@changeset}
-        id="video-form"
-        phx-target={@myself}
-        phx-change="validate"
-        phx-submit="save"
-      >
+      <.simple_form :let={f} for={@changeset} id="video-form" phx-target={@myself} phx-change="validate" phx-submit="save">
         <.input field={{f, :location}} type="text" label="location" />
         <.input field={{f, :duration_seconds}} type="number" label="duration_seconds" />
         <.input field={{f, :size_mb}} type="number" label="size_mb" step="any" />

@@ -4,9 +4,33 @@ defmodule KartVidsWeb.LocationLiveTest do
   import Phoenix.LiveViewTest
   import KartVids.ContentFixtures
 
-  @create_attrs %{city: "some city", code: "some code", country: "some country", name: "some name", state: "some state", street: "some street", street_2: "some street_2"}
-  @update_attrs %{city: "some updated city", code: "some updated code", country: "some updated country", name: "some updated name", state: "some updated state", street: "some updated street", street_2: "some updated street_2"}
-  @invalid_attrs %{city: nil, code: nil, country: nil, name: nil, state: nil, street: nil, street_2: nil}
+  @create_attrs %{
+    city: "some city",
+    code: "some code",
+    country: "some country",
+    name: "some name",
+    state: "some state",
+    street: "some street",
+    street_2: "some street_2"
+  }
+  @update_attrs %{
+    city: "some updated city",
+    code: "some updated code",
+    country: "some updated country",
+    name: "some updated name",
+    state: "some updated state",
+    street: "some updated street",
+    street_2: "some updated street_2"
+  }
+  @invalid_attrs %{
+    city: nil,
+    code: nil,
+    country: nil,
+    name: nil,
+    state: nil,
+    street: nil,
+    street_2: nil
+  }
 
   defp create_location(_) do
     location = location_fixture()

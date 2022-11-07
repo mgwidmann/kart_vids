@@ -12,14 +12,7 @@ defmodule KartVidsWeb.LocationLive.FormComponent do
         <:subtitle>Use this form to manage location records in your database.</:subtitle>
       </.header>
 
-      <.simple_form
-        :let={f}
-        for={@changeset}
-        id="location-form"
-        phx-target={@myself}
-        phx-change="validate"
-        phx-submit="save"
-      >
+      <.simple_form :let={f} for={@changeset} id="location-form" phx-target={@myself} phx-change="validate" phx-submit="save">
         <.input field={{f, :name}} type="text" label="name" />
         <.input field={{f, :street}} type="text" label="street" />
         <.input field={{f, :street_2}} type="text" label="street_2" />

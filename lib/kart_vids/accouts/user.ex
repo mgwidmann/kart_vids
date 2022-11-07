@@ -66,9 +66,7 @@ defmodule KartVids.Accounts.User do
     |> validate_length(:password, min: @min_password, max: @max_password)
     |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
     |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
-    |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/,
-      message: "at least one digit or punctuation character"
-    )
+    |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/, message: "at least one digit or punctuation character")
     |> validate_confirmation(:password, required: true, message: "does not match other password")
     |> maybe_hash_password(opts)
   end

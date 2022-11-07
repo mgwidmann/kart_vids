@@ -18,6 +18,6 @@ defmodule KartVids.Content.Location do
   def changeset(location, attrs) do
     location
     |> cast(attrs, [:name, :street, :street_2, :city, :state, :code, :country])
-    |> validate_required([:name, :street, :street_2, :city, :state, :code, :country])
+    |> validate_required([:name, :street, :city, :state, :code, :country])
   end
 end

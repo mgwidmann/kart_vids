@@ -1,0 +1,35 @@
+<.header>
+  Kart <%= @kart.id %>
+  <:subtitle>This is a kart record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/admin/locations/#{@location_id}/karts/#{@kart}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit kart</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Kart num"><%= @kart.kart_num %></:item>
+  <:item title="Fasest lap time"><%= @kart.fasest_lap_time %></:item>
+  <:item title="Average fastest lap time"><%= @kart.average_fastest_lap_time %></:item>
+  <:item title="Number of races"><%= @kart.number_of_races %></:item>
+  <:item title="Average rpms"><%= @kart.average_rpms %></:item>
+</.list>
+
+<.back navigate={~p"/admin/locations/#{@location_id}/karts"}>Back to karts</.back>
+
+<.modal 
+  :if={@live_action == :edit} 
+  id="kart-modal" 
+  show 
+  on_cancel={JS.patch(~p"/admin/locations/#{@location_id}/karts/#{@kart}")}
+>
+  <.live_component
+    module={KartVidsWeb.KartLive.FormComponent}
+    id={@kart.id}
+    title={@page_title}
+    action={@live_action}
+    kart={@kart}
+    navigate={~p"/admin/locations/#{@location_id}/karts/#{@kart}"}
+  />
+</.modal>

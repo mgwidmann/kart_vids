@@ -94,7 +94,15 @@ defmodule KartVids.ContentTest do
 
     import KartVids.ContentFixtures
 
-    @invalid_attrs %{city: nil, code: nil, country: nil, name: nil, state: nil, street: nil, street_2: nil}
+    @invalid_attrs %{
+      city: nil,
+      code: nil,
+      country: nil,
+      name: nil,
+      state: nil,
+      street: nil,
+      street_2: nil
+    }
 
     test "list_locations/0 returns all locations" do
       location = location_fixture()
@@ -107,7 +115,15 @@ defmodule KartVids.ContentTest do
     end
 
     test "create_location/1 with valid data creates a location" do
-      valid_attrs = %{city: "some city", code: "some code", country: "some country", name: "some name", state: "some state", street: "some street", street_2: "some street_2"}
+      valid_attrs = %{
+        city: "some city",
+        code: "some code",
+        country: "some country",
+        name: "some name",
+        state: "some state",
+        street: "some street",
+        street_2: "some street_2"
+      }
 
       assert {:ok, %Location{} = location} = Content.create_location(valid_attrs)
       assert location.city == "some city"
@@ -125,7 +141,16 @@ defmodule KartVids.ContentTest do
 
     test "update_location/2 with valid data updates the location" do
       location = location_fixture()
-      update_attrs = %{city: "some updated city", code: "some updated code", country: "some updated country", name: "some updated name", state: "some updated state", street: "some updated street", street_2: "some updated street_2"}
+
+      update_attrs = %{
+        city: "some updated city",
+        code: "some updated code",
+        country: "some updated country",
+        name: "some updated name",
+        state: "some updated state",
+        street: "some updated street",
+        street_2: "some updated street_2"
+      }
 
       assert {:ok, %Location{} = location} = Content.update_location(location, update_attrs)
       assert location.city == "some updated city"

@@ -15,9 +15,10 @@ defmodule KartVids.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: KartVids.PubSub},
       # Start the Endpoint (http/https)
-      KartVidsWeb.Endpoint
+      KartVidsWeb.Endpoint,
       # Start a worker by calling: KartVids.Worker.start_link(arg)
       # {KartVids.Worker, arg}
+      # {KartVids.Races.Listener, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
