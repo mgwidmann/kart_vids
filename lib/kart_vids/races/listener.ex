@@ -4,7 +4,7 @@ defmodule KartVids.Races.Listener do
   alias KartVids.Races
 
   @new_race %{current_race: nil, fastest_speed_level: 99}
-  @fastest_speed_level "1"
+  @fastest_speed_level 1
   @min_lap_time 15.0
   @max_lap_time 30.0
 
@@ -64,7 +64,7 @@ defmodule KartVids.Races.Listener do
     kart_performance = extract_scoreboard_data(scoreboard)
 
     if state[:current_race] == id do
-      Logger.info("Race (#{state[:current_race]}) #{name} Complete! Started at #{starts_at} with #{length(racers)} racers and scoreboard was ...")
+      Logger.info("Race (#{state[:current_race]}) #{name} Complete! Started at #{starts_at} with #{length(racers)} racers and scoreboard was")
       Logger.info("Scoreboard: #{inspect kart_performance}")
 
       if state[:fastest_speed_level] == @fastest_speed_level do
@@ -93,6 +93,8 @@ defmodule KartVids.Races.Listener do
             )
           end
         end
+      else
+        Logger.info("Dropping race because speed level was only level #{state[:fastest_speed_level]} at its fastest")
       end
     end
 
@@ -103,7 +105,7 @@ defmodule KartVids.Races.Listener do
     {speed, ""} = Integer.parse(speed_level)
 
     if state[:current_race] != id do
-      Logger.info("Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers with scoreboard ...")
+      Logger.info("Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers")
 
       state
       |> Map.merge(%{current_race: id, fastest_speed_level: speed})
