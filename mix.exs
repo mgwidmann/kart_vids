@@ -53,7 +53,8 @@ defmodule KartVids.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:websockex, "~> 0.4.3"},
-      {:parent, "~> 0.12.1"}
+      {:parent, "~> 0.12.1"},
+      {:flames, "~> 0.7.0", github: "mgwidmann/flames", branch: "liveview"}
     ]
   end
 

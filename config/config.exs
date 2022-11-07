@@ -50,10 +50,17 @@ config :tailwind,
     cd: Path.expand("../assets", __DIR__)
   ]
 
+config :flames,
+  repo: KartVids.Repo,
+  endpoint: KartVids.Endpoint
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
+
+config :logger,
+  backends: [:console, Flames.Logger]
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason

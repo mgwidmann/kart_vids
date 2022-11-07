@@ -3,6 +3,7 @@ defmodule KartVidsWeb.Router do
 
   import KartVidsWeb.UserAuth
   import Phoenix.LiveDashboard.Router
+  import Flames.Router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -93,6 +94,9 @@ defmodule KartVidsWeb.Router do
     pipe_through [:browser, :require_authenticated_user, :admin]
 
     live_dashboard "/dashboard", metrics: Telemetry
+
+    flames "/errors"
+
     live_session :require_authenticated_user_admin,
       on_mount: [{KartVidsWeb.UserAuth, :ensure_authenticated_admin}] do
 

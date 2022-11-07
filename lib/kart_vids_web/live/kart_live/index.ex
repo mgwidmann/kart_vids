@@ -51,6 +51,7 @@ defmodule KartVidsWeb.KartLive.Index do
     Races.list_karts(location_id)
   end
 
+  @impl true
   def handle_info(%Phoenix.Socket.Broadcast{event: "update", payload: %KartVids.Races.Kart{} = kart}, socket) do
     karts = [kart | socket.assigns.karts |> Enum.filter(& &1.id != kart.id)] |> Enum.sort_by(& &1.kart_num)
 
