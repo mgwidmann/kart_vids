@@ -42,8 +42,8 @@ defmodule KartVids.Races.Listener do
     WebSockex.start_link(
       "ws://autobahn-livescore.herokuapp.com/?track=1&location=aisdulles",
       __MODULE__,
-      location,
-      name: {:via, KartVids.Registry, {__MODULE__, location.id}}
+      location
+      # name: via_tuple(location.id)
     )
   end
 
@@ -69,6 +69,10 @@ defmodule KartVids.Races.Listener do
       ephemeral?: true
     }
     |> Supervisor.child_spec([])
+  end
+
+  def via_tuple(location_id) do
+    {:via, KartVids.Registry, {__MODULE__, location_id}}
   end
 
   def handle_connect(_conn, %Location{} = location) do
