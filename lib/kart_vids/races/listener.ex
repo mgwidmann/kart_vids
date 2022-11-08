@@ -68,34 +68,7 @@ defmodule KartVids.Races.Listener do
       Logger.info("Scoreboard: #{inspect kart_performance}")
 
       if state[:fastest_speed_level] == @fastest_speed_level do
-        for {kart_num, performance} <- kart_performance do
-          kart = Races.find_kart_by_location_and_number(state[:config][:location_id], kart_num)
-
-          cond do
-            kart && performance[:lap_time] > @min_lap_time && performance[:lap_time] < @max_lap_time ->
-              Races.update_kart(
-                kart,
-                %{
-                  average_fastest_lap_time: (kart.average_fastest_lap_time * kart.number_of_races + performance[:lap_time]) / (kart.number_of_races + 1),
-                  average_rpms: (kart.average_rpms * kart.number_of_races + performance[:rpm]) / (kart.number_of_races + 1),
-                  fastest_lap_time: min(kart[:fastest_lap_time], performance[:lap_time]),
-                  kart_num: kart_num,
-                  number_of_races: kart.number_of_races + 1
-                }
-              )
-            !kart && performance[:lap_time] > @min_lap_time && performance[:lap_time] < @max_lap_time ->
-              Races.create_kart(
-                average_fastest_lap_time: performance[:lap_time],
-                average_rpms: performance[:rpm],
-                fastest_lap_time: performance[:lap_time],
-                kart_num: kart_num,
-                number_of_races: 1,
-                location: state[:config][:location_id]
-              )
-            true ->
-              Logger.info("Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect performance}")
-          end
-        end
+        persist_race_information(kart_performance, state[:config][:location_id])
       else
         Logger.info("Dropping race because speed level was only level #{state[:fastest_speed_level]} at its fastest")
       end
@@ -134,6 +107,37 @@ defmodule KartVids.Races.Listener do
     IO.inspect(reason, label: "Unable to decode JSON:")
 
     state
+  end
+
+  def persist_race_information(kart_performance, location_id) when is_map(kart_performance) and is_integer(location_id) do
+    for {kart_num, performance} <- kart_performance do
+      kart = Races.find_kart_by_location_and_number(location_id, kart_num)
+
+      cond do
+        kart && performance[:lap_time] > @min_lap_time && performance[:lap_time] < @max_lap_time ->
+          Races.update_kart(
+            kart,
+            %{
+              average_fastest_lap_time: (kart.average_fastest_lap_time * kart.number_of_races + performance[:lap_time]) / (kart.number_of_races + 1),
+              average_rpms: (kart.average_rpms * kart.number_of_races + performance[:rpm]) / (kart.number_of_races + 1),
+              fastest_lap_time: min(kart[:fastest_lap_time], performance[:lap_time]),
+              kart_num: kart_num,
+              number_of_races: kart.number_of_races + 1
+            }
+          )
+        !kart && performance[:lap_time] > @min_lap_time && performance[:lap_time] < @max_lap_time ->
+          Races.create_kart(%{
+            average_fastest_lap_time: performance[:lap_time],
+            average_rpms: performance[:rpm],
+            fastest_lap_time: performance[:lap_time],
+            kart_num: kart_num,
+            number_of_races: 1,
+            location_id: location_id
+          })
+        true ->
+          Logger.info("Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect performance}")
+      end
+    end
   end
 
   def extract_scoreboard_data(results) when is_list(results) do
