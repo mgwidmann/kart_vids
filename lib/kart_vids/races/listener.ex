@@ -119,8 +119,8 @@ defmodule KartVids.Races.Listener do
             kart,
             %{
               average_fastest_lap_time: (kart.average_fastest_lap_time * kart.number_of_races + performance[:lap_time]) / (kart.number_of_races + 1),
-              average_rpms: (kart.average_rpms * kart.number_of_races + performance[:rpm]) / (kart.number_of_races + 1),
-              fastest_lap_time: min(kart[:fastest_lap_time], performance[:lap_time]),
+              average_rpms: div(kart.average_rpms * kart.number_of_races + performance[:rpm], kart.number_of_races + 1),
+              fastest_lap_time: min(kart.fastest_lap_time, performance[:lap_time]),
               kart_num: kart_num,
               number_of_races: kart.number_of_races + 1
             }
