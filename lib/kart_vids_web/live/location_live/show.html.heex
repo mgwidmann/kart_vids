@@ -2,6 +2,9 @@
   Location <%= @location.id %>
   <:subtitle>Information about this location.</:subtitle>
   <:actions>
+    <.link navigate={~p"/admin/locations/#{@location}/racing"}>
+      <.button>Racing</.button>
+    </.link>
     <.link navigate={~p"/admin/locations/#{@location}/karts"}>
       <.button>Karts</.button>
     </.link>

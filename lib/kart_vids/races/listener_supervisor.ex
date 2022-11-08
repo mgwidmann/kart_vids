@@ -1,12 +1,15 @@
 defmodule KartVids.Races.ListenerSupervisor do
+  @moduledoc false
   use Parent.GenServer
   require Logger
   alias KartVids.Content
   alias KartVids.Races.Listener
 
+  @spec start_link(any) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(arg), do: Parent.GenServer.start_link(__MODULE__, arg)
 
   @impl GenServer
+  @spec init(any) :: {:ok, nil}
   def init(_) do
     send(self(), :start_locations)
     {:ok, nil}
@@ -53,7 +56,7 @@ defmodule KartVids.Races.ListenerSupervisor do
 
   defp start_location(location) do
     try do
-      {:ok, _} = Parent.start_child(Listener.child_spec(location.id))
+      {:ok, _} = Parent.start_child(Listener.child_spec(location))
     rescue
       _ ->
         Logger.info("Trouble with starting location #{location.name} (#{location.id}) (will try again in #{@delay_minutes} minute(s))")

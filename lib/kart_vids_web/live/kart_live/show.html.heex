@@ -1,6 +1,6 @@
 <.header>
-  Kart <%= @kart.id %>
-  <:subtitle>This is a kart record from your database.</:subtitle>
+  Kart <%= @kart.kart_num %>
+  <:subtitle>Details about this particular kart which have been collected.</:subtitle>
   <:actions>
     <.link patch={~p"/admin/locations/#{@location_id}/karts/#{@kart}/show/edit"} phx-click={JS.push_focus()}>
       <.button>Edit kart</.button>

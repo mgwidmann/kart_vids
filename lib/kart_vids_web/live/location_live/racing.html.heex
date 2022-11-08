@@ -1,0 +1,21 @@
+<.header>
+  <%= @location.name %>
+  <:subtitle>Live racing information</:subtitle>
+  <:actions>
+  </:actions>
+</.header>
+  
+<.back navigate={~p"/admin/locations/#{@location}"}>Back to location</.back>
+
+Race Listener Status:
+<.pill type={if(@listener_alive?, do: :success, else: :danger)}>
+  <%= if @listener_alive? do %>
+    ONLINE
+  <% else %>
+    OFFLINE
+  <% end %>
+</.pill>
+
+<%= if @listener_alive? do %>
+  ...
+<% end %>

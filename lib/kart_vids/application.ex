@@ -8,6 +8,7 @@ defmodule KartVids.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      {Registry, keys: :unique, name: KartVids.Registry},
       # Start the Telemetry supervisor
       KartVidsWeb.Telemetry,
       # Start the Ecto repository

@@ -7,6 +7,8 @@
   </:actions>
 </.header>
 
+<.back navigate={~p"/admin/locations/#{@location_id}"}>Back to location</.back>
+
 <.table id="karts" rows={@karts} row_click={&JS.navigate(~p"/admin/locations/#{@location_id}/karts/#{&1}")}>
   <:col :let={kart} label="Kart Number"><%= kart.kart_num %></:col>
   <:col :let={kart} label="Fastest lap time"><%= kart.fastest_lap_time %></:col>

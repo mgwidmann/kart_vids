@@ -204,6 +204,24 @@ defmodule KartVidsWeb.CoreComponents do
     """
   end
 
+  attr :type, :atom, default: :brand
+  slot :inner_block, required: true
+
+  def pill(assigns) do
+    type = cond do
+      :brand == assigns[:type] || assigns[:type] == nil -> "bg-brand/20"
+      :success == assigns[:type] ->  "bg-emerald-500"
+      :danger == assigns[:type] -> "bg-rose-400"
+      true -> nil
+    end
+    assigns = Map.put(assigns, :type, type)
+    ~H"""
+    <small class={["ml-3 rounded-full px-2 text-[0.8125rem] font-medium leading-6", @type]}>
+      <%= render_slot(@inner_block) %>
+    </small>
+    """
+  end
+
   @doc """
   Renders an input with label and error messages.
 
