@@ -43,7 +43,7 @@ defmodule KartVids.Races.Listener do
       "ws://autobahn-livescore.herokuapp.com/?track=1&location=aisdulles",
       __MODULE__,
       location,
-      name: {:via, Registry, {__MODULE__, location.id}}
+      name: {:via, KartVids.Registry, {__MODULE__, location.id}}
     )
   end
 
