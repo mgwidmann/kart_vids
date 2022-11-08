@@ -6,7 +6,7 @@ defmodule KartVids.Races.Kart do
     field :average_fastest_lap_time, :float
     field :average_rpms, :integer
     field :fastest_lap_time, :float
-    field :kart_num, :string
+    field :kart_num, :integer
     field :number_of_races, :integer
 
     belongs_to :location, KartVids.Content.Location

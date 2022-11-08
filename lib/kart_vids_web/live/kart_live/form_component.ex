@@ -21,7 +21,7 @@ defmodule KartVidsWeb.KartLive.FormComponent do
         phx-submit="save"
       >
         <.input field={{f, :location_id}} type="hidden" />
-        <.input field={{f, :kart_num}} type="text" label="Kart Number" />
+        <.input field={{f, :kart_num}} type="number" label="Kart Number" />
         <.input field={{f, :fastest_lap_time}} type="number" label="Fastest Lap Time Ever" step="any" />
         <.input field={{f, :average_fastest_lap_time}} type="number" label="Average Fastest Lap Time in One Race" step="any" />
         <.input field={{f, :number_of_races}} type="number" label="Number of Races" />

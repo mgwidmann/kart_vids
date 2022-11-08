@@ -18,7 +18,7 @@ defmodule KartVids.Races do
 
   """
   def list_karts(location_id) do
-    from(k in Kart, where: k.location_id == ^location_id, order_by: k.kart_num)
+    from(k in Kart, where: k.location_id == ^location_id, order_by: {:asc, k.kart_num})
     |> Repo.all()
   end
 

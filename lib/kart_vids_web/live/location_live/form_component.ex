@@ -13,13 +13,17 @@ defmodule KartVidsWeb.LocationLive.FormComponent do
       </.header>
 
       <.simple_form :let={f} for={@changeset} id="location-form" phx-target={@myself} phx-change="validate" phx-submit="save">
-        <.input field={{f, :name}} type="text" label="name" />
-        <.input field={{f, :street}} type="text" label="street" />
-        <.input field={{f, :street_2}} type="text" label="street_2" />
-        <.input field={{f, :city}} type="text" label="city" />
-        <.input field={{f, :state}} type="text" label="state" />
-        <.input field={{f, :code}} type="text" label="code" />
-        <.input field={{f, :country}} type="text" label="country" />
+        <.input field={{f, :name}} type="text" label="Name" />
+        <.input field={{f, :street}} type="text" label="Street" />
+        <.input field={{f, :street_2}} type="text" label="Street Line 2 (optional)" />
+        <.input field={{f, :city}} type="text" label="City" />
+        <.input field={{f, :state}} type="text" label="State/Province" />
+        <.input field={{f, :code}} type="text" label="Zip/Postal Code" />
+        <.input field={{f, :country}} type="text" label="Country" />
+        <.input field={{f, :adult_kart_min}} type="number" label="First Adult Kart Number" />
+        <.input field={{f, :adult_kart_max}} type="number" label="Last Adult Kart Number" />
+        <.input field={{f, :junior_kart_min}} type="number" label="First Junior Kart Number" />
+        <.input field={{f, :junior_kart_max}} type="number" label="Last Junior Kart Number" />
         <:actions>
           <.button phx-disable-with="Saving...">Save Location</.button>
         </:actions>

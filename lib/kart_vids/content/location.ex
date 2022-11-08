@@ -10,6 +10,10 @@ defmodule KartVids.Content.Location do
     field :state, :string
     field :street, :string
     field :street_2, :string
+    field :adult_kart_min, :integer
+    field :adult_kart_max, :integer
+    field :junior_kart_min, :integer
+    field :junior_kart_max, :integer
 
     timestamps()
   end
@@ -17,7 +21,7 @@ defmodule KartVids.Content.Location do
   @doc false
   def changeset(location, attrs) do
     location
-    |> cast(attrs, [:name, :street, :street_2, :city, :state, :code, :country])
-    |> validate_required([:name, :street, :city, :state, :code, :country])
+    |> cast(attrs, [:name, :street, :street_2, :city, :state, :code, :country, :adult_kart_min, :adult_kart_max, :junior_kart_min, :junior_kart_max])
+    |> validate_required([:name, :street, :city, :state, :code, :country, :adult_kart_min, :adult_kart_max, :junior_kart_min, :junior_kart_max])
   end
 end
