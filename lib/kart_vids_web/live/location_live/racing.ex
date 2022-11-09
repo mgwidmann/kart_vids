@@ -5,6 +5,8 @@ defmodule KartVidsWeb.LocationLive.Racing do
   alias KartVids.Content
   alias KartVids.Races.Listener
 
+  @check_timeout 10_000
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok, socket}
@@ -15,6 +17,8 @@ defmodule KartVidsWeb.LocationLive.Racing do
     location = Content.get_location!(id)
     listener = Listener.whereis(location)
     Listener.subscribe(location)
+
+    Process.send_after(self(), :check_listener, @check_timeout)
 
     {:noreply,
      socket
@@ -31,5 +35,15 @@ defmodule KartVidsWeb.LocationLive.Racing do
     {:noreply,
      socket
      |> assign(:race_data, race_data)}
+  end
+
+  def handle_info(:check_listener, socket) do
+    listener = Listener.whereis(socket.assigns.location)
+    Process.send_after(self(), :check_listener, @check_timeout)
+
+    {:noreply,
+     socket
+     |> assign(:listener, listener)
+     |> assign(:listener_alive?, !is_nil(listener) && Process.alive?(listener))}
   end
 end
