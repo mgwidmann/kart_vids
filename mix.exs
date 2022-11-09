@@ -7,6 +7,9 @@ defmodule KartVids.MixProject do
       version: "0.1.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
+      elixirc_options: [
+        warnings_as_errors: true
+      ],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps()
@@ -54,6 +57,7 @@ defmodule KartVids.MixProject do
       {:credo, "~> 1.6"},
       {:plug_cowboy, "~> 2.5"},
       {:websockex, "~> 0.4.3"},
+      # {:websockex, path: "../websockex"},
       {:parent, "~> 0.12.1"},
       {:flames, "~> 0.7.0", github: "mgwidmann/flames", branch: "liveview"}
     ]

@@ -29,7 +29,8 @@ defmodule KartVids.Races.Listener do
   @max_lap_time 30.0
 
   @spec whereis(number | Location.t()) :: pid() | nil
-  def whereis(%Location{} = location), do: whereis(location.id)
+  def whereis(%Location{id: id}), do: whereis(id)
+
   def whereis(location_id) when is_number(location_id) do
     case Registry.lookup(KartVids.Registry, {__MODULE__, location_id}) do
       [{pid, _} | _] -> pid
@@ -37,13 +38,24 @@ defmodule KartVids.Races.Listener do
     end
   end
 
+  @spec subscribe(number | Location.t()) :: :ok | {:error, {:already_registered, pid}}
+  def subscribe(%Location{id: id}), do: subscribe(id)
+
+  def subscribe(location_id) when is_number(location_id) do
+    location_id
+    |> topic_name()
+    |> KartVidsWeb.Endpoint.subscribe()
+  end
+
+  ### Server functions
+
   @spec start_link(Location.t()) :: {:error, any} | {:ok, pid}
   def start_link(%Location{} = location) do
     WebSockex.start_link(
       "ws://autobahn-livescore.herokuapp.com/?track=1&location=aisdulles",
       __MODULE__,
-      location
-      # name: via_tuple(location.id)
+      location,
+      name: via_tuple(location.id)
     )
   end
 
@@ -72,13 +84,23 @@ defmodule KartVids.Races.Listener do
   end
 
   def via_tuple(location_id) do
-    {:via, KartVids.Registry, {__MODULE__, location_id}}
+    {:via, Registry, {KartVids.Registry, {__MODULE__, location_id}}}
   end
 
   def handle_connect(_conn, %Location{} = location) do
     Logger.info("Connected to websocket for location #{location.id}!")
 
     {:ok, %State{config: %Config{location_id: location.id, location: location}}}
+  end
+
+  def handle_disconnect(connection_status, %State{} = state) do
+    Logger.warn("Disconnected from location #{state.config.location_id}! #{inspect(connection_status)}")
+
+    {:ok, state}
+  end
+
+  def terminate(close_reason, state) do
+    Logger.error("Websockex shutting down! #{inspect(close_reason)} :: Last state was: #{inspect(state)}")
   end
 
   def handle_frame({:text, "{" <> _ = json}, state) do
@@ -95,15 +117,21 @@ defmodule KartVids.Races.Listener do
     {:ok, state}
   end
 
+  def handle_frame(other, state) do
+    Logger.warn("Received other frame: #{inspect(other)}")
+    {:ok, state}
+  end
+
   ## Handle Race Finish
   def handle_race_data(
-      {:ok, %{"race" => %{"id" => id, "starts_at_iso" => starts_at, "ended" => 1, "race_name" => name, "racers" => racers}, "scoreboard" => scoreboard}},
-      %State{current_race: current_race, fastest_speed_level: fastest_speed_level, config: %Config{location: location}} = state) do
+        {:ok, %{"race" => %{"id" => id, "starts_at_iso" => starts_at, "ended" => 1, "race_name" => name, "racers" => racers}, "scoreboard" => scoreboard}},
+        %State{current_race: current_race, fastest_speed_level: fastest_speed_level, config: %Config{location: location}} = state
+      ) do
     kart_performance = extract_scoreboard_data(scoreboard)
 
     if current_race == id do
       Logger.info("Race (#{current_race}) #{name} Complete! Started at #{starts_at} with #{length(racers)} racers and scoreboard was")
-      Logger.info("Scoreboard: #{inspect kart_performance}")
+      Logger.info("Scoreboard: #{inspect(kart_performance)}")
 
       if fastest_speed_level == @fastest_speed_level do
         persist_race_information(kart_performance, location)
@@ -112,13 +140,16 @@ defmodule KartVids.Races.Listener do
       end
     end
 
-    Map.merge(state, Map.take(%State{}, Map.keys(%State{}) |> Enum.reject(& &1 == :config)))
+    state
+    |> Map.merge(Map.take(%State{}, Map.keys(%State{}) |> Enum.reject(&(&1 == :config))))
+    |> broadcast()
   end
 
   ## Handle Race Start/Updates
   def handle_race_data(
-      {:ok, %{"race" => %{"id" => id, "speed_level_id" => speed_level, "starts_at_iso" => starts_at, "ended" => 0, "race_name" => name, "racers" => racers}}},
-      %State{current_race: current_race, fastest_speed_level: fastest_speed_level} = state) do
+        {:ok, %{"race" => %{"id" => id, "speed_level_id" => speed_level, "starts_at_iso" => starts_at, "ended" => 0, "race_name" => name, "racers" => racers}}},
+        %State{current_race: current_race, fastest_speed_level: fastest_speed_level} = state
+      ) do
     {speed, ""} = Integer.parse(speed_level)
 
     if current_race != id do
@@ -126,6 +157,7 @@ defmodule KartVids.Races.Listener do
 
       state
       |> Map.merge(%{current_race: id, fastest_speed_level: speed, racers: extract_racer_data(racers)})
+      |> broadcast()
     else
       new_speed = min(speed, fastest_speed_level || 99)
 
@@ -135,19 +167,38 @@ defmodule KartVids.Races.Listener do
 
       state
       |> Map.merge(%{current_race: id, fastest_speed_level: new_speed, racers: extract_racer_data(racers)})
+      |> broadcast()
     end
   end
 
   def handle_race_data({:ok, message}, %State{} = state) do
-    Logger.warn("Unknown Message Received: #{inspect message}")
+    Logger.warn("Unknown Message Received: #{inspect(message)}")
 
     state
   end
 
   def handle_race_data({:error, reason}, %State{} = state) do
-    Logger.error("Unable to decode JSON: #{inspect reason}")
+    Logger.error("Unable to decode JSON: #{inspect(reason)}")
 
     state
+  end
+
+  def handle_info(msg, state) do
+    Logger.error(msg)
+
+    {:ok, state}
+  end
+
+  defp broadcast(state) do
+    state.config.location_id
+    |> topic_name()
+    |> KartVidsWeb.Endpoint.broadcast("race_data", state)
+
+    state
+  end
+
+  defp topic_name(location_id) do
+    "race_location:#{location_id}"
   end
 
   def persist_race_information(kart_performance, %Location{id: location_id} = location) when is_map(kart_performance) do
@@ -168,6 +219,7 @@ defmodule KartVids.Races.Listener do
               type: Kart.kart_type(kart_num, location)
             }
           )
+
         !kart && performance[:lap_time] > @min_lap_time && performance[:lap_time] < @max_lap_time ->
           Races.create_kart(%{
             average_fastest_lap_time: performance[:lap_time],
@@ -178,8 +230,9 @@ defmodule KartVids.Races.Listener do
             location_id: location_id,
             type: Kart.kart_type(kart_num, location)
           })
+
         true ->
-          Logger.info("Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect performance}")
+          Logger.info("Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect(performance)}")
       end
     end
   end
@@ -197,6 +250,7 @@ defmodule KartVids.Races.Listener do
   @spec extract_racer_data(list(racer()), %{String.t() => racer()}) :: %{String.t() => racer()}
   def extract_racer_data(racers, by_kart \\ %{})
   def extract_racer_data([], by_kart), do: by_kart
+
   def extract_racer_data([%{"kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo} | racers], by_kart) do
     {fastest_lap, average_lap, last_lap} = analyze_laps(laps)
     {kart_number, ""} = Integer.parse(kart_num)
@@ -209,6 +263,7 @@ defmodule KartVids.Races.Listener do
   @spec analyze_laps(list(lap()), analysis()) :: analysis()
   def analyze_laps(laps, results \\ {@default_float, @default_float, @default_float})
   def analyze_laps([], results), do: results
+
   def analyze_laps([lap | laps], results) do
     {fastest_lap, average_lap, last_lap} = analyze_lap(lap, results)
     analyze_laps(laps, {fastest_lap, average_lap, last_lap})
@@ -216,10 +271,12 @@ defmodule KartVids.Races.Listener do
 
   @spec analyze_lap(lap(), analysis()) :: analysis()
   def analyze_lap(%{"lap_time" => lap_time, "lap_number" => "0"}, _), do: {lap_time, lap_time, lap_time}
+
   def analyze_lap(%{"lap_time" => lap_time, "lap_number" => lap}, {fastest_lap, average_lap, _last_lap}) when fastest_lap > lap_time do
     {lap, ""} = Integer.parse(lap)
     {lap_time, average_lap_time(average_lap, lap, lap_time), lap_time}
   end
+
   def analyze_lap(%{"lap_time" => lap_time, "lap_number" => lap}, {fastest_lap, average_lap, _last_lap}) when fastest_lap < lap_time do
     {lap, ""} = Integer.parse(lap)
     {fastest_lap, average_lap_time(average_lap, lap, lap_time), lap_time}
