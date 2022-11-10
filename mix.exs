@@ -7,9 +7,7 @@ defmodule KartVids.MixProject do
       version: "0.1.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
-      elixirc_options: [
-        warnings_as_errors: true
-      ],
+      elixirc_options: elixirc_options(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps()
@@ -29,6 +27,9 @@ defmodule KartVids.MixProject do
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  def elixirc_options(:prod), do: [warnings_as_errors: true]
+  def elixirc_options(_), do: []
 
   # Specifies your project dependencies.
   #
@@ -56,8 +57,8 @@ defmodule KartVids.MixProject do
       {:jason, "~> 1.2"},
       {:credo, "~> 1.6"},
       {:plug_cowboy, "~> 2.5"},
-      {:websockex, "~> 0.4.3"},
-      # {:websockex, path: "../websockex"},
+      # {:websockex, "~> 0.4.3"},
+      {:websockex, github: "mgwidmann/websockex"},
       {:parent, "~> 0.12.1"},
       {:flames, "~> 0.7.0", github: "mgwidmann/flames", branch: "liveview"}
     ]

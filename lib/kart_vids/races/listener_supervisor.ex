@@ -33,7 +33,13 @@ defmodule KartVids.Races.ListenerSupervisor do
   end
 
   def handle_info({:start_location, location}, state) do
-    start_location(location)
+    case Listener.whereis(location) do
+      nil ->
+        start_location(location)
+
+      _pid ->
+        nil
+    end
 
     {:noreply, state}
   end
@@ -43,11 +49,16 @@ defmodule KartVids.Races.ListenerSupervisor do
 
     locations = Content.list_locations()
 
-    for location <- locations do
-      start_location(location)
-    end
+    results =
+      for location <- locations do
+        start_location(location)
+      end
 
-    Logger.info("All done starting location listeners!")
+    if Enum.all?(results, & &1) do
+      Logger.info("All done starting location listeners!")
+    else
+      Logger.info("Some locations did not start successfully...")
+    end
 
     {:noreply, state}
   end
@@ -69,16 +80,15 @@ defmodule KartVids.Races.ListenerSupervisor do
         {:error, {:already_started, _pid}} -> nil
         other -> Logger.warn("Start child did not succeed: #{inspect(other)}")
       end
+
+      true
     rescue
       e ->
         Logger.info("Trouble with starting location #{location.name} (#{location.id}) (will try again in #{@delay_minutes} minute(s))")
-        Logger.warn(e)
+        Logger.warn("Rescued Failure starting location: #{inspect(e)} (#{inspect(self())})")
         Process.send_after(self(), {:start_location, location}, @delay)
-    catch
-      e ->
-        Logger.info("Trouble with starting location #{location.name} (#{location.id}) (will try again in #{@delay_minutes} minute(s))")
-        Logger.warn(e)
-        Process.send_after(self(), {:start_location, location}, @delay)
+
+        false
     end
   end
 end

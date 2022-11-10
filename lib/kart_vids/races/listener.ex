@@ -23,7 +23,6 @@ defmodule KartVids.Races.Listener do
     defstruct nickname: "", photo: "", kart_num: -1, fastest_lap: 999.99, average_lap: 999.99, last_lap: 999.99
   end
 
-  @default_float 999.99
   @fastest_speed_level 1
   @min_lap_time 15.0
   @max_lap_time 30.0
@@ -97,10 +96,6 @@ defmodule KartVids.Races.Listener do
     Logger.warn("Disconnected from location #{state.config.location_id}! #{inspect(connection_status)}")
 
     {:ok, state}
-  end
-
-  def terminate(close_reason, state) do
-    Logger.error("Websockex shutting down! #{inspect(close_reason)} :: Last state was: #{inspect(state)}")
   end
 
   def handle_frame({:text, "{" <> _ = json}, state) do
@@ -249,6 +244,7 @@ defmodule KartVids.Races.Listener do
   @typep racer :: %{String.t() => String.t(), String.t() => list(lap()), String.t() => String.t()}
   @spec extract_racer_data(list(racer()), %{String.t() => racer()}) :: %{String.t() => racer()}
   def extract_racer_data(racers, by_kart \\ %{})
+
   def extract_racer_data([], by_kart), do: by_kart
 
   def extract_racer_data([%{"kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo} | racers], by_kart) do
@@ -258,10 +254,15 @@ defmodule KartVids.Races.Listener do
     extract_racer_data(racers, by_kart)
   end
 
+  def extract_racer_data([_ | racers], by_kart) do
+    # Nothing to do without laps
+    extract_racer_data(racers, by_kart)
+  end
+
   @typep lap :: %{String.t() => float(), String.t() => String.t()}
-  @typep analysis :: {float(), float(), float()}
+  @typep analysis :: {float() | nil, float() | nil, float() | nil}
   @spec analyze_laps(list(lap()), analysis()) :: analysis()
-  def analyze_laps(laps, results \\ {@default_float, @default_float, @default_float})
+  def analyze_laps(laps, results \\ {nil, nil, nil})
   def analyze_laps([], results), do: results
 
   def analyze_laps([lap | laps], results) do
