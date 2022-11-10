@@ -139,7 +139,7 @@ defmodule KartVids.Races.Listener do
     end
 
     state
-    |> Map.merge(%{current_race_id: nil, racers: racer_data, fastest_speed_level: @fastest_speed_level})
+    |> Map.merge(%{current_race: nil, racers: racer_data, fastest_speed_level: @fastest_speed_level})
     |> broadcast("race_completed")
   end
 
@@ -245,7 +245,7 @@ defmodule KartVids.Races.Listener do
   end
 
   @typep racer :: %{String.t() => String.t(), String.t() => list(lap()), String.t() => String.t()}
-  @spec extract_racer_data(%{String.t() => racer()}, list(racer())) :: %{String.t() => racer()}
+  @spec extract_racer_data(%{String.t() => Racer.t()}, list(racer())) :: %{String.t() => racer()}
   def extract_racer_data(by_kart \\ %{}, racers)
 
   def extract_racer_data(by_kart, []) do
@@ -271,7 +271,7 @@ defmodule KartVids.Races.Listener do
   end
 
   # No lap data, use nil for all lap related fields
-  def extract_racer_data([%{"kart_number" => kart_num, "nickname" => nickname, "photo_url" => photo} | racers], by_kart) do
+  def extract_racer_data(by_kart, [%{"kart_number" => kart_num, "nickname" => nickname, "photo_url" => photo} | racers]) do
     by_kart
     |> add_racer(kart_num, nickname, photo, nil, nil, nil)
     |> extract_racer_data(racers)

@@ -484,7 +484,7 @@ defmodule KartVidsWeb.CoreComponents do
       <.back navigate={~p"/posts"}>Back to posts</.back>
   """
   attr :navigate, :any, required: true
-  attr :position, :atom
+  attr :position, :atom, default: :bottom
   slot :inner_block, required: true
 
   def back(assigns) do
