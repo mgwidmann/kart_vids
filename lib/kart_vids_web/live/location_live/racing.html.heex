@@ -26,13 +26,13 @@ Race Listener Status:
         <span class="text-4xl"><%= racer.nickname %></span>
       </:col>
       <:col :let={racer} label="Best Lap">
-        <span class="text-4xl"><%= Decimal.from_float(racer.fastest_lap) |> Decimal.round(3) %></span>
+        <span class="text-4xl"><%= if racer.fastset_lap, do: Decimal.from_float(racer.fastest_lap) |> Decimal.round(3), else: "..." %></span>
       </:col>
       <:col :let={racer} label="Average Lap">
-        <span class="text-4xl"><%= Decimal.from_float(racer.average_lap) |> Decimal.round(3) %></span>
+        <span class="text-4xl"><%= if racer.average_lap, do: Decimal.from_float(racer.average_lap) |> Decimal.round(3), else: "..." %></span>
       </:col>
       <:col :let={racer} label="Last Lap">
-        <span class="text-4xl"><%= Decimal.from_float(racer.last_lap) |> Decimal.round(3) %></span>
+        <span class="text-4xl"><%= if racer.last_lap, do: Decimal.from_float(racer.last_lap) |> Decimal.round(3), else: "..." %></span>
       </:col>
     </.table>
   <% end %>
