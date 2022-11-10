@@ -19,10 +19,12 @@ defmodule KartVids.Races.Listener do
 
   defmodule Racer do
     @moduledoc false
-    @type t :: %Racer{nickname: String.t(), photo: String.t(), kart_num: pos_integer(), fastest_lap: float(), average_lap: float(), last_lap: float()}
-    defstruct nickname: "", photo: "", kart_num: -1, fastest_lap: 999.99, average_lap: 999.99, last_lap: 999.99
+    @derive {Phoenix.Param, key: :nickname}
+    @type t :: %Racer{nickname: String.t(), photo: String.t(), kart_num: pos_integer(), fastest_lap: float(), average_lap: float(), last_lap: float(), position: pos_integer()}
+    defstruct nickname: "", photo: "", kart_num: -1, fastest_lap: 999.99, average_lap: 999.99, last_lap: 999.99, position: 99
   end
 
+  @default_float 99.9
   @fastest_speed_level 1
   @min_lap_time 15.0
   @max_lap_time 30.0
@@ -122,6 +124,7 @@ defmodule KartVids.Races.Listener do
         {:ok, %{"race" => %{"id" => id, "starts_at_iso" => starts_at, "ended" => 1, "race_name" => name, "racers" => racers}, "scoreboard" => scoreboard}},
         %State{current_race: current_race, fastest_speed_level: fastest_speed_level, config: %Config{location: location}} = state
       ) do
+    racer_data = extract_racer_data(racers)
     kart_performance = extract_scoreboard_data(scoreboard)
 
     if current_race == id do
@@ -136,8 +139,8 @@ defmodule KartVids.Races.Listener do
     end
 
     state
-    |> Map.merge(Map.take(%State{}, Map.keys(%State{}) |> Enum.reject(&(&1 == :config))))
-    |> broadcast()
+    |> Map.merge(%{current_race_id: nil, racers: racer_data, fastest_speed_level: @fastest_speed_level})
+    |> broadcast("race_completed")
   end
 
   ## Handle Race Start/Updates
@@ -152,7 +155,7 @@ defmodule KartVids.Races.Listener do
 
       state
       |> Map.merge(%{current_race: id, fastest_speed_level: speed, racers: extract_racer_data(racers)})
-      |> broadcast()
+      |> broadcast("race_data")
     else
       new_speed = min(speed, fastest_speed_level || 99)
 
@@ -162,7 +165,7 @@ defmodule KartVids.Races.Listener do
 
       state
       |> Map.merge(%{current_race: id, fastest_speed_level: new_speed, racers: extract_racer_data(racers)})
-      |> broadcast()
+      |> broadcast("race_data")
     end
   end
 
@@ -184,10 +187,10 @@ defmodule KartVids.Races.Listener do
     {:ok, state}
   end
 
-  defp broadcast(state) do
+  defp broadcast(state, event) do
     state.config.location_id
     |> topic_name()
-    |> KartVidsWeb.Endpoint.broadcast("race_data", state)
+    |> KartVidsWeb.Endpoint.broadcast(event, state)
 
     state
   end
@@ -242,21 +245,43 @@ defmodule KartVids.Races.Listener do
   end
 
   @typep racer :: %{String.t() => String.t(), String.t() => list(lap()), String.t() => String.t()}
-  @spec extract_racer_data(list(racer()), %{String.t() => racer()}) :: %{String.t() => racer()}
-  def extract_racer_data(racers, by_kart \\ %{})
+  @spec extract_racer_data(%{String.t() => racer()}, list(racer())) :: %{String.t() => racer()}
+  def extract_racer_data(by_kart \\ %{}, racers)
 
-  def extract_racer_data([], by_kart), do: by_kart
-
-  def extract_racer_data([%{"kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo} | racers], by_kart) do
-    {fastest_lap, average_lap, last_lap} = analyze_laps(laps)
-    {kart_number, ""} = Integer.parse(kart_num)
-    by_kart = Map.put(by_kart, kart_num, %Racer{nickname: nickname, kart_num: kart_number, photo: photo, fastest_lap: fastest_lap, average_lap: average_lap, last_lap: last_lap})
-    extract_racer_data(racers, by_kart)
+  def extract_racer_data(by_kart, []) do
+    by_kart
+    |> Enum.to_list()
+    |> Enum.sort_by(fn {_kart_num, %Racer{fastest_lap: fastest_lap}} ->
+      fastest_lap
+    end)
+    |> Stream.with_index()
+    |> Stream.map(fn {{kart_num, racer}, index} ->
+      racer = %{racer | position: index + 1}
+      {kart_num, racer}
+    end)
+    |> Enum.into(%{})
   end
 
-  def extract_racer_data([_ | racers], by_kart) do
-    # Nothing to do without laps
-    extract_racer_data(racers, by_kart)
+  def extract_racer_data(by_kart, [%{"kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo} | racers]) do
+    {fastest_lap, average_lap, last_lap} = analyze_laps(laps)
+
+    by_kart
+    |> add_racer(kart_num, nickname, photo, fastest_lap, average_lap, last_lap)
+    |> extract_racer_data(racers)
+  end
+
+  # No lap data, use nil for all lap related fields
+  def extract_racer_data([%{"kart_number" => kart_num, "nickname" => nickname, "photo_url" => photo} | racers], by_kart) do
+    by_kart
+    |> add_racer(kart_num, nickname, photo, nil, nil, nil)
+    |> extract_racer_data(racers)
+  end
+
+  defp add_racer(by_kart, kart_num, nickname, photo, fastest_lap, average_lap, last_lap) do
+    {kart_number, ""} = Integer.parse(kart_num)
+
+    by_kart
+    |> Map.put(kart_num, %Racer{nickname: nickname, kart_num: kart_number, photo: photo, fastest_lap: fastest_lap, average_lap: average_lap, last_lap: last_lap})
   end
 
   @typep lap :: %{String.t() => float(), String.t() => String.t()}
@@ -271,11 +296,17 @@ defmodule KartVids.Races.Listener do
   end
 
   @spec analyze_lap(lap(), analysis()) :: analysis()
-  def analyze_lap(%{"lap_time" => lap_time, "lap_number" => "0"}, _), do: {lap_time, lap_time, lap_time}
+  # Discard this lap because it just marks the amb time start
+  def analyze_lap(%{"lap_time" => 0, "lap_number" => "0"}, _), do: {@default_float, @default_float, @default_float}
 
   def analyze_lap(%{"lap_time" => lap_time, "lap_number" => lap}, {fastest_lap, average_lap, _last_lap}) when fastest_lap > lap_time do
     {lap, ""} = Integer.parse(lap)
-    {lap_time, average_lap_time(average_lap, lap, lap_time), lap_time}
+    # First lap
+    if average_lap == @default_float do
+      {lap_time, lap_time, lap_time}
+    else
+      {lap_time, average_lap_time(average_lap, lap, lap_time), lap_time}
+    end
   end
 
   def analyze_lap(%{"lap_time" => lap_time, "lap_number" => lap}, {fastest_lap, average_lap, _last_lap}) when fastest_lap < lap_time do

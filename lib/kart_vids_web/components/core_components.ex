@@ -208,13 +208,16 @@ defmodule KartVidsWeb.CoreComponents do
   slot :inner_block, required: true
 
   def pill(assigns) do
-    type = cond do
-      :brand == assigns[:type] || assigns[:type] == nil -> "bg-brand/20"
-      :success == assigns[:type] ->  "bg-emerald-500"
-      :danger == assigns[:type] -> "bg-rose-400"
-      true -> nil
-    end
+    type =
+      cond do
+        :brand == assigns[:type] || assigns[:type] == nil -> "bg-brand/20"
+        :success == assigns[:type] -> "bg-emerald-500"
+        :danger == assigns[:type] -> "bg-rose-400"
+        true -> nil
+      end
+
     assigns = Map.put(assigns, :type, type)
+
     ~H"""
     <small class={["ml-3 rounded-full px-2 text-[0.8125rem] font-medium leading-6", @type]}>
       <%= render_slot(@inner_block) %>
@@ -481,11 +484,12 @@ defmodule KartVidsWeb.CoreComponents do
       <.back navigate={~p"/posts"}>Back to posts</.back>
   """
   attr :navigate, :any, required: true
+  attr :position, :atom
   slot :inner_block, required: true
 
   def back(assigns) do
     ~H"""
-    <div class="mt-16">
+    <div class={if(@position == :top, do: "", else: "mt-16")}>
       <.link navigate={@navigate} class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700">
         <Heroicons.arrow_left solid class="w-3 h-3 stroke-current inline" />
         <%= render_slot(@inner_block) %>
@@ -506,9 +510,9 @@ defmodule KartVidsWeb.CoreComponents do
 
   def button_link(assigns) do
     ~H"""
-      <.link navigate={@navigate} class="rounded-lg bg-sky-600 hover:bg-sky-700 py-2 px-3 text-sm font-semibold leading-6 text-white active:text-white/80">
-        <%= render_slot(@inner_block) %>
-      </.link>
+    <.link navigate={@navigate} class="rounded-lg bg-sky-600 hover:bg-sky-700 py-2 px-3 text-sm font-semibold leading-6 text-white active:text-white/80">
+      <%= render_slot(@inner_block) %>
+    </.link>
     """
   end
 

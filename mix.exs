@@ -58,7 +58,7 @@ defmodule KartVids.MixProject do
       {:credo, "~> 1.6"},
       {:plug_cowboy, "~> 2.5"},
       # {:websockex, "~> 0.4.3"},
-      {:websockex, github: "mgwidmann/websockex"},
+      {:websockex, github: "mgwidmann/websockex", branch: "report-errors"},
       {:parent, "~> 0.12.1"},
       {:flames, "~> 0.7.0", github: "mgwidmann/flames", branch: "liveview"}
     ]

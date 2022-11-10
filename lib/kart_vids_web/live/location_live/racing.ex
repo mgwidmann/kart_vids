@@ -25,16 +25,16 @@ defmodule KartVidsWeb.LocationLive.Racing do
      |> assign(:page_title, "Racing: #{location.name}")
      |> assign(:location, location)
      |> assign(:listener, listener)
-     |> assign(:race_data, nil)
+     |> assign(:racers, nil)
      |> assign(:listener_alive?, !is_nil(listener) && Process.alive?(listener))}
   end
 
   @impl true
   @spec handle_info(Phoenix.Socket.Broadcast.t(), Phoenix.LiveView.Socket.t()) :: {:noreply, map}
-  def handle_info(%Phoenix.Socket.Broadcast{event: "race_data", payload: %KartVids.Races.Listener.State{} = race_data}, socket) do
+  def handle_info(%Phoenix.Socket.Broadcast{event: event, payload: %KartVids.Races.Listener.State{racers: racers}}, socket) when event in ["race_data", "race_completed"] do
     {:noreply,
      socket
-     |> assign(:race_data, race_data)}
+     |> assign(:racers, racers |> Map.values() |> Enum.sort_by(& &1.position))}
   end
 
   def handle_info(:check_listener, socket) do

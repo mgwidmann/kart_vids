@@ -1,4 +1,4 @@
-<.back navigate={~p"/admin/locations/#{@location}"}>Back to location</.back>
+<.back position={:top} navigate={~p"/admin/locations/#{@location}"}>Back to location</.back>
 
 <.header>
   <%= @location.name %>
@@ -15,9 +15,25 @@ Race Listener Status:
 </.pill>
 
 <div>
-  <%= if @listener_alive? do %>
-    <pre>
-      <%= inspect(@race_data, pretty: true, limit: :infinity) %>
-    </pre>
+  <%= if @listener_alive? && @racers != nil do %>
+    <.table id="scoreboard" rows={@racers}>
+      <:col :let={racer} label="Position">
+        <h1 class="text-4xl"><%= racer.position %></h1>
+      </:col>
+      <:col :let={racer} label=""><img src={racer.photo} class="max-h-40" /></:col>
+      <:col :let={racer} label="Kart"><span class="text-4xl"><%= racer.kart_num %></span></:col>
+      <:col :let={racer} label="Name">
+        <span class="text-4xl"><%= racer.nickname %></span>
+      </:col>
+      <:col :let={racer} label="Best Lap">
+        <span class="text-4xl"><%= Decimal.from_float(racer.fastest_lap) |> Decimal.round(3) %></span>
+      </:col>
+      <:col :let={racer} label="Average Lap">
+        <span class="text-4xl"><%= Decimal.from_float(racer.average_lap) |> Decimal.round(3) %></span>
+      </:col>
+      <:col :let={racer} label="Last Lap">
+        <span class="text-4xl"><%= Decimal.from_float(racer.last_lap) |> Decimal.round(3) %></span>
+      </:col>
+    </.table>
   <% end %>
 </div>
