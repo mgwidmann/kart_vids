@@ -309,7 +309,7 @@ defmodule KartVids.Races.Listener do
     end
   end
 
-  def analyze_lap(%{"lap_time" => lap_time, "lap_number" => lap}, {fastest_lap, average_lap, _last_lap}) when fastest_lap < lap_time do
+  def analyze_lap(%{"lap_time" => lap_time, "lap_number" => lap}, {fastest_lap, average_lap, _last_lap}) when fastest_lap <= lap_time do
     {lap, ""} = Integer.parse(lap)
     {fastest_lap, average_lap_time(average_lap, lap, lap_time), lap_time}
   end
