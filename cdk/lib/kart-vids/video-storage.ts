@@ -34,9 +34,9 @@ export class VideoStorage extends KartVidsConstruct {
 
     corsConfig(): CorsRule[] {
         if (this.isDev()) {
-            return [{ id: 'localhost', maxAge: Duration.hours(1).toSeconds(), allowedMethods: [HttpMethods.GET, HttpMethods.POST], allowedOrigins: ['http://localhost:4000'] }];
+            return [{ id: 'localhost', maxAge: Duration.hours(1).toSeconds(), allowedMethods: [HttpMethods.GET, HttpMethods.POST], allowedHeaders: ['*'], allowedOrigins: ['http://localhost:4000'] }];
         } else {
-            return [{ id: 'kart-vids.fly.dev', maxAge: Duration.hours(1).toSeconds(), allowedMethods: [HttpMethods.GET, HttpMethods.POST], allowedOrigins: ['https://kart-vids.fly.dev'] }];
+            return [{ id: 'kart-vids.fly.dev', maxAge: Duration.hours(1).toSeconds(), allowedMethods: [HttpMethods.GET, HttpMethods.POST], allowedHeaders: ['*'], allowedOrigins: ['https://kart-vids.fly.dev'] }];
         }
     }
 }
