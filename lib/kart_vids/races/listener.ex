@@ -134,7 +134,7 @@ defmodule KartVids.Races.Listener do
       if fastest_speed_level == @fastest_speed_level do
         persist_race_information(kart_performance, location)
       else
-        Logger.info("Dropping race because speed level was only level #{state[:fastest_speed_level]} at its fastest")
+        Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
       end
     end
 
