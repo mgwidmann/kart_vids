@@ -1,47 +1,69 @@
-<.header class="flex items-center justify-center">
-  Videos
-  <:actions>
-    <.button_group class="mb-3 inline-block" />
-    <.link patch={~p"/videos/new"} class="inline-block">
-      <.button>New Video</.button>
-    </.link>
-  </:actions>
-</.header>
-
-<%= if @view == :grid do %>
-  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-10">
-    <div :for={video <- @videos}>
-      <a href={~p"/videos/#{video}"} class="flex flex-col bg-white drop-shadow hover:drop-shadow-lg hover:opacity-70 rounded-md w-426">
-        <img src="https://dummyimage.com/426x240/ddd/aaa" class="w-426 h-240 object-cover rounded-tl-md rounded-tr-md" />
-        <div class="px-3 py-2">
-          <h1 class="font-semibold"><%= video.name %></h1>
-          <p class="text-sm"><%= video.duration_seconds %></p>
-        </div>
-      </a>
-    </div>
-  </div>
-<% else %>
-  <.table id="videos" rows={@videos} row_click={&JS.navigate(~p"/videos/#{&1}")}>
-    <:col :let={video} label="Location"><%= video.location %></:col>
-    <:col :let={video} label="Duration seconds"><%= video.duration_seconds %></:col>
-    <:col :let={video} label="Size mb"><%= video.size_mb %></:col>
-    <:col :let={video} label="Name"><%= video.name %></:col>
-    <:col :let={video} label="Description"><%= video.description %></:col>
-    <:col :let={video} label="Recorded on"><%= video.recorded_on %></:col>
-    <:action :let={video}>
-      <div class="sr-only">
-        <.link navigate={~p"/videos/#{video}"}>Show</.link>
-      </div>
-      <.link patch={~p"/videos/#{video}/edit"}>Edit</.link>
-    </:action>
-    <:action :let={video}>
-      <.link phx-click={JS.push("delete", value: %{id: video.id})} data-confirm="Are you sure?">
-        Delete
+<section phx-drop-target={@uploads.video.ref}>
+  <.header class="flex items-center justify-center">
+    Videos
+    <:actions>
+      <.button_group class="mb-3 inline-block" />
+      <.link patch={~p"/videos/new"} class="inline-block">
+        <.button>Upload Video</.button>
       </.link>
-    </:action>
-  </.table>
-<% end %>
+    </:actions>
+  </.header>
 
-<.modal :if={@live_action in [:new, :edit]} id="video-modal" show on_cancel={JS.navigate(~p"/videos")}>
-  <.live_component module={KartVidsWeb.VideoLive.FormComponent} id={@video.id || :new} title={@page_title} action={@live_action} video={@video} navigate={~p"/videos"} />
-</.modal>
+  <form id="upload-form" phx-submit="save" phx-change="validate" class="hidden">
+    <.live_file_input upload={@uploads.video} />
+  </form>
+
+  <%= if @view == :grid do %>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-10">
+      <div :for={video <- @videos}>
+        <a href={~p"/videos/#{video}"} class="flex flex-col bg-white drop-shadow hover:drop-shadow-lg hover:opacity-70 rounded-md w-426">
+          <img src="https://dummyimage.com/426x240/ddd/aaa" class="w-426 h-240 object-cover rounded-tl-md rounded-tr-md" />
+          <div class="px-3 py-2">
+            <h1 class="font-semibold">
+              <%= video.name %>
+            </h1>
+            <p class="text-sm">
+              <%= video.duration_seconds %>
+            </p>
+          </div>
+        </a>
+      </div>
+    </div>
+  <% else %>
+    <.table id="videos" rows={@videos} row_click={&JS.navigate(~p"/videos/#{&1}")}>
+      <:col :let={video} label="Location">
+        <%= video.location %>
+      </:col>
+      <:col :let={video} label="Duration seconds">
+        <%= video.duration_seconds %>
+      </:col>
+      <:col :let={video} label="Size mb">
+        <%= video.size_mb %>
+      </:col>
+      <:col :let={video} label="Name">
+        <%= video.name %>
+      </:col>
+      <:col :let={video} label="Description">
+        <%= video.description %>
+      </:col>
+      <:col :let={video} label="Recorded on">
+        <%= video.recorded_on %>
+      </:col>
+      <:action :let={video}>
+        <div class="sr-only">
+          <.link navigate={~p"/videos/#{video}"}>Show</.link>
+        </div>
+        <.link patch={~p"/videos/#{video}/edit"}>Edit</.link>
+      </:action>
+      <:action :let={video}>
+        <.link phx-click={JS.push("delete", value: %{id: video.id})} data-confirm="Are you sure?">
+          Delete
+        </.link>
+      </:action>
+    </.table>
+  <% end %>
+
+  <.modal :if={@live_action in [:new, :edit]} id="video-modal" show on_cancel={JS.navigate(~p"/videos")}>
+    <.live_component module={KartVidsWeb.VideoLive.FormComponent} id={@video.id || :new} title={@page_title} action={@live_action} video={@video} navigate={~p"/videos"} uploads={@uploads} />
+  </.modal>
+</section>

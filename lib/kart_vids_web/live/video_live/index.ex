@@ -6,12 +6,17 @@ defmodule KartVidsWeb.VideoLive.Index do
 
   @view_styles [:grid, :table]
 
+  @one_megabyte 1_000_000
+  @max_file_size 500 * @one_megabyte
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
      |> assign(:videos, list_videos())
-     |> assign(:view, :grid)}
+     |> assign(:view, :grid)
+     |> assign(:uploaded_videos, [])
+     |> allow_upload(:video, accept: ~w(.mp4), max_entries: 1, external: &presign_upload/2, max_file_size: @max_file_size)}
   end
 
   @impl true
@@ -37,7 +42,7 @@ defmodule KartVidsWeb.VideoLive.Index do
     |> assign(:video, nil)
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_event("delete", %{"id" => id}, socket) do
     video = Content.get_video!(id)
     {:ok, _} = Content.delete_video(video)
@@ -53,8 +58,42 @@ defmodule KartVidsWeb.VideoLive.Index do
      |> assign(:view, String.to_existing_atom(view_style))}
   end
 
+  def handle_event("validate", _params, socket) do
+    {
+      :noreply,
+      socket
+      |> push_patch(to: ~p"/videos/new")
+    }
+  end
+
   defp list_videos do
     Content.list_videos()
+  end
+
+  defp presign_upload(entry, socket) do
+    config = %{
+      region: Application.fetch_env!(:kart_vids, :aws_region),
+      access_key_id: System.fetch_env!("AWS_ACCESS_KEY_ID"),
+      secret_access_key: System.fetch_env!("AWS_SECRET_ACCESS_KEY")
+    }
+
+    user = socket.assigns.current_user
+    user_hash = SimpleS3Upload.sha256(config[:secret_access_key], "#{user.email}/#{user.id}")
+
+    uploads = socket.assigns.uploads
+    bucket = Application.fetch_env!(:kart_vids, :videos_bucket_name)
+    key = "videos/originals/#{user_hash}/#{entry.client_name}"
+
+    {:ok, fields} =
+      SimpleS3Upload.sign_form_upload(config, bucket,
+        key: key,
+        content_type: entry.client_type,
+        max_file_size: uploads[entry.upload_config].max_file_size,
+        expires_in: :timer.hours(1)
+      )
+
+    meta = %{uploader: "S3", key: key, url: "http://#{bucket}.s3-#{config.region}.amazonaws.com", fields: fields}
+    {:ok, meta, socket}
   end
 
   attr :class, :string

@@ -66,6 +66,10 @@ config :kart_vids, KartVidsWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :kart_vids, dev_routes: true
 
+# Configure video storage location
+config :kart_vids,
+  videos_bucket_name: System.fetch_env!("KART_VIDS_BUCKET_NAME_DEV")
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 
