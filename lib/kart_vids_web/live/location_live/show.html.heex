@@ -1,3 +1,5 @@
+<.back position={:top} navigate={~p"/admin/locations"}>Back to locations</.back>
+
 <.header>
   Location <%= @location.id %>
   <:subtitle>Information about this location.</:subtitle>
@@ -27,8 +29,6 @@
   <:item title="First Junior Kart Number"><%= @location.junior_kart_min %></:item>
   <:item title="Last Junior Kart Number"><%= @location.junior_kart_max %></:item>
 </.list>
-
-<.back navigate={~p"/admin/locations"}>Back to locations</.back>
 
 <.modal :if={@live_action == :edit} id="location-modal" show on_cancel={JS.patch(~p"/admin/locations/#{@location}")}>
   <.live_component module={KartVidsWeb.LocationLive.FormComponent} id={@location.id} title={@page_title} action={@live_action} location={@location} navigate={~p"/admin/locations/#{@location}"} />

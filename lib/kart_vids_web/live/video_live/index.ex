@@ -7,7 +7,7 @@ defmodule KartVidsWeb.VideoLive.Index do
   @view_styles [:grid, :table]
 
   @one_megabyte 1_000_000
-  @max_file_size 500 * @one_megabyte
+  @max_file_size 10_000 * @one_megabyte
 
   @impl true
   def mount(_params, _session, socket) do
@@ -16,7 +16,7 @@ defmodule KartVidsWeb.VideoLive.Index do
      |> assign(:videos, list_videos())
      |> assign(:view, :grid)
      |> assign(:uploaded_videos, [])
-     |> allow_upload(:video, accept: ~w(.mp4), max_entries: 1, external: &presign_upload/2, max_file_size: @max_file_size)}
+     |> allow_upload(:video, accept: ~w(.mp4 .mov), max_entries: 1, external: &presign_upload/2, max_file_size: @max_file_size)}
   end
 
   @impl true
@@ -31,6 +31,8 @@ defmodule KartVidsWeb.VideoLive.Index do
   end
 
   defp apply_action(socket, :new, _params) do
+    IO.inspect(socket, prety: true)
+
     socket
     |> assign(:page_title, "New Video")
     |> assign(:video, %Video{})
@@ -64,6 +66,10 @@ defmodule KartVidsWeb.VideoLive.Index do
       socket
       |> push_patch(to: ~p"/videos/new")
     }
+  end
+
+  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :video, ref)}
   end
 
   defp list_videos do

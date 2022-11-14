@@ -1,3 +1,5 @@
+<.back position={:top} navigate={~p"/videos"}>Back to videos</.back>
+
 <.header>
   Video <%= @video.id %>
   <:subtitle>This is a video record from your database.</:subtitle>
@@ -11,13 +13,11 @@
 <.list>
   <:item title="Location"><%= @video.location %></:item>
   <:item title="Duration seconds"><%= @video.duration_seconds %></:item>
-  <:item title="Size mb"><%= @video.size_mb %></:item>
+  <:item title="Size"><%= @video.size %></:item>
   <:item title="Name"><%= @video.name %></:item>
   <:item title="Description"><%= @video.description %></:item>
   <:item title="Recorded on"><%= @video.recorded_on %></:item>
 </.list>
-
-<.back navigate={~p"/videos"}>Back to videos</.back>
 
 <.modal :if={@live_action == :edit} id="video-modal" show on_cancel={JS.patch(~p"/videos/#{@video}")}>
   <.live_component module={KartVidsWeb.VideoLive.FormComponent} id={@video.id} title={@page_title} action={@live_action} video={@video} navigate={~p"/videos/#{@video}"} />

@@ -3,7 +3,11 @@
 <.header>
   <%= @location.name %>
   <:subtitle>Live racing information</:subtitle>
-  <:actions></:actions>
+  <:actions>
+    <.link navigate={~p"/admin/locations/#{@location}/races"}>
+      <.button>Past Races</.button>
+    </.link>
+  </:actions>
 </.header>
 Race Listener Status:
 <.pill type={if(@listener_alive?, do: :success, else: :danger)}>

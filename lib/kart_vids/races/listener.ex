@@ -14,7 +14,7 @@ defmodule KartVids.Races.Listener do
   defmodule State do
     @moduledoc false
     @type t :: %State{config: Config.t(), current_race: nil | Stirng.t(), fastest_speed_level: pos_integer(), racers: list()}
-    defstruct config: %Config{}, current_race: nil, fastest_speed_level: 99, racers: []
+    defstruct config: %Config{}, current_race: nil, current_race_started_at: nil, fastest_speed_level: 99, racers: []
   end
 
   defmodule Racer do
@@ -121,25 +121,27 @@ defmodule KartVids.Races.Listener do
 
   ## Handle Race Finish
   def handle_race_data(
-        {:ok, %{"race" => %{"id" => id, "starts_at_iso" => starts_at, "ended" => 1, "race_name" => name, "racers" => racers}, "scoreboard" => scoreboard}},
-        %State{current_race: current_race, fastest_speed_level: fastest_speed_level, config: %Config{location: location}} = state
+        {:ok, %{"race" => %{"id" => id, "ended" => 1, "race_name" => name, "racers" => racers, "laps" => laps}, "scoreboard" => scoreboard}},
+        %State{current_race: current_race, current_race_started_at: started_at, fastest_speed_level: fastest_speed_level, config: %Config{location: location}} = state
       ) do
     racer_data = extract_racer_data(racers)
     kart_performance = extract_scoreboard_data(scoreboard)
 
     if current_race == id do
-      Logger.info("Race (#{current_race}) #{name} Complete! Started at #{starts_at} with #{length(racers)} racers and scoreboard was")
+      Logger.info("Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
       Logger.info("Scoreboard: #{inspect(kart_performance)}")
 
       if fastest_speed_level == @fastest_speed_level do
-        persist_race_information(kart_performance, location)
+        persist_kart_information(kart_performance, location)
       else
         Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
       end
+
+      persist_race_information(name, id, started_at, racer_data, laps, location)
     end
 
     state
-    |> Map.merge(%{current_race: nil, racers: racer_data, fastest_speed_level: @fastest_speed_level})
+    |> Map.merge(%{current_race: nil, current_race_started_at: nil, racers: racer_data, fastest_speed_level: @fastest_speed_level})
     |> broadcast("race_completed")
   end
 
@@ -154,7 +156,7 @@ defmodule KartVids.Races.Listener do
       Logger.info("Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers")
 
       state
-      |> Map.merge(%{current_race: id, fastest_speed_level: speed, racers: extract_racer_data(racers)})
+      |> Map.merge(%{current_race: id, current_race_started_at: DateTime.utc_now(), fastest_speed_level: speed, racers: extract_racer_data(racers)})
       |> broadcast("race_data")
     else
       new_speed = min(speed, fastest_speed_level || 99)
@@ -199,7 +201,7 @@ defmodule KartVids.Races.Listener do
     "race_location:#{location_id}"
   end
 
-  def persist_race_information(kart_performance, %Location{id: location_id} = location) when is_map(kart_performance) do
+  def persist_kart_information(kart_performance, %Location{id: location_id} = location) when is_map(kart_performance) do
     for {kart_num, performance} <- kart_performance do
       {kart_num, ""} = Integer.parse(kart_num)
       kart = Races.find_kart_by_location_and_number(location_id, kart_num)
@@ -232,6 +234,32 @@ defmodule KartVids.Races.Listener do
         true ->
           Logger.info("Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect(performance)}")
       end
+    end
+  end
+
+  def persist_race_information(name, id, started_at, racers, laps, %Location{id: location_id}) do
+    race =
+      Races.create_race(%{
+        name: name,
+        location_id: location_id,
+        external_race_id: id,
+        started_at: started_at,
+        ended_at: DateTime.utc_now()
+      })
+
+    for racer <- racers do
+      racer_laps = Enum.filter(laps, &(&1["kart_num"] == racer.kart_num))
+
+      Races.create_racer(%{
+        average_lap: racer.average_lap,
+        fastest_lap: racer.fastest_lap,
+        kart_num: racer.kart_num,
+        nickname: racer.nickname,
+        photo: racer.photo,
+        position: racer.position,
+        race_id: race.id,
+        laps: racer_laps
+      })
     end
   end
 

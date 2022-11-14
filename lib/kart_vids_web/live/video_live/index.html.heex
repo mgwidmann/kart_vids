@@ -32,13 +32,13 @@
   <% else %>
     <.table id="videos" rows={@videos} row_click={&JS.navigate(~p"/videos/#{&1}")}>
       <:col :let={video} label="Location">
-        <%= video.location %>
+        <%= video.location_id %>
       </:col>
       <:col :let={video} label="Duration seconds">
         <%= video.duration_seconds %>
       </:col>
-      <:col :let={video} label="Size mb">
-        <%= video.size_mb %>
+      <:col :let={video} label="Size">
+        <%= video.size %>
       </:col>
       <:col :let={video} label="Name">
         <%= video.name %>

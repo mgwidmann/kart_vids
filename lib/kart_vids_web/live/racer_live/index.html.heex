@@ -1,0 +1,34 @@
+<.back position={:top} navigate={~p"/admin/locations/#{@location_id}/races/#{@race_id}"}>Back to race</.back>
+
+<.header>
+  Listing Racers
+  <:actions>
+    <.link patch={~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers/new"}>
+      <.button>New Racer</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="racers" rows={@racers} row_click={&JS.navigate(~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers/#{&1}")}>
+  <:col :let={racer} label="Position"><%= racer.position %></:col>
+  <:col :let={racer} label="Photo"><%= racer.photo %></:col>
+  <:col :let={racer} label="Kart num"><%= racer.kart_num %></:col>
+  <:col :let={racer} label="Nickname"><%= racer.nickname %></:col>
+  <:col :let={racer} label="Fastest lap"><%= racer.fastest_lap %></:col>
+  <:col :let={racer} label="Average lap"><%= racer.average_lap %></:col>
+  <:action :let={racer}>
+    <div class="sr-only">
+      <.link navigate={~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers/#{racer}"}>Show</.link>
+    </div>
+    <.link patch={~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers/#{racer}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={racer}>
+    <.link phx-click={JS.push("delete", value: %{id: racer.id})} data-confirm="Are you sure?">
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="racer-modal" show on_cancel={JS.navigate(~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers")}>
+  <.live_component module={KartVidsWeb.RacerLive.FormComponent} id={@racer.id || :new} title={@page_title} action={@live_action} racer={@racer} navigate={~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers"} />
+</.modal>

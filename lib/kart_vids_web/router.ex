@@ -95,11 +95,10 @@ defmodule KartVidsWeb.Router do
 
     live_dashboard "/dashboard", metrics: Telemetry
 
-    flames "/errors"
+    flames("/errors")
 
     live_session :require_authenticated_user_admin,
       on_mount: [{KartVidsWeb.UserAuth, :ensure_authenticated_admin}] do
-
       # Locations
       live "/locations", LocationLive.Index, :index
       live "/locations/new", LocationLive.Index, :new
@@ -116,6 +115,22 @@ defmodule KartVidsWeb.Router do
 
       live "/locations/:location_id/karts/:id", KartLive.Show, :show
       live "/locations/:location_id/karts/:id/show/edit", KartLive.Show, :edit
+
+      # Races
+      live "/locations/:location_id/races", RaceLive.Index, :index
+      live "/locations/:location_id/races/new", RaceLive.Index, :new
+      live "/locations/:location_id/races/:id/edit", RaceLive.Index, :edit
+
+      live "/locations/:location_id/races/:id", RaceLive.Show, :show
+      live "/locations/:location_id/races/:id/show/edit", RaceLive.Show, :edit
+
+      # Racer
+      live "/locations/:location_id/races/:race_id/racers", RacerLive.Index, :index
+      live "/locations/:location_id/races/:race_id/racers/new", RacerLive.Index, :new
+      live "/locations/:location_id/races/:race_id/racers/:id/edit", RacerLive.Index, :edit
+
+      live "/locations/:location_id/races/:race_id/racers/:id", RacerLive.Show, :show
+      live "/locations/:location_id/races/:race_id/racers/:id/show/edit", RacerLive.Show, :edit
     end
   end
 

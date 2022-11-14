@@ -13,7 +13,7 @@ defmodule KartVidsWeb.VideoLive.Show do
     {:noreply,
      socket
      |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:video, Content.get_video!(id))}
+     |> assign(:video, Content.get_video!(id) |> Content.with_location())}
   end
 
   defp page_title(:show), do: "Show Video"

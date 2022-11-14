@@ -21,6 +21,10 @@ if System.get_env("PHX_SERVER") do
 end
 
 if config_env() == :prod do
+  config :kart_vids,
+    video_originals_storage_salt: System.fetch_env("KART_VIDS_STORAGE_SALT"),
+    videos_bucket_name: System.fetch_env!("KART_VIDS_BUCKET_NAME")
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """

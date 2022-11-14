@@ -313,6 +313,24 @@ defmodule KartVidsWeb.CoreComponents do
     """
   end
 
+  def input(%{type: "hidden"} = assigns) do
+    ~H"""
+    <input
+      type={@type}
+      name={@name}
+      id={@id || @name}
+      value={@value}
+      class={[
+        input_border(@errors),
+        "mt-2 block w-full rounded-lg border-zinc-300 py-[7px] px-[11px]",
+        "text-zinc-900 focus:outline-none focus:ring-4 sm:text-sm sm:leading-6",
+        "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400 phx-no-feedback:focus:ring-zinc-800/5"
+      ]}
+      {@rest}
+    />
+    """
+  end
+
   def input(assigns) do
     ~H"""
     <div phx-feedback-for={@name}>
@@ -592,5 +610,25 @@ defmodule KartVidsWeb.CoreComponents do
 
   defp input_equals?(val1, val2) do
     Phoenix.HTML.html_escape(val1) == Phoenix.HTML.html_escape(val2)
+  end
+
+  @doc """
+  Displays a video preview for a file which is being uploaded.
+
+  Example:
+
+      <.live_video_preview entry={entry} />
+  """
+  def live_video_preview(%{entry: %Phoenix.LiveView.UploadEntry{ref: ref} = entry} = assigns) do
+    rest =
+      assigns
+      |> assigns_to_attributes([:entry])
+      |> Keyword.put_new_lazy(:id, fn -> "phx-preview-#{ref}" end)
+
+    assigns = assign(assigns, entry: entry, ref: ref, rest: rest)
+
+    ~H"""
+    <video data-phx-upload-ref={@entry.upload_ref} data-phx-entry-ref={@ref} data-phx-hook="Phoenix.LiveImgPreview" data-phx-update="ignore" {@rest} />
+    """
   end
 end

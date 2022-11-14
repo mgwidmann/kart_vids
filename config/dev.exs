@@ -68,6 +68,7 @@ config :kart_vids, dev_routes: true
 
 # Configure video storage location
 config :kart_vids,
+  video_originals_storage_salt: "MmF81MH2mJcce04I1eBZEcFAS/My7AE1TeUcI9/z1RwCl5Mo6aw21TECJaXCMjDT",
   videos_bucket_name: System.fetch_env!("KART_VIDS_BUCKET_NAME_DEV")
 
 # Do not include metadata nor timestamps in development logs

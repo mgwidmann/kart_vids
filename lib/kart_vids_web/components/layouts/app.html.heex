@@ -15,7 +15,10 @@
           <li>
             <%= if @current_user.admin? do %>
               <.link href={~p"/admin/locations"}>Locations</.link>
+              &nbsp;|&nbsp;
             <% end %>
+            <.link href={~p"/videos"}>Videos</.link>
+            &nbsp;|&nbsp;
             <.link href={~p"/users/settings"}>Settings</.link>
           </li>
           <li>

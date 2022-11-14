@@ -18,10 +18,11 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
         <div class="hidden">
           <.live_file_input upload={@uploads.video} />
         </div>
+        <%= inspect(f) %>
         <%= for entry <- @uploads.video.entries do %>
           <article class="upload-entry">
             <figure>
-              <.live_img_preview entry={entry} />
+              <.live_video_preview entry={entry} id="video-preview" />
               <figcaption><%= entry.client_name %></figcaption>
             </figure>
 
@@ -43,11 +44,12 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
           <p class="alert alert-danger"><%= error_to_string(err) %></p>
         <% end %>
 
-        <.input field={{f, :location}} type="hidden" />
-        <.input field={{f, :duration_seconds}} type="hidden" />
+        <.input field={{f, :location_id}} type="hidden" />
+        <.input field={{f, :s3_path}} type="hidden" />
+        <.input field={{f, :duration_seconds}} type="hidden" data-phx-hook="VideoHook" />
         <.input field={{f, :size}} type="hidden" />
         <.input field={{f, :name}} type="text" label="Name" />
-        <.input field={{f, :description}} type="text" label="Description" />
+        <.input field={{f, :description}} type="textarea" label="Description" />
         <.input field={{f, :recorded_on}} type="datetime-local" label="Recorded on" />
         <:actions>
           <.button phx-disable-with="Saving...">Save Video</.button>
@@ -73,23 +75,22 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
 
   @impl true
   def handle_event("validate", %{"video" => video_params}, socket) do
+    IO.inspect(video_params, label: "Validating changeset...")
+
     changeset =
       socket.assigns.video
       |> Content.change_video(video_params)
       |> Map.put(:action, :validate)
 
+    IO.inspect(changeset, label: "Changeset:", pretty: true)
     {:noreply, assign(socket, :changeset, changeset)}
-  end
-
-  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :video, ref)}
   end
 
   def handle_event("save", %{"video" => video_params}, socket) do
     save_video(socket, socket.assigns.action, video_params)
   end
 
-  def set_defaults(%{uploads: %{video: %{entries: [%{client_name: client_name, client_size: client_size, client_type: client_type} | _]}}, changeset: changeset} = assigns) do
+  def set_defaults(%{uploads: %{video: %{entries: [%{client_name: client_name, client_size: client_size, client_type: client_type, client_last_modified: last_modified} | _]}}, changeset: changeset} = assigns) do
     if Ecto.Changeset.get_change(changeset, :name) == nil do
       client_name = String.replace(client_name, ~r/\.mp4|\.mov/, "")
 
@@ -98,8 +99,7 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
         |> Ecto.Changeset.put_change(:name, client_name)
         |> Ecto.Changeset.put_change(:size, client_size)
         |> Ecto.Changeset.put_change(:mime_type, client_type)
-
-      # |> Ecto.Changeset.put_change(:recorded_on)
+        |> Ecto.Changeset.put_change(:recorded_on, last_modified |> DateTime.from_unix!(:millisecond))
 
       %{assigns | changeset: changeset}
     else

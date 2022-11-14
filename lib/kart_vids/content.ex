@@ -7,6 +7,18 @@ defmodule KartVids.Content do
   alias KartVids.Repo
 
   alias KartVids.Content.Video
+  alias KartVids.Accounts.User
+
+  @original_video_storage_prefix "videos/originals"
+
+  def user_originals_storage_prefix(%User{id: id}) do
+    salt = Application.get_env(:kart_vids, :video_originals_storage_salt)
+    if !salt, do: raise("Unconfigured originals storage prefix salt!")
+
+    unique_identifier = :crypto.mac(:hmac, :sha256, salt, "#{id}-#{salt}") |> Base.encode64()
+
+    "#{@original_video_storage_prefix}/user-#{id}-#{unique_identifier}/"
+  end
 
   @doc """
   Returns the list of videos.
@@ -132,6 +144,8 @@ defmodule KartVids.Content do
 
   """
   def get_location!(id), do: Repo.get!(Location, id)
+
+  def with_location(belongs_to_location), do: Repo.preload(belongs_to_location, :location)
 
   @doc """
   Creates a location.
