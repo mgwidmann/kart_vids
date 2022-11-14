@@ -14,9 +14,5 @@ config :kart_vids, KartVidsWeb.Endpoint, cache_static_manifest: "priv/static/cac
 # Do not print debug messages in production
 config :logger, level: :info
 
-# Configure video storage location
-config :kart_vids,
-  videos_bucket_name: System.fetch_env!("KART_VIDS_BUCKET_NAME_PROD")
-
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
