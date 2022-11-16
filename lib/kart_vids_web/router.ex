@@ -128,9 +128,6 @@ defmodule KartVidsWeb.Router do
       live "/locations/:location_id/races/:race_id/racers", RacerLive.Index, :index
       live "/locations/:location_id/races/:race_id/racers/new", RacerLive.Index, :new
       live "/locations/:location_id/races/:race_id/racers/:id/edit", RacerLive.Index, :edit
-
-      live "/locations/:location_id/races/:race_id/racers/:id", RacerLive.Show, :show
-      live "/locations/:location_id/races/:race_id/racers/:id/show/edit", RacerLive.Show, :edit
     end
   end
 

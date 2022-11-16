@@ -9,7 +9,7 @@
   </:actions>
 </.header>
 
-<.table id="races" rows={@races} row_click={&JS.navigate(~p"/admin/locations/#{@location_id}/races/#{&1}")}>
+<.table id="races" rows={@races} row_click={&JS.navigate(~p"/admin/locations/#{@location_id}/races/#{&1}/racers")}>
   <:col :let={race} label="External race">
     <%= race.external_race_id %>
   </:col>
@@ -27,9 +27,6 @@
       <.link navigate={~p"/admin/locations/#{@location_id}/races/#{race}"}>Show</.link>
     </div>
     <.link patch={~p"/admin/locations/#{@location_id}/races/#{race}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={race}>
-    <.link navigate={~p"/admin/locations/#{@location_id}/races/#{race}/racers"}>Racers</.link>
   </:action>
   <:action :let={race}>
     <.link phx-click={JS.push("delete", value: %{id: race.id})} data-confirm="Are you sure?">

@@ -60,7 +60,8 @@ defmodule KartVids.MixProject do
       # {:websockex, "~> 0.4.3"},
       {:websockex, github: "mgwidmann/websockex", branch: "report-errors"},
       {:parent, "~> 0.12.1"},
-      {:flames, "~> 0.7.0", github: "mgwidmann/flames", branch: "liveview"}
+      {:flames, "~> 0.7.0", github: "mgwidmann/flames", branch: "liveview"},
+      {:number, "~> 1.0"}
     ]
   end
 

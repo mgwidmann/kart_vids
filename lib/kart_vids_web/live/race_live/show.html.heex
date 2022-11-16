@@ -1,8 +1,8 @@
 <.back position={:top} navigate={~p"/admin/locations/#{@location}/races"}>Back to races</.back>
 
 <.header>
-  Race <%= @race.id %>
-  <:subtitle>This is a race record from your database.</:subtitle>
+  <%= @race.name %>
+  <:subtitle></:subtitle>
   <:actions>
     <.link navigate={~p"/admin/locations/#{@location}/races/#{@race}/racers"}>
       <.button>Racers</.button>

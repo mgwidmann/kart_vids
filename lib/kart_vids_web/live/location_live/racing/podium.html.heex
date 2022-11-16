@@ -1,0 +1,44 @@
+<div id="podium-box" class="grid grid-cols-12">
+  <div class="col-span-4 flex flex-col m-0 p-0">
+    <div class="mt-auto text-center">
+      <% racer = scoreboard_result(@scoreboard, 2) |> scoreboard_racer(@racers) %>
+      <%= if racer do %>
+        <div class="flex justify-center items-center">
+          <.racer_photo racer={racer} />
+        </div>
+        <h1 class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.nickname %></h1>
+      <% end %>
+    </div>
+    <div id="second-step" class="bg-gradient-to-b from-sky-800 to-sky-400 h-[210px] text-center flex items-center justify-center">
+      <img src={~p"/images/2nd.png"} />
+    </div>
+  </div>
+  <div class="col-span-4 flex flex-col m-0 p-0">
+    <div class="mt-auto text-center">
+      <% racer = scoreboard_result(@scoreboard, 1) |> scoreboard_racer(@racers) %>
+      <%= if racer do %>
+        <div class="flex justify-center items-center">
+          <.racer_photo racer={racer} />
+        </div>
+        <h1 class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.nickname %></h1>
+      <% end %>
+    </div>
+    <div id="first-step" class="bg-gradient-to-b from-sky-800 to-sky-400 h-[300px] text-center flex items-center justify-center">
+      <img src={~p"/images/1st.png"} />
+    </div>
+  </div>
+  <div class="col-span-4 flex flex-col m-0 p-0">
+    <div class="mt-auto text-center">
+      <% racer = scoreboard_result(@scoreboard, 3) |> scoreboard_racer(@racers) %>
+      <%= if racer do %>
+        <div class="flex justify-center items-center">
+          <.racer_photo racer={racer} />
+        </div>
+        <h1 class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.nickname %></h1>
+      <% end %>
+    </div>
+    <div id="third-step" class="bg-gradient-to-b from-sky-800 to-sky-400 h-[180px] text-center flex items-center justify-center">
+      <img src={~p"/images/3rd.png"} />
+    </div>
+  </div>
+</div>

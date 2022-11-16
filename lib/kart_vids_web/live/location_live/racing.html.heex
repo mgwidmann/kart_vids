@@ -28,24 +28,21 @@
 
 <div>
   <%= if @listener_alive? && @racers != nil do %>
-    <.table id="scoreboard" rows={@racers}>
-      <:col :let={racer} label="Position">
-        <h1 class="text-4xl"><%= racer.position %></h1>
-      </:col>
-      <:col :let={racer} label=""><img src={racer.photo} class="max-h-40" /></:col>
-      <:col :let={racer} label="Kart"><span class="text-4xl"><%= racer.kart_num %></span></:col>
-      <:col :let={racer} label="Name">
-        <span class="text-4xl"><%= racer.nickname %></span>
-      </:col>
-      <:col :let={racer} label="Best Lap">
-        <span class="text-4xl"><%= if racer.fastest_lap && racer.fastest_lap != 0, do: Decimal.from_float(racer.fastest_lap / 1) |> Decimal.round(3), else: "..." %></span>
-      </:col>
-      <:col :let={racer} label="Average Lap">
-        <span class="text-4xl"><%= if racer.average_lap && racer.average_lap != 0, do: Decimal.from_float(racer.average_lap / 1) |> Decimal.round(3), else: "..." %></span>
-      </:col>
-      <:col :let={racer} label="Last Lap">
-        <span class="text-4xl"><%= if racer.last_lap && racer.last_lap != 0, do: Decimal.from_float(racer.last_lap / 1) |> Decimal.round(3), else: "..." %></span>
-      </:col>
-    </.table>
+    <%= if @race_state == :race_completed do %>
+      <div class="lg:grid lg:grid-cols-3">
+        <div class="col-span-1 pr-2">
+          <%= podium(%{scoreboard: @scoreboard, racers: @racers}) %>
+        </div>
+        <div class="col-span-2">
+          <%= racers_table(%{racers: @racers}) %>
+        </div>
+      </div>
+    <% else %>
+      <%= racers_table(%{racers: @racers}) %>
+    <% end %>
+  <% else %>
+    <div class="flex justify-center items-center h-96">
+      <img src={~p"/images/KartVids-128.png"} class="animate-spin h-[128px] w-[128px]" />
+    </div>
   <% end %>
 </div>
