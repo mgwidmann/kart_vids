@@ -4,7 +4,6 @@ defmodule KartVidsWeb.LocationLive.Racing do
 
   alias KartVids.Content
   alias KartVids.Races.Listener
-  alias KartVids.Races.Listener.Racer
 
   @check_timeout 10_000
 
