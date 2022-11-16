@@ -24,7 +24,6 @@ defmodule KartVids.Races.Listener do
     defstruct nickname: "", photo: "", kart_num: -1, fastest_lap: 999.99, average_lap: 999.99, last_lap: 999.99, position: 99
   end
 
-  @default_float 99.9
   @fastest_speed_level 1
   @min_lap_time 15.0
   @max_lap_time 30.0
@@ -239,7 +238,7 @@ defmodule KartVids.Races.Listener do
 
   def persist_race_information(name, id, started_at, racers, laps, %Location{id: location_id}) do
     Races.transaction(fn ->
-      race =
+      {:ok, race} =
         Races.create_race(%{
           name: name,
           location_id: location_id,
@@ -327,12 +326,12 @@ defmodule KartVids.Races.Listener do
 
   @spec analyze_lap(lap(), analysis()) :: analysis()
   # Discard this lap because it just marks the amb time start
-  def analyze_lap(%{"lap_time" => 0, "lap_number" => "0"}, _), do: {@default_float, @default_float, @default_float}
+  def analyze_lap(%{"lap_time" => 0, "lap_number" => "0"}, _), do: {nil, nil, nil}
 
   def analyze_lap(%{"lap_time" => lap_time, "lap_number" => lap}, {fastest_lap, average_lap, _last_lap}) when fastest_lap > lap_time do
     {lap, ""} = Integer.parse(lap)
     # First lap
-    if average_lap == @default_float do
+    if average_lap == nil do
       {lap_time, lap_time, lap_time}
     else
       {lap_time, average_lap_time(average_lap, lap, lap_time), lap_time}
@@ -341,6 +340,7 @@ defmodule KartVids.Races.Listener do
 
   def analyze_lap(%{"lap_time" => lap_time, "lap_number" => lap}, {fastest_lap, average_lap, _last_lap}) when fastest_lap <= lap_time do
     {lap, ""} = Integer.parse(lap)
+    # Since `nil > 0.0 == true`, no need to check for nil here since fastest_lap cannot be less than lap_time
     {fastest_lap, average_lap_time(average_lap, lap, lap_time), lap_time}
   end
 
