@@ -1,4 +1,14 @@
 <.back position={:top} navigate={~p"/admin/locations/#{@location}"}>Back to location</.back>
+<div>
+  Race Listener Status:
+  <.pill type={if(@listener_alive?, do: :success, else: :danger)}>
+    <%= if @listener_alive? do %>
+      ONLINE
+    <% else %>
+      OFFLINE
+    <% end %>
+  </.pill>
+</div>
 
 <.header>
   <%= @location.name %>
@@ -9,14 +19,12 @@
     </.link>
   </:actions>
 </.header>
-Race Listener Status:
-<.pill type={if(@listener_alive?, do: :success, else: :danger)}>
-  <%= if @listener_alive? do %>
-    ONLINE
-  <% else %>
-    OFFLINE
-  <% end %>
-</.pill>
+<.header>
+  <%= @race_name %>
+  <:subtitle>
+    <%= race_state(@race_state) %>
+  </:subtitle>
+</.header>
 
 <div>
   <%= if @listener_alive? && @racers != nil do %>
@@ -30,13 +38,13 @@ Race Listener Status:
         <span class="text-4xl"><%= racer.nickname %></span>
       </:col>
       <:col :let={racer} label="Best Lap">
-        <span class="text-4xl"><%= if racer.fastest_lap, do: Decimal.from_float(racer.fastest_lap) |> Decimal.round(3), else: "..." %></span>
+        <span class="text-4xl"><%= if racer.fastest_lap && racer.fastest_lap != 0, do: Decimal.from_float(racer.fastest_lap / 1) |> Decimal.round(3), else: "..." %></span>
       </:col>
       <:col :let={racer} label="Average Lap">
-        <span class="text-4xl"><%= if racer.average_lap, do: Decimal.from_float(racer.average_lap) |> Decimal.round(3), else: "..." %></span>
+        <span class="text-4xl"><%= if racer.average_lap && racer.average_lap != 0, do: Decimal.from_float(racer.average_lap / 1) |> Decimal.round(3), else: "..." %></span>
       </:col>
       <:col :let={racer} label="Last Lap">
-        <span class="text-4xl"><%= if racer.last_lap, do: Decimal.from_float(racer.last_lap) |> Decimal.round(3), else: "..." %></span>
+        <span class="text-4xl"><%= if racer.last_lap && racer.last_lap != 0, do: Decimal.from_float(racer.last_lap / 1) |> Decimal.round(3), else: "..." %></span>
       </:col>
     </.table>
   <% end %>

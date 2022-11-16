@@ -13,15 +13,15 @@ defmodule KartVids.Races.Listener do
 
   defmodule State do
     @moduledoc false
-    @type t :: %State{config: Config.t(), current_race: nil | Stirng.t(), fastest_speed_level: pos_integer(), racers: list()}
-    defstruct config: %Config{}, current_race: nil, current_race_started_at: nil, fastest_speed_level: 99, racers: []
+    @type t :: %State{config: Config.t(), current_race: nil | Stirng.t(), race_name: nil | String.t(), fastest_speed_level: pos_integer(), racers: list(Racer.t())}
+    defstruct config: %Config{}, current_race: nil, current_race_started_at: nil, race_name: nil, fastest_speed_level: 99, racers: []
   end
 
   defmodule Racer do
     @moduledoc false
     @derive {Phoenix.Param, key: :nickname}
-    @type t :: %Racer{nickname: String.t(), photo: String.t(), kart_num: pos_integer(), fastest_lap: float(), average_lap: float(), last_lap: float(), position: pos_integer()}
-    defstruct nickname: "", photo: "", kart_num: -1, fastest_lap: 999.99, average_lap: 999.99, last_lap: 999.99, position: 99
+    @type t :: %Racer{nickname: String.t(), photo: String.t(), kart_num: pos_integer(), fastest_lap: float(), average_lap: float(), last_lap: float(), position: pos_integer(), laps: list(map())}
+    defstruct nickname: "", photo: "", kart_num: -1, fastest_lap: 999.99, average_lap: 999.99, last_lap: 999.99, position: 99, laps: []
   end
 
   @fastest_speed_level 1
@@ -139,9 +139,13 @@ defmodule KartVids.Races.Listener do
       persist_race_information(name, id, started_at, racer_data, laps, location)
     end
 
+    # Update for broadcast but don't keep it
     state
-    |> Map.merge(%{current_race: nil, current_race_started_at: nil, racers: racer_data, fastest_speed_level: @fastest_speed_level})
+    |> Map.merge(%{current_race: id, race_name: name, racers: racer_data, fastest_speed_level: fastest_speed_level})
     |> broadcast("race_completed")
+
+    state
+    |> Map.merge(%{current_race: nil, current_race_started_at: nil, race_name: nil, racers: racer_data, fastest_speed_level: fastest_speed_level})
   end
 
   ## Handle Race Start/Updates
@@ -155,7 +159,7 @@ defmodule KartVids.Races.Listener do
       Logger.info("Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers")
 
       state
-      |> Map.merge(%{current_race: id, current_race_started_at: DateTime.utc_now(), fastest_speed_level: speed, racers: extract_racer_data(racers)})
+      |> Map.merge(%{current_race: id, current_race_started_at: DateTime.utc_now(), race_name: name, fastest_speed_level: speed, racers: extract_racer_data(racers)})
       |> broadcast("race_data")
     else
       new_speed = min(speed, fastest_speed_level || 99)
@@ -165,7 +169,7 @@ defmodule KartVids.Races.Listener do
       end
 
       state
-      |> Map.merge(%{current_race: id, fastest_speed_level: new_speed, racers: extract_racer_data(racers)})
+      |> Map.merge(%{current_race: id, fastest_speed_level: new_speed, race_name: name, racers: extract_racer_data(racers)})
       |> broadcast("race_data")
     end
   end
@@ -327,6 +331,7 @@ defmodule KartVids.Races.Listener do
   @spec analyze_lap(lap(), analysis()) :: analysis()
   # Discard this lap because it just marks the amb time start
   def analyze_lap(%{"lap_time" => 0, "lap_number" => "0"}, _), do: {nil, nil, nil}
+  def analyze_lap(%{"lap_time" => 0.0, "lap_number" => "0"}, _), do: {nil, nil, nil}
 
   def analyze_lap(%{"lap_time" => lap_time, "lap_number" => lap}, {fastest_lap, average_lap, _last_lap}) when fastest_lap > lap_time do
     {lap, ""} = Integer.parse(lap)
