@@ -249,7 +249,7 @@ defmodule KartVids.Races.Listener do
         })
 
       for {racer_kart_num, racer} <- racers do
-        racer_laps = Enum.filter(laps, fn %{"kart_num" => kart_num} -> kart_num == racer_kart_num end)
+        racer_laps = Enum.filter(laps, fn %{"kart_number" => kart_num} -> kart_num == racer_kart_num end)
 
         Races.create_racer(%{
           average_lap: racer.average_lap,
