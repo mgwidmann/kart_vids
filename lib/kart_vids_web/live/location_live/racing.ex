@@ -39,7 +39,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
      socket
      |> assign(:race_state, String.to_existing_atom(event))
      |> assign(:race_name, race_name)
-     |> assign(:racers, racers |> Map.values() |> sort_racers(race_name))}
+     |> assign(:racers, racers |> Map.values() |> sort_racers())}
   end
 
   def handle_info(:check_listener, socket) do
@@ -52,26 +52,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
      |> assign(:listener_alive?, !is_nil(listener) && Process.alive?(listener))}
   end
 
-  def sort_racers(racers, nil) do
-    sort_racers_by_position(racers)
-  end
-
-  def sort_racers(racers, race_name) do
-    if race_name |> String.downcase() |> String.contains?(["aekc race"]) do
-      Enum.sort_by(racers, fn
-        %Racer{laps: [_ | _] = laps} ->
-          %{amb_time: amb_time} = Enum.reverse(laps) |> hd()
-          -amb_time
-
-        %Racer{laps: []} ->
-          sort_racers_by_position(racers)
-      end)
-    else
-      sort_racers_by_position(racers)
-    end
-  end
-
-  defp sort_racers_by_position(racers) do
+  def sort_racers(racers) do
     Enum.sort_by(racers, & &1.position)
   end
 
