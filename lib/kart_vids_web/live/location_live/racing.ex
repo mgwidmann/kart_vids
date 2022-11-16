@@ -57,11 +57,11 @@ defmodule KartVidsWeb.LocationLive.Racing do
   end
 
   def sort_racers(racers, race_name) do
-    if race_name |> String.downcase() |> String.contains?(["qualifying", "aekc race"]) do
+    if race_name |> String.downcase() |> String.contains?(["aekc race"]) do
       Enum.sort_by(racers, fn
         %Racer{laps: [_ | _] = laps} ->
           %{amb_time: amb_time} = Enum.reverse(laps) |> hd()
-          amb_time
+          -amb_time
 
         %Racer{laps: []} ->
           sort_racers_by_position(racers)
