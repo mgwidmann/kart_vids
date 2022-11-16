@@ -32,7 +32,6 @@ defmodule KartVids.Content.Video do
       :duration_seconds,
       :size,
       :name,
-      :description,
       :recorded_on
     ])
     |> validate_length(:s3_path, max: 1000)

@@ -225,6 +225,14 @@ defmodule KartVids.Races do
     Race.changeset(race, attrs)
   end
 
+  def transaction(func) do
+    Repo.transaction(func)
+  end
+
+  def persist(multi) do
+    Repo.transaction(multi)
+  end
+
   alias KartVids.Races.Racer
 
   @doc """

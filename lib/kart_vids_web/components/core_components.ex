@@ -331,6 +331,28 @@ defmodule KartVidsWeb.CoreComponents do
     """
   end
 
+  def input(%{type: "datetime-local"} = assigns) do
+    ~H"""
+    <div phx-feedback-for={@name}>
+      <.label for={@id}><%= @label %></.label>
+      <input
+        type={@type}
+        name={@name}
+        id={@id || @name}
+        value={@value && Calendar.strftime(@value, "%Y-%m-%dT%H:%M")}
+        class={[
+          input_border(@errors),
+          "mt-2 block w-full rounded-lg border-zinc-300 py-[7px] px-[11px]",
+          "text-zinc-900 focus:outline-none focus:ring-4 sm:text-sm sm:leading-6",
+          "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400 phx-no-feedback:focus:ring-zinc-800/5"
+        ]}
+        {@rest}
+      />
+      <.error :for={msg <- @errors} message={msg} />
+    </div>
+    """
+  end
+
   def input(assigns) do
     ~H"""
     <div phx-feedback-for={@name}>

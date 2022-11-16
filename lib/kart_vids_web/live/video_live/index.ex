@@ -31,8 +31,6 @@ defmodule KartVidsWeb.VideoLive.Index do
   end
 
   defp apply_action(socket, :new, _params) do
-    IO.inspect(socket, prety: true)
-
     socket
     |> assign(:page_title, "New Video")
     |> assign(:video, %Video{})

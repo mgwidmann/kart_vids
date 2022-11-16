@@ -238,29 +238,31 @@ defmodule KartVids.Races.Listener do
   end
 
   def persist_race_information(name, id, started_at, racers, laps, %Location{id: location_id}) do
-    race =
-      Races.create_race(%{
-        name: name,
-        location_id: location_id,
-        external_race_id: id,
-        started_at: started_at,
-        ended_at: DateTime.utc_now()
-      })
+    Races.transaction(fn ->
+      race =
+        Races.create_race(%{
+          name: name,
+          location_id: location_id,
+          external_race_id: id,
+          started_at: started_at,
+          ended_at: DateTime.utc_now()
+        })
 
-    for racer <- racers do
-      racer_laps = Enum.filter(laps, &(&1["kart_num"] == racer.kart_num))
+      for {racer_kart_num, racer} <- racers do
+        racer_laps = Enum.filter(laps, fn %{"kart_num" => kart_num} -> kart_num == racer_kart_num end)
 
-      Races.create_racer(%{
-        average_lap: racer.average_lap,
-        fastest_lap: racer.fastest_lap,
-        kart_num: racer.kart_num,
-        nickname: racer.nickname,
-        photo: racer.photo,
-        position: racer.position,
-        race_id: race.id,
-        laps: racer_laps
-      })
-    end
+        Races.create_racer(%{
+          average_lap: racer.average_lap,
+          fastest_lap: racer.fastest_lap,
+          kart_num: racer.kart_num,
+          nickname: racer.nickname,
+          photo: racer.photo,
+          position: racer.position,
+          race_id: race.id,
+          laps: racer_laps
+        })
+      end
+    end)
   end
 
   def extract_scoreboard_data(results) when is_list(results) do

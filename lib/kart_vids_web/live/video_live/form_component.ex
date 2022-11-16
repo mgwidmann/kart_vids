@@ -2,53 +2,67 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
   use KartVidsWeb, :live_component
 
   alias KartVids.Content
+  alias KartVids.Content.Video
+
+  @impl true
+  def mount(socket) do
+    locations = Content.list_locations()
+
+    {
+      :ok,
+      socket
+      |> assign(:locations, locations)
+    }
+  end
 
   @impl true
   def render(assigns) do
-    assigns = set_defaults(assigns)
-
     ~H"""
     <div>
       <.header>
         <%= @title %>
-        <:subtitle>Use this form to manage video records in your database.</:subtitle>
+        <:subtitle>Select a video and begin uploading!</:subtitle>
       </.header>
 
       <.simple_form :let={f} for={@changeset} id="video-form" phx-target={@myself} phx-change="validate" phx-submit="save">
-        <div class="hidden">
-          <.live_file_input upload={@uploads.video} />
-        </div>
         <%= inspect(f) %>
-        <%= for entry <- @uploads.video.entries do %>
-          <article class="upload-entry">
-            <figure>
-              <.live_video_preview entry={entry} id="video-preview" />
-              <figcaption><%= entry.client_name %></figcaption>
-            </figure>
+        <div class={if(@upload_present?, do: "hidden", else: "")}>
+          <.drop_video>
+            <.live_file_input upload={@uploads.video} />
+          </.drop_video>
+        </div>
+        <%= if @upload_present? do %>
+          <%= for entry <- @uploads.video.entries do %>
+            <article class="upload-entry">
+              <figure>
+                <.live_video_preview entry={entry} id="video-preview" />
+                <figcaption><%= entry.client_name %></figcaption>
+              </figure>
 
-            <div class="grid grid-cols-12">
-              <div class="col-span-11 flex items-center">
-                <progress value={entry.progress} max="100" class="w-full"><%= entry.progress %>%</progress>
+              <div class="grid grid-cols-12">
+                <div class="col-span-11 flex items-center">
+                  <progress value={entry.progress} max="100" class="w-full"><%= entry.progress %>%</progress>
+                </div>
+                <div class="col-span-1 flex flex-col items-center align-middle">
+                  <button type="button" phx-click="cancel-upload" phx-value-ref={entry.ref} aria-label="cancel">&times;</button>
+                </div>
               </div>
-              <div class="col-span-1 flex flex-col items-center align-middle">
-                <button type="button" phx-click="cancel-upload" phx-value-ref={entry.ref} aria-label="cancel">&times;</button>
-              </div>
-            </div>
 
-            <%= for err <- upload_errors(@uploads.video, entry) do %>
-              <p class="alert alert-danger"><%= error_to_string(err) %></p>
-            <% end %>
-          </article>
+              <%= for err <- upload_errors(@uploads.video, entry) do %>
+                <p class="alert alert-danger"><%= error_to_string(err) %></p>
+              <% end %>
+            </article>
+          <% end %>
         <% end %>
         <%= for err <- upload_errors(@uploads.video) do %>
           <p class="alert alert-danger"><%= error_to_string(err) %></p>
         <% end %>
 
-        <.input field={{f, :location_id}} type="hidden" />
         <.input field={{f, :s3_path}} type="hidden" />
         <.input field={{f, :duration_seconds}} type="hidden" data-phx-hook="VideoHook" />
+        <.input field={{f, :location_id}} type="select" options={@locations |> Enum.map(&{&1.name, &1.id})} />
         <.input field={{f, :size}} type="hidden" />
-        <.input field={{f, :name}} type="text" label="Name" />
+        <.input field={{f, :name}} type="text" label="Name" data-phx-hook="VideoHook" />
         <.input field={{f, :description}} type="textarea" label="Description" />
         <.input field={{f, :recorded_on}} type="datetime-local" label="Recorded on" />
         <:actions>
@@ -59,53 +73,100 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
     """
   end
 
+  def drop_video(assigns) do
+    ~H"""
+    <section class="bg-slate-100 border-dashed border-slate-700 border-2 rounded-[5.0rem] mt-8 px-8">
+      <div class="grid max-w-screen-xl px-4 py-8 mx-auto lg:gap-8 xl:gap-0 lg:py-16 lg:grid-cols-12">
+        <div class="mr-auto place-self-center lg:col-span-7">
+          <p class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl">
+            <h3 class="max-w-2xl mb-4 text-md font-extrabold tracking-tight leading-none md:text-lg xl:text-xl">
+              Drop video here or click
+            </h3>
+            <%= render_slot(@inner_block) %>
+          </p>
+        </div>
+        <div class="hidden lg:mt-0 lg:col-span-5 lg:flex">
+          <img src={~p"/images/KartVids-640.png"} />
+        </div>
+      </div>
+    </section>
+    """
+  end
+
   def error_to_string(:too_large), do: "Too large"
   def error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
   def error_to_string(:too_many_files), do: "You have selected too many files"
 
   @impl true
   def update(%{video: video} = assigns, socket) do
+    {video, upload_present} =
+      if assigns.uploads.video.entries != [] do
+        {set_defaults(video, assigns.uploads.video.entries, assigns.current_user), true}
+      else
+        {video, false}
+      end
+
     changeset = Content.change_video(video)
 
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:video, video)
+     |> assign(:upload_present?, upload_present)
      |> assign(:changeset, changeset)}
   end
 
   @impl true
   def handle_event("validate", %{"video" => video_params}, socket) do
-    IO.inspect(video_params, label: "Validating changeset...")
-
     changeset =
       socket.assigns.video
-      |> Content.change_video(video_params)
+      |> set_defaults(socket.assigns.uploads.video.entries, socket.assigns.current_user)
+      |> Content.change_video(video_params |> clean_params())
       |> Map.put(:action, :validate)
 
-    IO.inspect(changeset, label: "Changeset:", pretty: true)
-    {:noreply, assign(socket, :changeset, changeset)}
+    {
+      :noreply,
+      socket
+      |> assign(:upload_present?, length(socket.assigns.uploads.video.entries) > 0)
+      |> assign(:changeset, changeset)
+    }
   end
 
   def handle_event("save", %{"video" => video_params}, socket) do
-    save_video(socket, socket.assigns.action, video_params)
+    save_video(socket, socket.assigns.action, video_params |> clean_params())
   end
 
-  def set_defaults(%{uploads: %{video: %{entries: [%{client_name: client_name, client_size: client_size, client_type: client_type, client_last_modified: last_modified} | _]}}, changeset: changeset} = assigns) do
-    if Ecto.Changeset.get_change(changeset, :name) == nil do
-      client_name = String.replace(client_name, ~r/\.mp4|\.mov/, "")
-
-      changeset =
-        changeset
-        |> Ecto.Changeset.put_change(:name, client_name)
-        |> Ecto.Changeset.put_change(:size, client_size)
-        |> Ecto.Changeset.put_change(:mime_type, client_type)
-        |> Ecto.Changeset.put_change(:recorded_on, last_modified |> DateTime.from_unix!(:millisecond))
-
-      %{assigns | changeset: changeset}
-    else
-      assigns
-    end
+  def clean_params(params) do
+    params
+    |> Enum.reject(fn
+      {_, v} when v in [nil, ""] -> true
+      _ -> false
+    end)
+    |> Map.new()
   end
+
+  def set_defaults(%Video{name: name} = video, [%{client_name: client_name} | _] = entry, current_user) when name in [nil, ""] and client_name not in [nil, ""] do
+    %{video | name: client_name} |> set_defaults(entry, current_user)
+  end
+
+  def set_defaults(%Video{recorded_on: recorded} = video, [%{client_last_modified: last_modified} | _] = entry, current_user) when recorded in [nil, ""] and last_modified not in [nil, ""] do
+    %{video | recorded_on: last_modified |> DateTime.from_unix!(:millisecond)} |> set_defaults(entry, current_user)
+  end
+
+  def set_defaults(%Video{size: size} = video, [%{client_size: client_size} | _] = entry, current_user) when size in [nil, 0, ""] and client_size not in [nil, 0, ""] do
+    %{video | size: client_size} |> set_defaults(entry, current_user)
+  end
+
+  def set_defaults(%Video{mime_type: mime_type} = video, [%{client_type: client_type} | _] = entry, current_user) when mime_type in [nil, ""] and client_type not in [nil, ""] do
+    %{video | mime_type: client_type} |> set_defaults(entry, current_user)
+  end
+
+  def set_defaults(%Video{s3_path: path} = video, [%{uuid: uuid, client_type: client_type} | _] = entry, current_user) when path in [nil, ""] and client_type not in [nil, ""] do
+    [ext | _] = MIME.extensions(client_type)
+    %{video | s3_path: Path.join(Content.user_originals_storage_prefix(current_user), "#{uuid}.#{ext}")} |> set_defaults(entry, current_user)
+  end
+
+  def set_defaults(%Video{} = video, _, _), do: video
 
   # No video is loaded yet
   def set_defaults(assigns), do: assigns
