@@ -3,6 +3,8 @@ defmodule KartVidsWeb.Live.Helpers do
   Static function helpers for rendering live pages
   """
 
+  @no_data "..."
+
   def format_lap(nil), do: @no_data
   def format_lap(lap) when lap < 10.0, do: @no_data
 

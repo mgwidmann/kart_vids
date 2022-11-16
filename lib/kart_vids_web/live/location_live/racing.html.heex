@@ -29,6 +29,10 @@
 <div>
   <%= if @listener_alive? && @racers != nil do %>
     <%= if @race_state == :race_completed do %>
+      <svg width="400" height="110" class="absolute">
+        <rect class="animate-spin" width="20" height="10" style="fill:rgb(0,0,255)" />
+        <rect class="animate-spin" width="25" height="8" style="fill:rgb(0,255,255)" />
+      </svg>
       <div class="lg:grid lg:grid-cols-3">
         <div class="col-span-1 pr-2">
           <%= podium(%{scoreboard: @scoreboard, racers: @racers}) %>
