@@ -8,7 +8,9 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "deploy:prod": "NODE_ENV=production cdk deploy --all --profile kartvids-prod",
+    "deploy:dev": "cdk deploy --all --profile kartvids-dev"
   },
   "devDependencies": {
     "@types/inquirer": "^9.0.3",
