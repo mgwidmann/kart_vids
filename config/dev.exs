@@ -61,7 +61,8 @@ config :kart_vids, KartVidsWeb.Endpoint,
       ~r"lib/kart_vids_web/(live|views)/.*(ex)$",
       ~r"lib/kart_vids_web/templates/.*(eex)$"
     ]
-  ]
+  ],
+  check_origin: ["http://localhost:4000"]
 
 # Enable dev routes for dashboard and mailbox
 config :kart_vids, dev_routes: true

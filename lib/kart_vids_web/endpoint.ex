@@ -11,9 +11,7 @@ defmodule KartVidsWeb.Endpoint do
     same_site: "Lax"
   ]
 
-  socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
-    check_origin: Application.compile_env!(:kart_vids, :origin)
+  socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
 
   # Serve at "/" the static files from "priv/static" directory.
   #

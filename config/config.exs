@@ -66,8 +66,7 @@ config :logger,
 config :phoenix, :json_library, Jason
 
 config :kart_vids,
-  aws_region: "us-east-1",
-  origin: ["http://localhost:4000"]
+  aws_region: "us-east-1"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

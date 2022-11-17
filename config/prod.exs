@@ -15,7 +15,7 @@ config :kart_vids, KartVidsWeb.Endpoint, cache_static_manifest: "priv/static/cac
 config :logger, level: :info
 
 config :kart_vids,
-  origin: ["https://kart-vids.com", "https://www.kart-vids.com", "https://kart-vids.fly.dev"]
+  origin: ["https://www.kart-vids.com", "https://kart-vids.com", "https://kart-vids.fly.dev"]
 
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
