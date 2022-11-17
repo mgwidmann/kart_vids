@@ -52,6 +52,10 @@ defmodule KartVidsWeb.Telemetry do
         description: "The time the connection spent waiting before being checked out for the query"
       ),
 
+      # Race Listener Metrics
+      # distribution("kart_vids.location_listener.clock_delta"), # Doesn't seem to work, page hangs
+      summary("kart_vids.location_listener.clock_delta"),
+
       # VM Metrics
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),

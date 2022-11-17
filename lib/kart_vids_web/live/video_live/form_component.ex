@@ -25,7 +25,6 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
       </.header>
 
       <.simple_form :let={f} for={@changeset} id="video-form" phx-target={@myself} phx-change="validate" phx-submit="save">
-        <%= inspect(f) %>
         <div class={if(@upload_present?, do: "hidden", else: "")}>
           <.drop_video>
             <.live_file_input upload={@uploads.video} />

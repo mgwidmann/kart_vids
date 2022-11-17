@@ -93,7 +93,7 @@ defmodule KartVidsWeb.Router do
   scope "/admin", KartVidsWeb do
     pipe_through [:browser, :require_authenticated_user, :admin]
 
-    live_dashboard "/dashboard", metrics: Telemetry
+    live_dashboard "/dashboard", metrics: KartVidsWeb.Telemetry
 
     flames("/errors")
 

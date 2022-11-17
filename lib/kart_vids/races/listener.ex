@@ -13,8 +13,8 @@ defmodule KartVids.Races.Listener do
 
   defmodule State do
     @moduledoc false
-    @type t :: %State{config: Config.t(), current_race: nil | Stirng.t(), race_name: nil | String.t(), fastest_speed_level: pos_integer(), racers: list(Racer.t()), scoreboard: nil | map()}
-    defstruct config: %Config{}, current_race: nil, current_race_started_at: nil, race_name: nil, fastest_speed_level: 99, racers: [], scoreboard: nil
+    @type t :: %State{config: Config.t(), current_race: nil | Stirng.t(), race_name: nil | String.t(), fastest_speed_level: pos_integer(), racers: list(Racer.t()), scoreboard: nil | map(), last_timestamp: nil | String.t()}
+    defstruct config: %Config{}, current_race: nil, current_race_started_at: nil, race_name: nil, fastest_speed_level: 99, racers: [], scoreboard: nil, last_timestamp: nil
   end
 
   defmodule Racer do
@@ -108,9 +108,28 @@ defmodule KartVids.Races.Listener do
     {:ok, state}
   end
 
-  # Ignore timestamp
-  def handle_frame({:text, _timestamp}, state) do
+  # Timestamp format like: "02:47:42 GMT+0000 (Coordinated Universal Time)"
+  # for some reason this is broadcast about 270 times per second with the same value which does not include fractions of a second
+  # this would make sense to keep clocks in tune but it doesn't include milliseconds so I'm unclear on what its for
+  # When the timestamps match, ignore, when it differs, save last timestamp for calculating time delta
+  def handle_frame({:text, timestamp}, %State{last_timestamp: timestamp} = state) do
     {:ok, state}
+  end
+
+  def handle_frame({:text, timestamp}, %State{config: %Config{location_id: location_id}} = state) do
+    clock = DateTime.utc_now() |> DateTime.to_time()
+
+    {:ok, time} =
+      timestamp
+      |> String.split(" ")
+      |> List.first()
+      |> Time.from_iso8601()
+
+    delta = Time.diff(clock, time, :microsecond)
+    :telemetry.execute([:kart_vids, :location_listener], %{clock_delta: delta}, %{location_id: location_id})
+    # Logger.debug("Clock time vs broadcast time delta (microseconds): #{delta}")
+
+    {:ok, %{state | last_timestamp: timestamp}}
   end
 
   def handle_frame(other, state) do
