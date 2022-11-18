@@ -125,14 +125,10 @@ defmodule KartVids.Races.Listener do
     {:ok, state}
   end
 
-  def handle_frame({:text, timestamp}, %State{config: %Config{location_id: location_id}} = state) do
+  def handle_frame({:text, <<time::binary-size(8), _::binary>> = timestamp}, %State{config: %Config{location_id: location_id}} = state) do
     clock = DateTime.utc_now() |> DateTime.to_time()
 
-    {:ok, time} =
-      timestamp
-      |> String.split(" ")
-      |> List.first()
-      |> Time.from_iso8601()
+    {:ok, time} = Time.from_iso8601(time)
 
     delta = Time.diff(clock, time, :microsecond)
     :telemetry.execute([:kart_vids, :location_listener], %{clock_delta: delta}, %{location_id: location_id})
