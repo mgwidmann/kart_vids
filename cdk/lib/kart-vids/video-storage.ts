@@ -22,10 +22,14 @@ export class VideoStorage extends KartVidsConstruct {
             intelligentTieringConfigurations: [
                 {
                     name: 'videos',
-                    prefix: 'videos/originals',
+                    prefix: 'videos',
                     archiveAccessTierTime: Duration.days(90),
                     deepArchiveAccessTierTime: Duration.days(180),
                 }
+            ],
+            lifecycleRules: [
+                { id: 'delete-expired-multipart', prefix: '', abortIncompleteMultipartUploadAfter: Duration.days(1), enabled: true, expiredObjectDeleteMarker: true, },
+                { id: 'cleanup-prior-versions', prefix: '', noncurrentVersionsToRetain: 1, noncurrentVersionExpiration: Duration.days(30), },
             ]
         });
 
