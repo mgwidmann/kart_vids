@@ -11,10 +11,6 @@
     </:actions>
   </.header>
 
-  <form id="upload-form" phx-submit="save" phx-change="validate">
-    <.live_file_input upload={@uploads.video} class="hidden" />
-  </form>
-
   <%= if @videos == [] do %>
     <div class="flex justify-center">
       <section class="bg-slate-100 border-dashed border-slate-700 border-2 rounded-[5.0rem] mt-8 px-8">
@@ -95,6 +91,6 @@
   <% end %>
 
   <.modal :if={@live_action in [:new, :edit]} id="video-modal" show on_cancel={JS.navigate(~p"/videos")}>
-    <.live_component module={KartVidsWeb.VideoLive.FormComponent} id={@video.id || :new} title={@page_title} action={@live_action} video={@video} navigate={~p"/videos"} uploads={@uploads} current_user={@current_user} />
+    <.live_component module={KartVidsWeb.VideoLive.FormComponent} id={(@video && @video.id) || :new} title={@page_title} action={@live_action} video={@video} navigate={~p"/videos"} uploads={@uploads} current_user={@current_user} />
   </.modal>
 </section>

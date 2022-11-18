@@ -29,8 +29,11 @@ defmodule KartVids.Content do
       [%Video{}, ...]
 
   """
-  def list_videos do
-    Repo.all(Video)
+  def list_videos(%User{id: id}), do: list_videos(id)
+
+  def list_videos(current_user_id) when is_number(current_user_id) do
+    from(v in Video, where: v.user_id == ^current_user_id and v.is_deleted? == false)
+    |> Repo.all()
   end
 
   @doc """
@@ -61,9 +64,10 @@ defmodule KartVids.Content do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_video(attrs \\ %{}) do
+  def create_video(%User{id: id}, attrs \\ %{}) do
     %Video{}
     |> Video.changeset(attrs)
+    |> Ecto.Changeset.put_change(:user_id, id)
     |> Repo.insert()
   end
 
@@ -98,7 +102,12 @@ defmodule KartVids.Content do
 
   """
   def delete_video(%Video{} = video) do
-    Repo.delete(video)
+    video
+    |> Video.changeset(%{})
+    # Force changes which the changeset function does not allow to be altered
+    |> Ecto.Changeset.put_change(:is_deleted?, true)
+    |> Ecto.Changeset.put_change(:deleted_at, DateTime.utc_now())
+    |> Repo.update!()
   end
 
   @doc """

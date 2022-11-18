@@ -6,17 +6,13 @@ defmodule KartVidsWeb.VideoLive.Index do
 
   @view_styles [:grid, :table]
 
-  @one_megabyte 1_000_000
-  @max_file_size 10_000 * @one_megabyte
-
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:videos, list_videos())
+     |> assign(:videos, Content.list_videos(socket.assigns.current_user))
      |> assign(:view, :grid)
-     |> assign(:uploaded_videos, [])
-     |> allow_upload(:video, accept: ~w(.mp4 .mov), max_entries: 1, external: &presign_upload/2, max_file_size: @max_file_size)}
+     |> allow_upload(:video, accept: ~w(.mp4 .mov), max_entries: 1, external: &presign_upload/2, max_file_size: Video.maximum_size_bytes())}
   end
 
   @impl true
@@ -47,7 +43,7 @@ defmodule KartVidsWeb.VideoLive.Index do
     video = Content.get_video!(id)
     {:ok, _} = Content.delete_video(video)
 
-    {:noreply, assign(socket, :videos, list_videos())}
+    {:noreply, assign(socket, :videos, Content.list_videos(socket.assigns.current_user))}
   end
 
   @view_style_strings @view_styles |> Enum.map(fn s -> Atom.to_string(s) end)
@@ -70,11 +66,7 @@ defmodule KartVidsWeb.VideoLive.Index do
     {:noreply, cancel_upload(socket, :video, ref)}
   end
 
-  defp list_videos do
-    Content.list_videos()
-  end
-
-  defp presign_upload(entry, socket) do
+  def presign_upload(entry, socket) do
     config = %{
       region: Application.fetch_env!(:kart_vids, :aws_region),
       access_key_id: System.fetch_env!("AWS_ACCESS_KEY_ID"),

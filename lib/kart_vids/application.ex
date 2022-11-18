@@ -7,6 +7,10 @@ defmodule KartVids.Application do
 
   @impl true
   def start(_type, _args) do
+    # Don't start the system without these available at runtime
+    _ = System.fetch_env!("AWS_ACCESS_KEY_ID")
+    _ = System.fetch_env!("AWS_SECRET_ACCESS_KEY")
+
     children = [
       {Registry, keys: :unique, name: KartVids.Registry},
       # Start the Telemetry supervisor

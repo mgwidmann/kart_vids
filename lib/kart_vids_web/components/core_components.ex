@@ -447,6 +447,8 @@ defmodule KartVidsWeb.CoreComponents do
   attr :id, :string, required: true
   attr :row_click, JS, default: nil
   attr :rows, :list, required: true
+  attr :row_add, :any, default: nil
+  attr :row_remove, :any, default: nil
 
   slot :col, required: true do
     attr :class, :string
@@ -471,7 +473,7 @@ defmodule KartVidsWeb.CoreComponents do
           </tr>
         </thead>
         <tbody class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
-          <tr :for={row <- @rows} id={"#{@id}-#{Phoenix.Param.to_param(row)}"} class="group hover:bg-zinc-50">
+          <tr :for={row <- @rows} id={"#{@id}-#{Phoenix.Param.to_param(row)}"} class="group hover:bg-zinc-50" phx-mounted={is_function(@row_add, 1) && @row_add.(row)} phx-remove={is_function(@row_remove, 1) && @row_remove.(row)}>
             <td :for={{col, i} <- Enum.with_index(@col)} phx-click={@row_click && @row_click.(row)} class={["relative p-0", @row_click && "hover:cursor-pointer", col[:row_class]]}>
               <div class="block py-4 sm:px-3">
                 <span class="absolute right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
@@ -570,17 +572,18 @@ defmodule KartVidsWeb.CoreComponents do
 
   ## JS Commands
 
-  def show(js \\ %JS{}, selector) do
+  def show(js \\ %JS{}, selector, time \\ 200) do
     JS.show(js,
       to: selector,
+      time: time,
       transition: {"transition-all transform ease-out duration-300", "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95", "opacity-100 translate-y-0 sm:scale-100"}
     )
   end
 
-  def hide(js \\ %JS{}, selector) do
+  def hide(js \\ %JS{}, selector, time \\ 200) do
     JS.hide(js,
       to: selector,
-      time: 200,
+      time: time,
       transition: {"transition-all transform ease-in duration-200", "opacity-100 translate-y-0 sm:scale-100", "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
     )
   end
@@ -592,7 +595,7 @@ defmodule KartVidsWeb.CoreComponents do
       to: "##{id}-bg",
       transition: {"transition-all transform ease-out duration-300", "opacity-0", "opacity-100"}
     )
-    |> show("##{id}-container")
+    |> show("##{id}-container", 500)
     |> JS.focus_first(to: "##{id}-content")
   end
 
@@ -602,7 +605,7 @@ defmodule KartVidsWeb.CoreComponents do
       to: "##{id}-bg",
       transition: {"transition-all transform ease-in duration-200", "opacity-100", "opacity-0"}
     )
-    |> hide("##{id}-container")
+    |> hide("##{id}-container", 500)
     |> JS.hide(to: "##{id}", transition: {"block", "block", "hidden"})
     |> JS.pop_focus()
   end

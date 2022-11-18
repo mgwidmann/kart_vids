@@ -6,6 +6,7 @@ defmodule KartVidsWeb.Router do
   import Flames.Router
 
   pipeline :browser do
+    plug :redirect_old_host
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
@@ -142,6 +143,16 @@ defmodule KartVidsWeb.Router do
       on_mount: [{KartVidsWeb.UserAuth, :mount_current_user}] do
       live "/users/confirm/:token", UserConfirmationLive, :edit
       live "/users/confirm", UserConfirmationInstructionsLive, :new
+    end
+  end
+
+  def redirect_old_host(conn, []) do
+    if String.contains?(conn.host, "fly.dev") do
+      conn
+      |> put_status(:found)
+      |> put_resp_header("location", "https://www.kart-vids.com")
+    else
+      conn
     end
   end
 

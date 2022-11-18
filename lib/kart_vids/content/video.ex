@@ -3,6 +3,7 @@ defmodule KartVids.Content.Video do
   import Ecto.Changeset
 
   alias KartVids.Content.Location
+  alias KartVids.Accounts.User
 
   schema "videos" do
     field :description, :string
@@ -12,8 +13,12 @@ defmodule KartVids.Content.Video do
     field :size, :integer
     field :mime_type, :string
     field :s3_path, :string
+    field :youtube_url, :string
+    field :is_deleted?, :boolean, default: false, source: :is_deleted
+    field :deleted_at, :utc_datetime
 
     belongs_to :location, Location
+    belongs_to :user, User
 
     timestamps()
   end
@@ -21,12 +26,12 @@ defmodule KartVids.Content.Video do
   # Milliseconds to seconds
   @max_duration_seconds :timer.hours(1) / 1000
   @megabyte 1_000_000
-  @max_size_bytes 10_000 * @megabyte
+  @max_size_bytes 100 * @megabyte
 
   @doc false
   def changeset(video, attrs) do
     video
-    |> cast(attrs |> convert_duration(), [:location_id, :duration_seconds, :size, :name, :description, :recorded_on])
+    |> cast(attrs |> convert_duration(), [:location_id, :duration_seconds, :size, :name, :description, :recorded_on, :s3_path, :youtube_url])
     |> validate_required([
       :location_id,
       :duration_seconds,
@@ -41,6 +46,8 @@ defmodule KartVids.Content.Video do
     |> validate_length(:name, max: 500)
     |> validate_length(:mime_type, max: 100)
   end
+
+  def maximum_size_bytes(), do: @max_size_bytes
 
   def convert_duration(%{"duration_seconds" => seconds} = attrs) when is_float(seconds) do
     %{attrs | "duration_seconds" => trunc(seconds)}

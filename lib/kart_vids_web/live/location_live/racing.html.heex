@@ -21,6 +21,13 @@
 </.header>
 <.header>
   <%= @race_name %>
+  <br class="block sm:hidden" />
+  <%= if @speed_level do %>
+    (Speed: <%= speed_string(@speed_level) %>)
+  <% end %>
+  <%= if @fastest_speed_level && @speed_level && @fastest_speed_level == @speed_level do %>
+    <span class="text-2xl">🛑 SLOWED</span>
+  <% end %>
   <:subtitle>
     <%= race_state(@race_state) %>
   </:subtitle>
@@ -34,11 +41,11 @@
           <%= podium(%{scoreboard: @scoreboard, racers: @racers}) %>
         </div>
         <div class="col-span-2">
-          <%= racers_table(%{racers: @racers}) %>
+          <%= racers_table(%{racers: @racers, racer_change: @racer_change}) %>
         </div>
       </div>
     <% else %>
-      <%= racers_table(%{racers: @racers}) %>
+      <%= racers_table(%{racers: @racers, racer_change: @racer_change}) %>
     <% end %>
   <% else %>
     <div class="flex justify-center items-center h-96">

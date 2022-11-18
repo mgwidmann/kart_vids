@@ -12,6 +12,7 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
       :ok,
       socket
       |> assign(:locations, locations)
+      |> allow_upload(:video, accept: ~w(.mp4 .mov), max_entries: 1, external: &KartVidsWeb.VideoLive.Index.presign_upload/2, max_file_size: Video.maximum_size_bytes())
     }
   end
 
@@ -75,7 +76,7 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
   def drop_video(assigns) do
     ~H"""
     <section class="bg-slate-100 border-dashed border-slate-700 border-2 rounded-[5.0rem] mt-8 px-8">
-      <div class="grid max-w-screen-xl px-4 py-8 mx-auto lg:gap-8 xl:gap-0 lg:py-16 lg:grid-cols-12">
+      <div class="grid max-w-screen-xl px-0 py-8 mx-auto lg:gap-8 xl:gap-0 lg:py-16 lg:grid-cols-12">
         <div class="mr-auto place-self-center lg:col-span-7">
           <p class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl">
             <h3 class="max-w-2xl mb-4 text-md font-extrabold tracking-tight leading-none md:text-lg xl:text-xl">
@@ -98,6 +99,8 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
 
   @impl true
   def update(%{video: video} = assigns, socket) do
+    video = video || %Video{}
+
     {video, upload_present} =
       if assigns.uploads.video.entries != [] do
         {set_defaults(video, assigns.uploads.video.entries, assigns.current_user), true}
@@ -132,6 +135,12 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
   end
 
   def handle_event("save", %{"video" => video_params}, socket) do
+    uploaded_files =
+      consume_uploaded_entries(socket, :video, fn %{path: path}, entry ->
+        IO.puts("Path uploaded was: #{inspect(path)} for entry: #{inspect(entry)}")
+      end)
+
+    IO.puts("Uploaded files: #{inspect(uploaded_files)}")
     save_video(socket, socket.assigns.action, video_params |> clean_params())
   end
 
@@ -184,7 +193,7 @@ defmodule KartVidsWeb.VideoLive.FormComponent do
   end
 
   defp save_video(socket, :new, video_params) do
-    case Content.create_video(video_params) do
+    case Content.create_video(socket.assigns.current_user, video_params) do
       {:ok, _video} ->
         {:noreply,
          socket
