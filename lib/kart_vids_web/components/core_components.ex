@@ -153,6 +153,7 @@ defmodule KartVidsWeb.CoreComponents do
   """
   attr :for, :any, default: nil, doc: "the datastructure for the form"
   attr :as, :any, default: nil, doc: "the server side parameter to collect all input under"
+  attr :class, :string, default: nil
 
   attr :rest, :global,
     include: ~w(autocomplete name rel action enctype method novalidate target),
@@ -164,7 +165,7 @@ defmodule KartVidsWeb.CoreComponents do
   def simple_form(assigns) do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class="space-y-8 bg-white mt-10">
+      <div class={@class || "space-y-8 bg-white mt-10"}>
         <%= render_slot(@inner_block, f) %>
         <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
           <%= render_slot(action, f) %>
@@ -194,7 +195,7 @@ defmodule KartVidsWeb.CoreComponents do
       type={@type}
       class={[
         "phx-submit-loading:opacity-75 rounded-lg bg-sky-600 hover:bg-sky-700 py-2 px-3",
-        "text-sm font-semibold leading-6 text-white active:text-white/80",
+        "text-sm font-semibold leading-6 text-white active:text-white/80 whitespace-nowrap",
         @class
       ]}
       {@rest}
@@ -374,6 +375,25 @@ defmodule KartVidsWeb.CoreComponents do
     </div>
     """
   end
+
+  # @doc """
+  # Regular select element which does not require a form element.
+  # """
+
+  # attr :prompt, :string, default: nil
+  # attr :options, :list, required: true
+  # attr :value, :string, required: true
+  # attr :class, :string, default: nil
+  # attr :rest, :global
+
+  # def select(assigns) do
+  #   ~H"""
+  #   <select class={["mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-zinc-500 focus:border-zinc-500 sm:text-sm", @class]} {@rest}>
+  #     <option :if={@prompt}><%= @prompt %></option>
+  #     <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
+  #   </select>
+  #   """
+  # end
 
   defp input_border([] = _errors),
     do: "border-zinc-300 focus:border-zinc-400 focus:ring-zinc-800/5"

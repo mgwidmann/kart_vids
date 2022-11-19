@@ -12,11 +12,15 @@
 
 <.header>
   <%= @location.name %>
-  <:subtitle>Live racing information</:subtitle>
   <:actions>
-    <.link navigate={~p"/admin/locations/#{@location}/races"}>
-      <.button>Past Races</.button>
-    </.link>
+    <div class="flex justify-between items-center shrink-0">
+      <.simple_form :let={f} for={:race_type} phx-change="change_race_type" class="mr-2 min-w-[7rem]">
+        <.input field={{f, :race_type}} type="select" options={["Best Lap": :best_lap, Position: :position]} value={@race_type} />
+      </.simple_form>
+      <.link navigate={~p"/admin/locations/#{@location}/races"}>
+        <.button>Past Races</.button>
+      </.link>
+    </div>
   </:actions>
 </.header>
 <.header>
@@ -25,7 +29,7 @@
   <%= if @speed_level do %>
     (Speed: <%= speed_string(@speed_level) %>)
   <% end %>
-  <%= if @fastest_speed_level && @speed_level && @fastest_speed_level == @speed_level do %>
+  <%= if @speed_level && @speed_level != Listener.fastest_speed_level() do %>
     <span class="text-2xl">🛑 SLOWED</span>
   <% end %>
   <:subtitle>
@@ -41,11 +45,11 @@
           <%= podium(%{scoreboard: @scoreboard, racers: @racers}) %>
         </div>
         <div class="col-span-2">
-          <%= racers_table(%{racers: @racers, racer_change: @racer_change}) %>
+          <%= racers_table(%{racers: @racers, racer_change: @racer_change, first_amb: @first_amb}) %>
         </div>
       </div>
     <% else %>
-      <%= racers_table(%{racers: @racers, racer_change: @racer_change}) %>
+      <%= racers_table(%{racers: @racers, racer_change: @racer_change, first_amb: @first_amb}) %>
     <% end %>
   <% else %>
     <div class="flex justify-center items-center h-96">

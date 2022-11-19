@@ -392,6 +392,8 @@ defmodule KartVids.Races.Listener do
   defp average_lap_time(average_lap, lap, lap_time) do
     (average_lap * (lap + 1) + lap_time) / (lap + 2)
   end
+
+  def fastest_speed_level(), do: @fastest_speed_level
 end
 
 # %{

@@ -12,6 +12,9 @@
         </span>
       <% true -> %>
     <% end %>
+    <div>
+      Lap <%= lap_count(racer) %>
+    </div>
   </:col>
   <:col :let={racer} label="" row_class="w-[80px] md:w-[160px] px-1">
     <.racer_photo racer={racer} />
@@ -20,16 +23,16 @@
   <:col :let={racer} label="Name" row_class="max-w-[200px]">
     <span class="text-md md:text-xl xl:text-2xl break-words"><%= racer.nickname %></span>
   </:col>
-  <:col :let={racer} label="Best Lap" label_mobile="Best">
-    <span id={"fastest_lap-#{racer.nickname}"} class="text-md md:text-xl xl:text-2xl" phx-update={JS.transition("scaleInOut", to: "#fastest_lap-#{racer.nickname}")}><%= format_lap(racer.fastest_lap) %></span>
+  <:col :let={racer} label="Best Lap" label_mobile="Best" row_class="px-1">
+    <span id={"fastest_lap-#{racer.nickname}"} class="text-md md:text-xl xl:text-2xl" phx-mount={JS.transition("scaleInOut", to: "#fastest_lap-#{racer.nickname}")}><%= format_lap(racer.fastest_lap) %></span>
   </:col>
-  <:col :let={racer} label="Average Lap" label_mobile="Avg">
-    <span id={"average_lap-#{racer.nickname}"} class="text-md md:text-xl xl:text-2xl" phx-update={JS.transition("scaleInOut", to: "#average_lap-#{racer.nickname}")}><%= format_lap(racer.average_lap) %></span>
+  <:col :let={racer} label="Average Lap" label_mobile="Avg" row_class="px-1">
+    <span id={"average_lap-#{racer.nickname}"} class="text-md md:text-xl xl:text-2xl" phx-mount={JS.transition("scaleInOut", to: "#average_lap-#{racer.nickname}")}><%= format_lap(racer.average_lap) %></span>
   </:col>
-  <:col :let={racer} label="Last Lap" label_mobile="Last">
-    <span id={"last_lap-#{racer.nickname}"} class="text-md md:text-xl xl:text-2xl" phx-update={JS.transition("scaleInOut", to: "#last_lap-#{racer.nickname}")}><%= format_lap(racer.last_lap) %></span>
+  <:col :let={racer} label="Last Lap" label_mobile="Last" row_class="px-1">
+    <span id={"last_lap-#{racer.nickname}"} class="text-md md:text-xl xl:text-2xl" phx-mount={JS.transition("scaleInOut", to: "#last_lap-#{racer.nickname}")}><%= format_lap(racer.last_lap) %></span>
   </:col>
-  <:col :let={racer} label="Last AMB" class="hidden sm:table-cell" row_class="hidden sm:table-cell">
-    <span id={"amb-#{racer.nickname}"} class="text-md md:text-xl xl:text-2xl" phx-update={JS.transition("scaleInOut", to: "#amb-#{racer.nickname}")}><%= amb_time(racer.laps) %></span>
+  <:col :let={racer} label="AMB" class="hidden sm:table-cell" row_class="hidden sm:table-cell">
+    <span id={"amb-#{racer.nickname}"} class="text-md md:text-xl xl:text-2xl" phx-mount={JS.transition("scaleInOut", to: "#amb-#{racer.nickname}")}><%= amb_time(racer.laps, @first_amb) %></span>
   </:col>
 </.table>
