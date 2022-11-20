@@ -20,6 +20,9 @@
   <:item title="Name">
     <%= @race.name %>
   </:item>
+  <:item title="Is League Race?">
+    <%= if(@race.league?, do: "Yes", else: "No") %>
+  </:item>
   <:item title="Started at">
     <%= @race.started_at %>
   </:item>

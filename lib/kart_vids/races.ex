@@ -6,6 +6,7 @@ defmodule KartVids.Races do
   import Ecto.Query, warn: false
   alias KartVids.Repo
 
+  alias KartVids.Races.Racer
   alias KartVids.Races.Kart
 
   @doc """
@@ -140,7 +141,7 @@ defmodule KartVids.Races do
 
   """
   def list_races(location_id) do
-    from(r in Race, where: r.location_id == ^location_id)
+    from(r in Race, where: r.location_id == ^location_id, order_by: {:desc, r.started_at})
     |> Repo.all()
   end
 
@@ -233,7 +234,36 @@ defmodule KartVids.Races do
     Repo.transaction(multi)
   end
 
-  alias KartVids.Races.Racer
+  defmodule League do
+    @moduledoc false
+    defstruct date: DateTime.utc_now() |> DateTime.to_date(), races: 0, racer_names: []
+  end
+
+  defimpl Phoenix.Param, for: League do
+    def to_param(league) do
+      "#{league.date.year}-#{league.date.month}-#{league.date.day}"
+    end
+  end
+
+  def leagues() do
+    query =
+      from(race in Race,
+        where: race.league? == true,
+        join: racer in Racer,
+        on: racer.race_id == race.id,
+        group_by: fragment("?::date", race.started_at),
+        order_by: {:desc, fragment("?::date", race.started_at)}
+      )
+
+    from([race, racer] in query, select: %League{date: fragment("?::date", race.started_at), races: count(race.id, :distinct), racer_names: fragment("array_agg(distinct ?)", racer.nickname)})
+    |> Repo.all()
+  end
+
+  def league_races_on_date(%Date{} = date) do
+    from(r in Race, where: r.league? == true and fragment("?::date", r.started_at) >= ^date)
+    |> Repo.all()
+    |> Repo.preload(:racers)
+  end
 
   @doc """
   Returns the list of racers.

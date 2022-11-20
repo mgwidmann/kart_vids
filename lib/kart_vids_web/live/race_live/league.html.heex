@@ -1,0 +1,13 @@
+<.back position={:top} navigate={~p"/admin/locations/#{@location_id}/leagues"}>Back to leagues</.back>
+
+<.header>
+  League Races on <%= @date %>
+</.header>
+
+<%= race_table(%{location_id: @location_id, races: @races}) %>
+
+<.header>
+  Qualifying Standing
+</.header>
+
+<%= racer_table(%{racers: @qualifying, location_id: @location_id, race_id: nil}) %>

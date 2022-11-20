@@ -1,0 +1,21 @@
+<.back position={:top} navigate={~p"/admin/locations/#{@location_id}/racing"}>Back to racing</.back>
+
+<.header>
+  League Race Events
+</.header>
+
+<.table id="races" rows={@leagues} row_click={&JS.navigate(~p"/admin/locations/#{@location_id}/leagues/#{&1}")}>
+  <:col :let={league} label="Date">
+    <%= Phoenix.Param.to_param(league) %>
+  </:col>
+  <:col :let={league} label="Races">
+    <%= league.races %>
+  </:col>
+  <:col :let={league} label="Racers" row_class="max-w-[30vw] text-ellipsis">
+    <%= if length(league.racer_names) > 30 do %>
+      <%= league.racer_names |> Enum.take(30) |> Enum.join(", ") |> Kernel.<>(" ... ") %>
+    <% else %>
+      <%= league.racer_names |> Enum.join(", ") %>
+    <% end %>
+  </:col>
+</.table>

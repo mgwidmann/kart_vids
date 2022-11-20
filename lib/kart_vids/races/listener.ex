@@ -2,6 +2,7 @@ defmodule KartVids.Races.Listener do
   use WebSockex
   require Logger
   alias KartVids.Races
+  alias KartVids.Races.Race
   alias KartVids.Races.Kart
   alias KartVids.Content.Location
 
@@ -287,7 +288,8 @@ defmodule KartVids.Races.Listener do
           location_id: location_id,
           external_race_id: id,
           started_at: started_at,
-          ended_at: DateTime.utc_now()
+          ended_at: DateTime.utc_now(),
+          league?: Race.is_league_race?(name)
         })
 
       for {racer_kart_num, racer} <- racers do

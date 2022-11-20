@@ -3,6 +3,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
   require Logger
 
   alias KartVids.Content
+  alias KartVids.Races.Race
   alias KartVids.Races.Listener
   alias KartVids.Races.Listener.Racer
   alias Phoenix.LiveView.JS
@@ -126,7 +127,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
   def race_type(race_type, race_name, :race_completed, :race_data) when not is_nil(race_type), do: race_type(nil, race_name, :race_completed, :race_data)
 
   def race_type(nil, race_name, :race_completed, :race_data) do
-    if race_name |> String.downcase() |> String.contains?(["aekc race"]) do
+    if Race.is_feature_race?(race_name) do
       :position
     else
       :best_lap

@@ -4,6 +4,8 @@ defmodule KartVidsWeb.RaceLive.Index do
   alias KartVids.Races
   alias KartVids.Races.Race
 
+  embed_templates "races/*"
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok, socket}

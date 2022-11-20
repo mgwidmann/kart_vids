@@ -14,10 +14,11 @@ defmodule KartVidsWeb.RaceLive.FormComponent do
 
       <.simple_form :let={f} for={@changeset} id="race-form" phx-target={@myself} phx-change="validate" phx-submit="save">
         <.input field={{f, :location_id}} type="hidden" />
-        <.input field={{f, :external_race_id}} type="text" label="external_race_id" />
-        <.input field={{f, :name}} type="text" label="name" />
-        <.input field={{f, :started_at}} type="datetime-local" label="started_at" />
-        <.input field={{f, :ended_at}} type="datetime-local" label="ended_at" />
+        <.input field={{f, :external_race_id}} type="text" label="Heat ID" />
+        <.input field={{f, :name}} type="text" label="Race Name" />
+        <.input field={{f, :started_at}} type="datetime-local" label="Started At" />
+        <.input field={{f, :ended_at}} type="datetime-local" label="Ended At" />
+        <.input field={{f, :league?}} type="checkbox" label="Is League Race?" />
         <:actions>
           <.button phx-disable-with="Saving...">Save Race</.button>
         </:actions>

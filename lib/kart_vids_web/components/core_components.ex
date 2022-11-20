@@ -340,7 +340,7 @@ defmodule KartVidsWeb.CoreComponents do
         type={@type}
         name={@name}
         id={@id || @name}
-        value={@value && Calendar.strftime(@value, "%Y-%m-%dT%H:%M")}
+        value={@value && !is_binary(@value) && Calendar.strftime(@value, "%Y-%m-%dT%H:%M")}
         class={[
           input_border(@errors),
           "mt-2 block w-full rounded-lg border-zinc-300 py-[7px] px-[11px]",

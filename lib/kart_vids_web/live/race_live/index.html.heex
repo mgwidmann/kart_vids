@@ -9,31 +9,7 @@
   </:actions>
 </.header>
 
-<.table id="races" rows={@races} row_click={&JS.navigate(~p"/admin/locations/#{@location_id}/races/#{&1}/racers")}>
-  <:col :let={race} label="External race">
-    <%= race.external_race_id %>
-  </:col>
-  <:col :let={race} label="Name">
-    <%= race.name %>
-  </:col>
-  <:col :let={race} label="Started at">
-    <%= race.started_at %>
-  </:col>
-  <:col :let={race} label="Ended at">
-    <%= race.ended_at %>
-  </:col>
-  <:action :let={race}>
-    <div class="sr-only">
-      <.link navigate={~p"/admin/locations/#{@location_id}/races/#{race}"}>Show</.link>
-    </div>
-    <.link patch={~p"/admin/locations/#{@location_id}/races/#{race}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={race}>
-    <.link phx-click={JS.push("delete", value: %{id: race.id})} data-confirm="Are you sure?">
-      Delete
-    </.link>
-  </:action>
-</.table>
+<%= race_table(%{location_id: @location_id, races: @races}) %>
 
 <.modal :if={@live_action in [:new, :edit]} id="race-modal" show on_cancel={JS.navigate(~p"/admin/locations/#{@location_id}/races")}>
   <.live_component module={KartVidsWeb.RaceLive.FormComponent} id={@race.id || :new} title={@page_title} action={@live_action} race={@race} navigate={~p"/admin/locations/#{@location_id}/races"} />
