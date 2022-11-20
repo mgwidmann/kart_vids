@@ -260,7 +260,7 @@ defmodule KartVids.Races do
   end
 
   def league_races_on_date(%Date{} = date) do
-    from(r in Race, where: r.league? == true and fragment("?::date", r.started_at) >= ^date)
+    from(r in Race, where: r.league? == true and fragment("?::date", r.started_at) >= ^date, order_by: {:desc, r.started_at})
     |> Repo.all()
     |> Repo.preload(:racers)
   end
