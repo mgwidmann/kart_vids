@@ -429,6 +429,15 @@ defmodule KartVidsWeb.CoreComponents do
     """
   end
 
+  attr :timestamp, :map, required: true
+  attr :timezone, :string, required: true
+
+  def display_timestamp(assigns) do
+    ~H"""
+    <%= DateTime.to_naive(@timestamp) |> DateTime.from_naive!(@timezone) |> Calendar.strftime("%a %b %d, %Y %I:%M %p") %>
+    """
+  end
+
   @doc """
   Renders a header with title.
   """

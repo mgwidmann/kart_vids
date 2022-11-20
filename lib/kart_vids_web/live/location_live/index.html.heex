@@ -7,7 +7,7 @@
   </:actions>
 </.header>
 
-<.table id="locations" rows={@locations} row_click={&JS.navigate(~p"/admin/locations/#{&1}")}>
+<.table id="locations" rows={@locations} row_click={&JS.navigate(~p"/admin/locations/#{&1}/racing")}>
   <:col :let={location} label="Name"><%= location.name %></:col>
   <:col :let={location} label="Street"><%= location.street %></:col>
   <:col :let={location} label="Street 2"><%= location.street_2 %></:col>
@@ -16,9 +16,9 @@
   <:col :let={location} label="Code"><%= location.code %></:col>
   <:col :let={location} label="Country"><%= location.country %></:col>
   <:action :let={location}>
-    <div class="sr-only">
-      <.link navigate={~p"/admin/locations/#{location}"}>Show</.link>
-    </div>
+    <.link navigate={~p"/admin/locations/#{location}"}>Show</.link>
+  </:action>
+  <:action :let={location}>
     <.link patch={~p"/admin/locations/#{location}/edit"}>Edit</.link>
   </:action>
   <:action :let={location}>

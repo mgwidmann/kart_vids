@@ -9,10 +9,10 @@
     <%= if(race.league?, do: "Yes", else: "No") %>
   </:col>
   <:col :let={race} label="Started at">
-    <%= race.started_at %>
+    <.display_timestamp timestamp={race.started_at} timezone={@timezone} />
   </:col>
   <:col :let={race} label="Ended at">
-    <%= race.ended_at %>
+    <.display_timestamp timestamp={race.ended_at} timezone={@timezone} />
   </:col>
   <:action :let={race}>
     <div class="sr-only">

@@ -4,7 +4,7 @@
   League Races on <%= @date %>
 </.header>
 
-<%= race_table(%{location_id: @location_id, races: @races}) %>
+<%= race_table(%{location_id: @location_id, races: @races, timezone: @location.timezone}) %>
 
 <.header>
   Qualifying Standing

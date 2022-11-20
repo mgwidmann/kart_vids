@@ -57,6 +57,7 @@ defmodule KartVids.MixProject do
       {:jason, "~> 1.2"},
       {:credo, "~> 1.6"},
       {:plug_cowboy, "~> 2.5"},
+      {:tzdata, "~> 1.1"},
       # {:websockex, "~> 0.4.3"},
       {:websockex, github: "mgwidmann/websockex", branch: "report-errors"},
       {:parent, "~> 0.12.1"},

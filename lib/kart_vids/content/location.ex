@@ -14,6 +14,7 @@ defmodule KartVids.Content.Location do
     field :adult_kart_max, :integer
     field :junior_kart_min, :integer
     field :junior_kart_max, :integer
+    field :timezone, :string
 
     timestamps()
   end
@@ -21,7 +22,22 @@ defmodule KartVids.Content.Location do
   @doc false
   def changeset(location, attrs) do
     location
-    |> cast(attrs, [:name, :street, :street_2, :city, :state, :code, :country, :adult_kart_min, :adult_kart_max, :junior_kart_min, :junior_kart_max])
-    |> validate_required([:name, :street, :city, :state, :code, :country, :adult_kart_min, :adult_kart_max, :junior_kart_min, :junior_kart_max])
+    |> cast(attrs, [:name, :street, :street_2, :city, :state, :code, :country, :adult_kart_min, :adult_kart_max, :junior_kart_min, :junior_kart_max, :timezone])
+    |> validate_required([:name, :street, :city, :state, :code, :country, :adult_kart_min, :adult_kart_max, :junior_kart_min, :junior_kart_max, :timezone])
+    |> validate_timezone()
+  end
+
+  def validate_timezone(changeset) do
+    timezone = get_change(changeset, :timezone)
+
+    if timezone do
+      if Tzdata.zone_exists?(timezone) do
+        changeset
+      else
+        add_error(changeset, :timezone, "Time zone does not exist, please enter a valid timezone.")
+      end
+    else
+      changeset
+    end
   end
 end

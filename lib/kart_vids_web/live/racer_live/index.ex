@@ -1,6 +1,7 @@
 defmodule KartVidsWeb.RacerLive.Index do
   use KartVidsWeb, :live_view
 
+  alias KartVids.Content
   alias KartVids.Races
   alias KartVids.Races.Racer
 
@@ -13,10 +14,13 @@ defmodule KartVidsWeb.RacerLive.Index do
 
   @impl true
   def handle_params(%{"location_id" => location_id, "race_id" => race_id} = params, _url, socket) do
+    location = Content.get_location!(location_id)
+
     {
       :noreply,
       socket
       |> assign(:location_id, location_id)
+      |> assign(:location, location)
       |> assign(:race_id, race_id)
       |> assign(:racers, list_racers(race_id))
       |> apply_action(socket.assigns.live_action, params)

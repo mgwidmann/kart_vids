@@ -1,6 +1,7 @@
 defmodule KartVidsWeb.RaceLive.League do
   use KartVidsWeb, :live_view
 
+  alias KartVids.Content
   alias KartVids.Races
   alias KartVids.Races.{Race, Racer}
 
@@ -14,12 +15,14 @@ defmodule KartVidsWeb.RaceLive.League do
 
   @impl true
   def handle_params(%{"location_id" => location_id, "date" => date} = params, _url, socket) do
+    location = Content.get_location!(location_id)
     {:ok, date} = Date.from_iso8601(date)
 
     {
       :noreply,
       socket
       |> assign(:location_id, location_id)
+      |> assign(:location, location)
       |> assign(:date, date)
       |> apply_action(socket.assigns.live_action, params)
     }

@@ -24,10 +24,10 @@
     <%= if(@race.league?, do: "Yes", else: "No") %>
   </:item>
   <:item title="Started at">
-    <%= @race.started_at %>
+    <.display_timestamp timestamp={@race.started_at} timezone={@location.timezone} />
   </:item>
   <:item title="Ended at">
-    <%= @race.ended_at %>
+    <.display_timestamp timestamp={@race.ended_at} timezone={@location.timezone} />
   </:item>
 </.list>
 
