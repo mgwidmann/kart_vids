@@ -71,14 +71,23 @@ defmodule KartVids.Races.ListenerSupervisor do
     super(message, state)
   end
 
+  @retry_minutes 1
+  @retry_minutes_in_ms @retry_minutes * 60 * 1000
+
   defp start_location(location) do
     child = Listener.child_spec(location)
 
     try do
       case Parent.start_child(child) do
-        {:ok, pid} -> Logger.info("Location #{location.name} booted and linked to #{inspect(pid)}")
-        {:error, {:already_started, _pid}} -> nil
-        other -> Logger.warn("Start child did not succeed: #{inspect(other)}")
+        {:ok, pid} ->
+          Logger.info("Location #{location.name} booted and linked to #{inspect(pid)}")
+
+        {:error, {:already_started, _pid}} ->
+          nil
+
+        other ->
+          Logger.warn("Start child did not succeed, will try again in #{@retry_minutes} minute(s), cause: #{inspect(other)}")
+          Process.send_after(self(), {:start_location, location}, @retry_minutes_in_ms)
       end
 
       true
