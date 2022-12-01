@@ -17,6 +17,7 @@ defmodule KartVids.Application do
       KartVidsWeb.Telemetry,
       # Start the Ecto repository
       KartVids.Repo,
+      Flames.Supervisor,
       # Start the PubSub system
       {Phoenix.PubSub, name: KartVids.PubSub},
       # Start the Endpoint (http/https)

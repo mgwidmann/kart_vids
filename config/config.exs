@@ -54,7 +54,8 @@ config :tailwind,
 
 config :flames,
   repo: KartVids.Repo,
-  endpoint: KartVids.Endpoint
+  timezone: "America/New_York",
+  endpoint: KartVidsWeb.Endpoint
 
 # Configures Elixir's Logger
 config :logger, :console,
