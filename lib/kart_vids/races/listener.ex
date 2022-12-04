@@ -245,7 +245,7 @@ defmodule KartVids.Races.Listener do
   end
 
   def persist_kart_information(kart_performance, %Location{id: location_id} = location) when is_map(kart_performance) do
-    for {kart_num, performance} <- kart_performance do
+    for {kart_num, performance} <- kart_performance, !is_nil(kart_num) do
       {kart_num, ""} = Integer.parse(kart_num)
       kart = Races.find_kart_by_location_and_number(location_id, kart_num)
 
@@ -292,7 +292,7 @@ defmodule KartVids.Races.Listener do
           league?: Race.is_league_race?(name)
         })
 
-      for {racer_kart_num, racer} <- racers do
+      for {racer_kart_num, racer} <- racers, !is_nil(racer_kart_num) do
         racer_laps = Enum.filter(laps, fn %{"kart_number" => kart_num} -> kart_num == racer_kart_num end)
 
         Races.create_racer(%{
@@ -310,11 +310,15 @@ defmodule KartVids.Races.Listener do
   end
 
   def extract_scoreboard_data(results) when is_list(results) do
-    Enum.reduce(results, %{}, fn %{"fastest_lap_time" => lap_time, "kart_num" => kart_num, "rpm" => rpm, "position" => position}, karts ->
-      {position, ""} = Integer.parse(position)
-      {rpm, ""} = Integer.parse(rpm)
-      {lap_time, ""} = Float.parse(lap_time)
-      Map.put(karts, kart_num, %{lap_time: lap_time, rpm: rpm, position: position})
+    Enum.reduce(results, %{}, fn
+      %{"fastest_lap_time" => lap_time, "kart_num" => kart_num, "rpm" => rpm, "position" => position}, karts when not is_nil(kart_num) ->
+        {position, ""} = Integer.parse(position)
+        {rpm, ""} = Integer.parse(rpm)
+        {lap_time, ""} = Float.parse(lap_time)
+        Map.put(karts, kart_num, %{lap_time: lap_time, rpm: rpm, position: position})
+
+      _, karts ->
+        karts
     end)
   end
 

@@ -22,6 +22,7 @@ import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
 import { VideoHook } from "./video";
+import { ConfettiHook } from "./confetti";
 
 // Taken directly from docs
 // https://hexdocs.pm/phoenix_live_view/uploads-external.html
@@ -54,6 +55,7 @@ let liveSocket = new LiveSocket("/live", Socket, {
     uploaders: Uploaders,
     hooks: {
         VideoHook,
+        ConfettiHook,
     },
     params: { _csrf_token: csrfToken }
 })

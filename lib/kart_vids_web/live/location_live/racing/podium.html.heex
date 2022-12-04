@@ -1,4 +1,4 @@
-<div id="podium-box" class="grid grid-cols-12">
+<div id="podium-box" phx-hook="ConfettiHook" class="grid grid-cols-12">
   <div class="col-span-4 flex flex-col m-0 p-0">
     <div class="mt-auto text-center">
       <% racer = scoreboard_result(@scoreboard, 2) |> scoreboard_racer(@racers) %>
