@@ -488,6 +488,7 @@ defmodule KartVidsWeb.CoreComponents do
     attr(:row_class, :string)
     attr(:label, :string)
     attr(:label_mobile, :string)
+    attr(:inner_div_class, :string)
   end
 
   slot(:action, doc: "the slot for showing user actions in the last table column")
@@ -508,11 +509,11 @@ defmodule KartVidsWeb.CoreComponents do
         <tbody class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
           <tr :for={row <- @rows} id={"#{@id}-#{Phoenix.Param.to_param(row)}"} class="group hover:bg-zinc-50" phx-mounted={is_function(@row_add, 1) && @row_add.(row)} phx-remove={is_function(@row_remove, 1) && @row_remove.(row)}>
             <td :for={{col, i} <- Enum.with_index(@col)} phx-click={@row_click && @row_click.(row)} class={["relative p-0", @row_click && "hover:cursor-pointer", col[:row_class]]}>
-              <div class="block py-4 sm:px-3">
+              <div class={["block py-4 sm:px-3 overflow-auto h-full", col[:inner_div_class]]}>
                 <span class="absolute right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
-                <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
+                <div class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
                   <%= render_slot(col, row) %>
-                </span>
+                </div>
               </div>
             </td>
             <td :if={@action != []} class="relative p-0 w-14">

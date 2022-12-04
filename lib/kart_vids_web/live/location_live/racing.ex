@@ -291,4 +291,9 @@ defmodule KartVidsWeb.LocationLive.Racing do
     {kart_num, ""} = Integer.parse(kart)
     Enum.find(racers, &(&1.kart_num == kart_num))
   end
+
+  def sanitize_nickname(name) do
+    name
+    |> String.replace(~r/[^a-zA-Z0-9]/, "_")
+  end
 end

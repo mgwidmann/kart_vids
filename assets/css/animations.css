@@ -1,21 +1,21 @@
 @keyframes scaleInOut {
     0% {
-        transform: scale(1);
-        background: white;
+        scale: 1;
+        background: transparent;
     }
 
     50% {
-        transform: scale(1.35);
+        scale: 1.5;
         /* bg-amber-300 */
         background: rgb(252 211 77);
     }
 
     100% {
-        transform: scale(1);
-        background: white;
+        scale: 1;
+        background: transparent;
     }
 }
 
 .scaleInOut {
-    animation: scaleInOut .75s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards;
+    animation: scaleInOut 1.75s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards;
 }
