@@ -351,9 +351,13 @@ defmodule KartVids.Races.Listener do
     |> extract_racer_data(racers)
   end
 
+  # Sometime kart number is nil, not really sure what to do about that so just don't crash
+  defp add_racer(by_kart, nil, _nickname, _photo, _fastest_lap, _average_lap, _last_lap, _laps) do
+    by_kart
+  end
+
   defp add_racer(by_kart, kart_num, nickname, photo, fastest_lap, average_lap, last_lap, laps) do
-    # Sometime kart number is nil, not really sure what to do about that so just don't crash
-    {kart_number, ""} = Integer.parse(kart_num || "-1")
+    {kart_number, ""} = Integer.parse(kart_num)
 
     by_kart
     |> Map.put(kart_num, %Racer{nickname: nickname, kart_num: kart_number, photo: photo, fastest_lap: fastest_lap, average_lap: average_lap, last_lap: last_lap, laps: laps})
