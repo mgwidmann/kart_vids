@@ -145,9 +145,11 @@ defmodule KartVids.Races.Listener do
 
   ## Handle Race Finish
   def handle_race_data(
-        {:ok, %{"race" => %{"id" => id, "ended" => 1, "race_name" => name, "racers" => racers, "speed_level_id" => speed_level, "laps" => laps}, "scoreboard" => scoreboard}},
+        {:ok, %{"race" => race = %{"id" => id, "ended" => 1, "race_name" => name, "racers" => racers, "speed_level_id" => speed_level}, "scoreboard" => scoreboard}},
         %State{current_race: current_race, current_race_started_at: started_at, fastest_speed_level: fastest_speed_level, config: %Config{location: location}} = state
       ) do
+    laps = Map.get(race, "laps", [])
+    race_by = Map.get(race, "race_by")
     speed = parse_speed_level(speed_level)
     racer_data = extract_racer_data(racers)
     scoreboard_by_kart = extract_scoreboard_data(scoreboard)
@@ -162,7 +164,7 @@ defmodule KartVids.Races.Listener do
         Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
       end
 
-      persist_race_information(name, id, started_at, racer_data, laps, location)
+      persist_race_information(name, id, started_at, racer_data, laps, race_by, location)
     end
 
     # Update for broadcast but don't keep it
@@ -280,7 +282,10 @@ defmodule KartVids.Races.Listener do
     end
   end
 
-  def persist_race_information(name, id, started_at, racers, laps, %Location{id: location_id}) do
+  # Do nothing if there are no laps
+  def persist_race_information(_name, _id, _started_at, _racers, [], _race_by, _location), do: nil
+
+  def persist_race_information(name, id, started_at, racers, laps, race_by, %Location{id: location_id}) do
     Races.transaction(fn ->
       {:ok, race} =
         Races.create_race(%{
@@ -291,6 +296,10 @@ defmodule KartVids.Races.Listener do
           ended_at: DateTime.utc_now(),
           league?: Race.is_league_race?(name)
         })
+
+      if race_by != "laps" do
+        Logger.warn("Unexpected race by: #{race_by}")
+      end
 
       for {racer_kart_num, racer} <- racers, !is_nil(racer_kart_num) do
         racer_laps = Enum.filter(laps, fn %{"kart_number" => kart_num} -> kart_num == racer_kart_num end)
@@ -356,7 +365,8 @@ defmodule KartVids.Races.Listener do
   end
 
   # Sometime kart number is nil, not really sure what to do about that so just don't crash
-  defp add_racer(by_kart, nil, _nickname, _photo, _fastest_lap, _average_lap, _last_lap, _laps) do
+  defp add_racer(by_kart, nil, nickname, photo, fastest_lap, average_lap, last_lap, laps) do
+    Logger.warn("Unable to add racer with null kart number: #{inspect(%{nickname: nickname, photo: photo, fastest_lap: fastest_lap, average_lap: average_lap, last_lap: last_lap, laps: laps})}")
     by_kart
   end
 
