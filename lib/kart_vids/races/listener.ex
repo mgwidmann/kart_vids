@@ -161,7 +161,7 @@ defmodule KartVids.Races.Listener do
     racer_data = extract_racer_data(racers)
     scoreboard_by_kart = extract_scoreboard_data(scoreboard)
 
-    if current_race == id && scoreboard do
+    if current_race == id do
       Logger.info("Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
       Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
 
@@ -172,6 +172,10 @@ defmodule KartVids.Races.Listener do
       end
 
       persist_race_information(name, id, started_at, racer_data, laps, race_by, location)
+    end
+
+    if win_by != "laptime" do
+      Logger.warn("Unexpected win by: #{win_by}")
     end
 
     # Update for broadcast but don't keep it

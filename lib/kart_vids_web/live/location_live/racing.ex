@@ -43,6 +43,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
      |> assign(:race_type, nil)
      |> assign(:first_amb, 0.0)
      |> assign(:scoreboard, nil)
+     |> assign(:win_by, nil)
      |> assign(:listener_alive?, !is_nil(listener) && Process.alive?(listener))}
   end
 
@@ -58,7 +59,10 @@ defmodule KartVidsWeb.LocationLive.Racing do
 
   @impl true
   @spec handle_info(Phoenix.Socket.Broadcast.t(), Phoenix.LiveView.Socket.t()) :: {:noreply, Phoenix.LiveView.Socket.t()}
-  def handle_info(%Phoenix.Socket.Broadcast{event: event, payload: %KartVids.Races.Listener.State{racers: racers, fastest_speed_level: fastest_speed_level, speed_level: speed_level, race_name: race_name, scoreboard: scoreboard}}, socket)
+  def handle_info(
+        %Phoenix.Socket.Broadcast{event: event, payload: %KartVids.Races.Listener.State{racers: racers, fastest_speed_level: fastest_speed_level, speed_level: speed_level, race_name: race_name, scoreboard: scoreboard, win_by: win_by}},
+        socket
+      )
       when event in ["race_data", "race_completed"] do
     race_state = String.to_existing_atom(event)
 
@@ -101,6 +105,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
       |> assign(:speed_level, speed_level)
       |> assign(:racers, sorted_racers)
       |> assign(:race_type, race_type)
+      |> assign(:win_by, win_by)
       |> assign(:first_amb, first_amb)
       |> assign(:racer_change, position_change)
     }
@@ -249,7 +254,13 @@ defmodule KartVidsWeb.LocationLive.Racing do
   def amb_time_human(seconds, str) when seconds <= 60.0 do
     seconds_int = round(seconds)
     frac = fraction(seconds)
-    <<"0", frac_string::binary>> = frac |> Decimal.from_float() |> Decimal.round(3) |> Decimal.to_string()
+
+    frac_string =
+      case frac |> Decimal.from_float() |> Decimal.round(3) |> Decimal.to_string() do
+        <<"0", frac_string::binary>> -> frac_string
+        <<"-0", frac_string::binary>> -> frac_string
+      end
+
     str <> (Integer.to_string(seconds_int) |> String.pad_leading(2, "0")) <> frac_string
   end
 
