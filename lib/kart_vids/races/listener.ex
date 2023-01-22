@@ -22,9 +22,10 @@ defmodule KartVids.Races.Listener do
             speed_level: nil | pos_integer(),
             racers: list(Racer.t()),
             scoreboard: nil | map(),
-            last_timestamp: nil | String.t()
+            last_timestamp: nil | String.t(),
+            win_by: nil | String.t()
           }
-    defstruct config: %Config{}, current_race: nil, current_race_started_at: nil, race_name: nil, fastest_speed_level: nil, speed_level: nil, racers: [], scoreboard: nil, last_timestamp: nil
+    defstruct config: %Config{}, current_race: nil, current_race_started_at: nil, race_name: nil, fastest_speed_level: nil, speed_level: nil, racers: [], scoreboard: nil, last_timestamp: nil, win_by: nil
   end
 
   defmodule Racer do
@@ -138,6 +139,11 @@ defmodule KartVids.Races.Listener do
     {:ok, %{state | last_timestamp: timestamp}}
   end
 
+  # Ignore this bizarre frame
+  def handle_frame({:text, "1"}, state) do
+    {:ok, state}
+  end
+
   def handle_frame(other, state) do
     Logger.warn("Received other frame: #{inspect(other)}")
     {:ok, state}
@@ -145,45 +151,53 @@ defmodule KartVids.Races.Listener do
 
   ## Handle Race Finish
   def handle_race_data(
-        {:ok, %{"race" => race = %{"id" => id, "ended" => 1, "race_name" => name, "racers" => racers, "speed_level_id" => speed_level}, "scoreboard" => scoreboard}},
+        {:ok, msg = %{"race" => race = %{"id" => id, "ended" => 1, "race_name" => name, "racers" => racers, "speed_level_id" => speed_level}}},
         %State{current_race: current_race, current_race_started_at: started_at, fastest_speed_level: fastest_speed_level, config: %Config{location: location}} = state
       ) do
     laps = Map.get(race, "laps", [])
     race_by = Map.get(race, "race_by")
+    win_by = Map.get(race, "win_by")
+    scoreboard = Map.get(msg, "scoreboard")
     speed = parse_speed_level(speed_level)
     racer_data = extract_racer_data(racers)
-    scoreboard_by_kart = extract_scoreboard_data(scoreboard)
 
-    if current_race == id do
-      Logger.info("Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
-      Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
+    scoreboard_by_kart =
+      if current_race == id && scoreboard do
+        scoreboard_by_kart = extract_scoreboard_data(scoreboard)
+        Logger.info("Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
+        Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
 
-      if fastest_speed_level == @fastest_speed_level do
-        persist_kart_information(scoreboard_by_kart, location)
+        if fastest_speed_level == @fastest_speed_level do
+          persist_kart_information(scoreboard_by_kart, location)
+        else
+          Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
+        end
+
+        persist_race_information(name, id, started_at, racer_data, laps, race_by, location)
       else
-        Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
-      end
+        Logger.warn("Race ended without scoreboard")
 
-      persist_race_information(name, id, started_at, racer_data, laps, race_by, location)
-    end
+        nil
+      end
 
     # Update for broadcast but don't keep it
     state
-    |> Map.merge(%{current_race: id, race_name: name, racers: racer_data, fastest_speed_level: fastest_speed_level, speed_level: speed, scoreboard: scoreboard_by_kart})
+    |> Map.merge(%{current_race: id, race_name: name, racers: racer_data, fastest_speed_level: fastest_speed_level, speed_level: speed, scoreboard: scoreboard_by_kart, win_by: win_by})
     |> broadcast("race_completed")
 
     state
-    |> Map.merge(%{current_race: nil, current_race_started_at: nil, race_name: nil, racers: racer_data, fastest_speed_level: fastest_speed_level, speed_level: speed, scoreboard: scoreboard_by_kart})
+    |> Map.merge(%{current_race: nil, current_race_started_at: nil, race_name: nil, racers: racer_data, fastest_speed_level: fastest_speed_level, speed_level: speed, scoreboard: scoreboard_by_kart, win_by: win_by})
   end
 
   ## Handle Race Start/Updates
 
   # Race we are already tracking, where ids match
   def handle_race_data(
-        {:ok, %{"race" => %{"id" => id, "speed_level_id" => speed_level, "ended" => 0, "race_name" => name, "racers" => racers}}},
+        {:ok, %{"race" => race = %{"id" => id, "speed_level_id" => speed_level, "ended" => 0, "race_name" => name, "racers" => racers}}},
         %State{current_race: id, fastest_speed_level: fastest_speed_level} = state
       ) do
     speed = parse_speed_level(speed_level)
+    win_by = Map.get(race, "win_by")
     new_speed = min(speed, fastest_speed_level || 99)
 
     if new_speed != speed do
@@ -191,20 +205,21 @@ defmodule KartVids.Races.Listener do
     end
 
     state
-    |> Map.merge(%{current_race: id, fastest_speed_level: new_speed, speed_level: speed, race_name: name, racers: extract_racer_data(racers), scoreboard: nil})
+    |> Map.merge(%{current_race: id, fastest_speed_level: new_speed, speed_level: speed, race_name: name, racers: extract_racer_data(racers), scoreboard: nil, win_by: win_by})
     |> broadcast("race_data")
   end
 
   # Race just beginning
   def handle_race_data(
-        {:ok, %{"race" => %{"id" => id, "speed_level_id" => speed_level, "starts_at_iso" => starts_at, "ended" => 0, "race_name" => name, "racers" => racers}}},
+        {:ok, %{"race" => race = %{"id" => id, "speed_level_id" => speed_level, "starts_at_iso" => starts_at, "ended" => 0, "race_name" => name, "racers" => racers}}},
         %State{} = state
       ) do
     speed = parse_speed_level(speed_level)
+    win_by = Map.get(race, "win_by")
     Logger.info("Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers")
 
     state
-    |> Map.merge(%{current_race: id, current_race_started_at: DateTime.utc_now(), race_name: name, fastest_speed_level: speed, speed_level: speed, racers: extract_racer_data(racers), scoreboard: nil})
+    |> Map.merge(%{current_race: id, current_race_started_at: DateTime.utc_now(), race_name: name, fastest_speed_level: speed, speed_level: speed, racers: extract_racer_data(racers), scoreboard: nil, win_by: win_by})
     |> broadcast("race_data")
   end
 
@@ -297,7 +312,7 @@ defmodule KartVids.Races.Listener do
           league?: Race.is_league_race?(name)
         })
 
-      if race_by != "laps" do
+      if race_by != "laps" && race_by != "minutes" do
         Logger.warn("Unexpected race by: #{race_by}")
       end
 
