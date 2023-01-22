@@ -65,6 +65,9 @@ config :logger, :console,
 config :logger,
   backends: [:console, Flames.Logger]
 
+config :logger, truncate: :infinity
+config :logger, :console, truncate: :infinity
+
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
