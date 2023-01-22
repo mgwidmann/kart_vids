@@ -151,36 +151,28 @@ defmodule KartVids.Races.Listener do
 
   ## Handle Race Finish
   def handle_race_data(
-        {:ok, msg = %{"race" => race = %{"id" => id, "ended" => 1, "race_name" => name, "racers" => racers, "speed_level_id" => speed_level}}},
+        {:ok, %{"race" => race = %{"id" => id, "ended" => 1, "race_name" => name, "racers" => racers, "speed_level_id" => speed_level}, "scoreboard" => scoreboard}},
         %State{current_race: current_race, current_race_started_at: started_at, fastest_speed_level: fastest_speed_level, config: %Config{location: location}} = state
       ) do
     laps = Map.get(race, "laps", [])
     race_by = Map.get(race, "race_by")
     win_by = Map.get(race, "win_by")
-    scoreboard = Map.get(msg, "scoreboard")
     speed = parse_speed_level(speed_level)
     racer_data = extract_racer_data(racers)
+    scoreboard_by_kart = extract_scoreboard_data(scoreboard)
 
-    scoreboard_by_kart =
-      if current_race == id && scoreboard do
-        scoreboard_by_kart = extract_scoreboard_data(scoreboard)
-        Logger.info("Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
-        Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
+    if current_race == id && scoreboard do
+      Logger.info("Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
+      Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
 
-        if fastest_speed_level == @fastest_speed_level do
-          persist_kart_information(scoreboard_by_kart, location)
-        else
-          Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
-        end
-
-        persist_race_information(name, id, started_at, racer_data, laps, race_by, location)
-
-        scoreboard_by_kart
+      if fastest_speed_level == @fastest_speed_level do
+        persist_kart_information(scoreboard_by_kart, location)
       else
-        Logger.warn("Race ended without scoreboard! Keys of message received:#{Map.keys(msg)}")
-
-        %{}
+        Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
       end
+
+      persist_race_information(name, id, started_at, racer_data, laps, race_by, location)
+    end
 
     # Update for broadcast but don't keep it
     state
