@@ -61,10 +61,15 @@ defmodule KartVidsWeb.RaceLive.League do
 
   def calculate_qualifying_for_racer(racer, standing) do
     Map.update(standing, racer.nickname, racer, fn val ->
-      cond do
-        val && racer.fastest_lap > val.fastest_lap -> val
-        val && racer.fastest_lap < val.fastest_lap -> racer
-        true -> racer
+      if val && val.fastest_lap && racer && racer.fastest_lap do
+        cond do
+          racer.fastest_lap > val.fastest_lap -> val
+          racer.fastest_lap < val.fastest_lap -> racer
+          true -> racer
+        end
+      else
+        # No comparison can be made since fastest_lap data isn't available for both
+        racer
       end
     end)
   end
