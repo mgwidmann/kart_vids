@@ -8,8 +8,8 @@ defmodule KartVids.Races.Listener do
 
   defmodule Config do
     @moduledoc false
-    @type t :: %Config{location_id: nil | pos_integer(), location: Location.t()}
-    defstruct location_id: nil, location: nil
+    @type t :: %Config{location_id: nil | pos_integer(), location: Location.t(), reconnect_attempt: pos_integer()}
+    defstruct location_id: nil, location: nil, reconnect_attempt: 0
   end
 
   defmodule State do
@@ -60,10 +60,12 @@ defmodule KartVids.Races.Listener do
 
   ### Server functions
 
+  @ws_url "ws://autobahn-livescore.herokuapp.com/?track=1&location=aisdulles"
+
   @spec start_link(Location.t()) :: {:error, any} | {:ok, pid}
   def start_link(%Location{} = location) do
     WebSockex.start_link(
-      "ws://autobahn-livescore.herokuapp.com/?track=1&location=aisdulles",
+      @ws_url,
       __MODULE__,
       location,
       name: via_tuple(location.id)
@@ -104,10 +106,18 @@ defmodule KartVids.Races.Listener do
     {:ok, %State{config: %Config{location_id: location.id, location: location}}}
   end
 
-  def handle_disconnect(connection_status, %State{} = state) do
-    Logger.warn("Disconnected from location #{state.config.location_id}! #{inspect(connection_status)}")
+  @reconnect_timeout 1 * 60_000
 
-    {:ok, state}
+  def handle_disconnect(connection_status, %State{} = state) do
+    if state.config.reconnect_attempt > 10 do
+      {:"$EXIT", "#{inspect(__MODULE__)}: Too many reconnect attempts!"}
+    else
+      Logger.warn("Exiting due to repeated disconnect from location #{state.config.location_id}! #{inspect(connection_status)}")
+
+      Process.sleep(@reconnect_timeout)
+
+      {:reconnect, WebSockex.Conn.new(@ws_url, name: via_tuple(state.config.location.id)), put_in(state, [:config, :reconnect_attempt], state.config.reconnect_attempt + 1)}
+    end
   end
 
   def handle_frame({:text, "{" <> _ = json}, state) do
@@ -174,7 +184,7 @@ defmodule KartVids.Races.Listener do
       persist_race_information(name, id, started_at, racer_data, laps, race_by, location)
     end
 
-    if win_by != "laptime" do
+    if win_by != "laptime" && win_by != "position" do
       Logger.warn("Unexpected win by: #{win_by}")
     end
 
@@ -219,6 +229,15 @@ defmodule KartVids.Races.Listener do
     state
     |> Map.merge(%{current_race: id, current_race_started_at: DateTime.utc_now(), race_name: name, fastest_speed_level: speed, speed_level: speed, racers: extract_racer_data(racers), scoreboard: nil, win_by: win_by})
     |> broadcast("race_data")
+  end
+
+  def handle_race_data(
+        {:ok, msg = %{"race" => race = %{"id" => id, "ended" => 1, "duration" => duration, "racers" => racers}}},
+        %State{} = state
+      ) do
+    Logger.warning("Race ID #{id} ended abruptly without scoreboard! Duration was: #{duration} Racers count: #{length(racers)}-- Message Keys: #{inspect(Map.keys(msg))}, Race Keys: #{Map.keys(race)}")
+
+    state
   end
 
   # JSON was parsable but we didn't match anything above
