@@ -26,7 +26,7 @@ defmodule KartVids.Races.Race do
   end
 
   @feature_race ["aekc race"]
-  @qualifying_race ["qualifying", "qualifier"]
+  @qualifying_race ["qualifying", "qualifier", "pro"]
   @league_race @feature_race ++ @qualifying_race
 
   def is_feature_race?(%__MODULE__{name: name}), do: is_feature_race?(name)
