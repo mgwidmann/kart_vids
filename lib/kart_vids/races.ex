@@ -241,7 +241,7 @@ defmodule KartVids.Races do
 
   defimpl Phoenix.Param, for: League do
     def to_param(league) do
-      "#{league.date.year}-#{league.date.month}-#{league.date.day}"
+      Date.to_string(league.date)
     end
   end
 
