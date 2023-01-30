@@ -19,5 +19,5 @@
 <.back navigate={~p"/locations/#{@location_id}/karts"}>Back to karts</.back>
 
 <.modal :if={@live_action == :edit} id="kart-modal" show on_cancel={JS.patch(~p"/locations/#{@location_id}/karts/#{@kart}")}>
-  <.live_component module={KartVidsWeb.KartLive.FormComponent} id={@kart.id} title={@page_title} action={@live_action} kart={@kart} navigate={~p"/locations/#{@location_id}/karts/#{@kart}"} />
+  <.live_component module={KartVidsWeb.KartLive.FormComponent} id={@kart.id} title={@page_title} action={@live_action} kart={@kart} navigate={~p"/locations/#{@location_id}/karts/#{@kart}"} current_user={@current_user}/>
 </.modal>

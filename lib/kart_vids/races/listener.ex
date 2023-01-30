@@ -8,9 +8,13 @@ defmodule KartVids.Races.Listener do
 
   defmodule Config do
     @moduledoc false
-    @type t :: %Config{location_id: nil | pos_integer(), location: Location.t(), reconnect_attempt: pos_integer()}
+    @type t :: %Config{
+            location_id: nil | pos_integer(),
+            location: Location.t(),
+            reconnect_attempt: pos_integer()
+          }
     defstruct location_id: nil, location: nil, reconnect_attempt: 0
-    
+
     @behaviour Access
 
     def fetch(term, key), do: Map.fetch(term, key)
@@ -35,8 +39,18 @@ defmodule KartVids.Races.Listener do
             last_timestamp: nil | String.t(),
             win_by: nil | String.t()
           }
-    defstruct config: %Config{}, current_race: nil, current_race_started_at: nil, race_name: nil, fastest_speed_level: nil, speed_level: nil, racers: [], scoreboard: nil, last_timestamp: nil, win_by: nil
-    
+
+    defstruct config: %Config{},
+              current_race: nil,
+              current_race_started_at: nil,
+              race_name: nil,
+              fastest_speed_level: nil,
+              speed_level: nil,
+              racers: [],
+              scoreboard: nil,
+              last_timestamp: nil,
+              win_by: nil
+
     @behaviour Access
 
     def fetch(term, key), do: Map.fetch(term, key)
@@ -51,8 +65,24 @@ defmodule KartVids.Races.Listener do
   defmodule Racer do
     @moduledoc false
     @derive {Phoenix.Param, key: :nickname}
-    @type t :: %Racer{nickname: String.t(), photo: String.t(), kart_num: pos_integer(), fastest_lap: float(), average_lap: float(), last_lap: float(), position: pos_integer(), laps: list(map())}
-    defstruct nickname: "", photo: "", kart_num: -1, fastest_lap: 999.99, average_lap: 999.99, last_lap: 999.99, position: 99, laps: []
+    @type t :: %Racer{
+            nickname: String.t(),
+            photo: String.t(),
+            kart_num: pos_integer(),
+            fastest_lap: float(),
+            average_lap: float(),
+            last_lap: float(),
+            position: pos_integer(),
+            laps: list(map())
+          }
+    defstruct nickname: "",
+              photo: "",
+              kart_num: -1,
+              fastest_lap: 999.99,
+              average_lap: 999.99,
+              last_lap: 999.99,
+              position: 99,
+              laps: []
   end
 
   @fastest_speed_level 1
@@ -130,11 +160,16 @@ defmodule KartVids.Races.Listener do
     if state.config.reconnect_attempt > 10 do
       {:"$EXIT", "#{inspect(__MODULE__)}: Too many reconnect attempts!"}
     else
-      Logger.warn("Exiting due to repeated disconnect from location #{state.config.location_id}! #{inspect(connection_status)}")
+      Logger.warn(
+        "Exiting due to repeated disconnect from location #{state.config.location_id}! #{inspect(connection_status)}"
+      )
 
       Process.sleep(@reconnect_timeout)
 
-      {:reconnect, WebSockex.Conn.new(state.config.location.websocket_url, name: via_tuple(state.config.location.id)), put_in(state, [:config, :reconnect_attempt], state.config.reconnect_attempt + 1)}
+      {:reconnect,
+       WebSockex.Conn.new(state.config.location.websocket_url,
+         name: via_tuple(state.config.location.id)
+       ), put_in(state, [:config, :reconnect_attempt], state.config.reconnect_attempt + 1)}
     end
   end
 
@@ -155,13 +190,20 @@ defmodule KartVids.Races.Listener do
     {:ok, state}
   end
 
-  def handle_frame({:text, <<time::binary-size(8), _::binary>> = timestamp}, %State{config: %Config{location_id: location_id}} = state) do
+  def handle_frame(
+        {:text, <<time::binary-size(8), _::binary>> = timestamp},
+        %State{config: %Config{location_id: location_id}} = state
+      ) do
     clock = DateTime.utc_now() |> DateTime.to_time()
 
     {:ok, time} = Time.from_iso8601(time)
 
     delta = Time.diff(clock, time, :microsecond)
-    :telemetry.execute([:kart_vids, :location_listener], %{clock_delta: delta}, %{location_id: location_id})
+
+    :telemetry.execute([:kart_vids, :location_listener], %{clock_delta: delta}, %{
+      location_id: location_id
+    })
+
     # Logger.debug("Clock time vs broadcast time delta (microseconds): #{delta}")
 
     {:ok, %{state | last_timestamp: timestamp}}
@@ -179,8 +221,24 @@ defmodule KartVids.Races.Listener do
 
   ## Handle Race Finish
   def handle_race_data(
-        {:ok, %{"race" => race = %{"id" => id, "ended" => 1, "race_name" => name, "racers" => racers, "speed_level_id" => speed_level}, "scoreboard" => scoreboard}},
-        %State{current_race: current_race, current_race_started_at: started_at, fastest_speed_level: fastest_speed_level, config: %Config{location: location}} = state
+        {:ok,
+         %{
+           "race" =>
+             race = %{
+               "id" => id,
+               "ended" => 1,
+               "race_name" => name,
+               "racers" => racers,
+               "speed_level_id" => speed_level
+             },
+           "scoreboard" => scoreboard
+         }},
+        %State{
+          current_race: current_race,
+          current_race_started_at: started_at,
+          fastest_speed_level: fastest_speed_level,
+          config: %Config{location: location}
+        } = state
       ) do
     laps = Map.get(race, "laps", [])
     race_by = Map.get(race, "race_by")
@@ -190,13 +248,18 @@ defmodule KartVids.Races.Listener do
     scoreboard_by_kart = extract_scoreboard_data(scoreboard)
 
     if current_race == id do
-      Logger.info("Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
+      Logger.info(
+        "Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was"
+      )
+
       Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
 
       if fastest_speed_level == @fastest_speed_level do
         persist_kart_information(scoreboard_by_kart, location)
       else
-        Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
+        Logger.info(
+          "Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest"
+        )
       end
 
       persist_race_information(name, id, started_at, racer_data, laps, race_by, location)
@@ -208,18 +271,45 @@ defmodule KartVids.Races.Listener do
 
     # Update for broadcast but don't keep it
     state
-    |> Map.merge(%{current_race: id, race_name: name, racers: racer_data, fastest_speed_level: fastest_speed_level, speed_level: speed, scoreboard: scoreboard_by_kart, win_by: win_by})
+    |> Map.merge(%{
+      current_race: id,
+      race_name: name,
+      racers: racer_data,
+      fastest_speed_level: fastest_speed_level,
+      speed_level: speed,
+      scoreboard: scoreboard_by_kart,
+      win_by: win_by
+    })
     |> broadcast("race_completed")
 
     state
-    |> Map.merge(%{current_race: nil, current_race_started_at: nil, race_name: nil, racers: racer_data, fastest_speed_level: fastest_speed_level, speed_level: speed, scoreboard: scoreboard_by_kart, win_by: win_by})
+    |> Map.merge(%{
+      current_race: nil,
+      current_race_started_at: nil,
+      race_name: nil,
+      racers: racer_data,
+      fastest_speed_level: fastest_speed_level,
+      speed_level: speed,
+      scoreboard: scoreboard_by_kart,
+      win_by: win_by
+    })
   end
 
   ## Handle Race Start/Updates
 
   # Race we are already tracking, where ids match
   def handle_race_data(
-        {:ok, %{"race" => race = %{"id" => id, "speed_level_id" => speed_level, "ended" => 0, "race_name" => name, "racers" => racers}}},
+        {:ok,
+         %{
+           "race" =>
+             race = %{
+               "id" => id,
+               "speed_level_id" => speed_level,
+               "ended" => 0,
+               "race_name" => name,
+               "racers" => racers
+             }
+         }},
         %State{current_race: id, fastest_speed_level: fastest_speed_level} = state
       ) do
     speed = parse_speed_level(speed_level)
@@ -231,29 +321,66 @@ defmodule KartVids.Races.Listener do
     end
 
     state
-    |> Map.merge(%{current_race: id, fastest_speed_level: new_speed, speed_level: speed, race_name: name, racers: extract_racer_data(racers), scoreboard: nil, win_by: win_by})
+    |> Map.merge(%{
+      current_race: id,
+      fastest_speed_level: new_speed,
+      speed_level: speed,
+      race_name: name,
+      racers: extract_racer_data(racers),
+      scoreboard: nil,
+      win_by: win_by
+    })
     |> broadcast("race_data")
   end
 
   # Race just beginning
   def handle_race_data(
-        {:ok, %{"race" => race = %{"id" => id, "speed_level_id" => speed_level, "starts_at_iso" => starts_at, "ended" => 0, "race_name" => name, "racers" => racers}}},
+        {:ok,
+         %{
+           "race" =>
+             race = %{
+               "id" => id,
+               "speed_level_id" => speed_level,
+               "starts_at_iso" => starts_at,
+               "ended" => 0,
+               "race_name" => name,
+               "racers" => racers
+             }
+         }},
         %State{} = state
       ) do
     speed = parse_speed_level(speed_level)
     win_by = Map.get(race, "win_by")
-    Logger.info("Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers")
+
+    Logger.info(
+      "Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers"
+    )
 
     state
-    |> Map.merge(%{current_race: id, current_race_started_at: DateTime.utc_now(), race_name: name, fastest_speed_level: speed, speed_level: speed, racers: extract_racer_data(racers), scoreboard: nil, win_by: win_by})
+    |> Map.merge(%{
+      current_race: id,
+      current_race_started_at: DateTime.utc_now(),
+      race_name: name,
+      fastest_speed_level: speed,
+      speed_level: speed,
+      racers: extract_racer_data(racers),
+      scoreboard: nil,
+      win_by: win_by
+    })
     |> broadcast("race_data")
   end
 
   def handle_race_data(
-        {:ok, msg = %{"race" => race = %{"id" => id, "ended" => 1, "duration" => duration, "racers" => racers}}},
+        {:ok,
+         msg = %{
+           "race" =>
+             race = %{"id" => id, "ended" => 1, "duration" => duration, "racers" => racers}
+         }},
         %State{} = state
       ) do
-    Logger.warning("Race ID #{id} ended abruptly without scoreboard! Duration was: #{duration} Racers count: #{length(racers)}-- Message Keys: #{inspect(Map.keys(msg))}, Race Keys: #{inspect(Map.keys(race))}")
+    Logger.warning(
+      "Race ID #{id} ended abruptly without scoreboard! Duration was: #{duration} Racers count: #{length(racers)}-- Message Keys: #{inspect(Map.keys(msg))}, Race Keys: #{inspect(Map.keys(race))}"
+    )
 
     state
   end
@@ -279,7 +406,9 @@ defmodule KartVids.Races.Listener do
 
   # Not supposed to receive any messages, so log them if we get them
   def handle_info(msg, state) do
-    Logger.error("Received unknown message where process does not handle any messages: #{inspect(msg)}")
+    Logger.error(
+      "Received unknown message where process does not handle any messages: #{inspect(msg)}"
+    )
 
     {:ok, state}
   end
@@ -296,7 +425,8 @@ defmodule KartVids.Races.Listener do
     "race_location:#{location_id}"
   end
 
-  def persist_kart_information(kart_performance, %Location{id: location_id} = location) when is_map(kart_performance) do
+  def persist_kart_information(kart_performance, %Location{id: location_id} = location)
+      when is_map(kart_performance) do
     for {kart_num, performance} <- kart_performance, !is_nil(kart_num) do
       {kart_num, ""} = Integer.parse(kart_num)
       kart = Races.find_kart_by_location_and_number(location_id, kart_num)
@@ -304,10 +434,17 @@ defmodule KartVids.Races.Listener do
       cond do
         kart && performance[:lap_time] > @min_lap_time && performance[:lap_time] < @max_lap_time ->
           Races.update_kart(
+            :system,
             kart,
             %{
-              average_fastest_lap_time: (kart.average_fastest_lap_time * kart.number_of_races + performance[:lap_time]) / (kart.number_of_races + 1),
-              average_rpms: div(kart.average_rpms * kart.number_of_races + performance[:rpm], kart.number_of_races + 1),
+              average_fastest_lap_time:
+                (kart.average_fastest_lap_time * kart.number_of_races + performance[:lap_time]) /
+                  (kart.number_of_races + 1),
+              average_rpms:
+                div(
+                  kart.average_rpms * kart.number_of_races + performance[:rpm],
+                  kart.number_of_races + 1
+                ),
               fastest_lap_time: min(kart.fastest_lap_time, performance[:lap_time]),
               kart_num: kart_num,
               number_of_races: kart.number_of_races + 1,
@@ -316,7 +453,7 @@ defmodule KartVids.Races.Listener do
           )
 
         !kart && performance[:lap_time] > @min_lap_time && performance[:lap_time] < @max_lap_time ->
-          Races.create_kart(%{
+          Races.create_kart(:system, %{
             average_fastest_lap_time: performance[:lap_time],
             average_rpms: performance[:rpm],
             fastest_lap_time: performance[:lap_time],
@@ -327,7 +464,9 @@ defmodule KartVids.Races.Listener do
           })
 
         true ->
-          Logger.info("Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect(performance)}")
+          Logger.info(
+            "Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect(performance)}"
+          )
       end
     end
   end
@@ -335,10 +474,12 @@ defmodule KartVids.Races.Listener do
   # Do nothing if there are no laps
   def persist_race_information(_name, _id, _started_at, _racers, [], _race_by, _location), do: nil
 
-  def persist_race_information(name, id, started_at, racers, laps, race_by, %Location{id: location_id}) do
+  def persist_race_information(name, id, started_at, racers, laps, race_by, %Location{
+        id: location_id
+      }) do
     Races.transaction(fn ->
       {:ok, race} =
-        Races.create_race(%{
+        Races.create_race(:system, %{
           name: name,
           location_id: location_id,
           external_race_id: id,
@@ -352,9 +493,10 @@ defmodule KartVids.Races.Listener do
       end
 
       for {racer_kart_num, racer} <- racers, !is_nil(racer_kart_num) do
-        racer_laps = Enum.filter(laps, fn %{"kart_number" => kart_num} -> kart_num == racer_kart_num end)
+        racer_laps =
+          Enum.filter(laps, fn %{"kart_number" => kart_num} -> kart_num == racer_kart_num end)
 
-        Races.create_racer(%{
+        Races.create_racer(:system, %{
           average_lap: racer.average_lap,
           fastest_lap: racer.fastest_lap,
           kart_num: racer.kart_num,
@@ -370,7 +512,14 @@ defmodule KartVids.Races.Listener do
 
   def extract_scoreboard_data(results) when is_list(results) do
     Enum.reduce(results, %{}, fn
-      %{"fastest_lap_time" => lap_time, "kart_num" => kart_num, "rpm" => rpm, "position" => position}, karts when not is_nil(kart_num) ->
+      %{
+        "fastest_lap_time" => lap_time,
+        "kart_num" => kart_num,
+        "rpm" => rpm,
+        "position" => position
+      },
+      karts
+      when not is_nil(kart_num) ->
         {position, ""} = Integer.parse(position)
         {rpm, ""} = Integer.parse(rpm)
         {lap_time, ""} = Float.parse(lap_time)
@@ -399,7 +548,10 @@ defmodule KartVids.Races.Listener do
     |> Enum.into(%{})
   end
 
-  def extract_racer_data(by_kart, [%{"kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo} | racers]) do
+  def extract_racer_data(by_kart, [
+        %{"kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo}
+        | racers
+      ]) do
     {fastest_lap, average_lap, last_lap} = analyze_laps(laps)
 
     by_kart
@@ -408,7 +560,9 @@ defmodule KartVids.Races.Listener do
   end
 
   # No lap data, use nil for all lap related fields
-  def extract_racer_data(by_kart, [%{"kart_number" => kart_num, "nickname" => nickname, "photo_url" => photo} | racers]) do
+  def extract_racer_data(by_kart, [
+        %{"kart_number" => kart_num, "nickname" => nickname, "photo_url" => photo} | racers
+      ]) do
     by_kart
     |> add_racer(kart_num, nickname, photo, nil, nil, nil, [])
     |> extract_racer_data(racers)
@@ -416,7 +570,10 @@ defmodule KartVids.Races.Listener do
 
   # Sometime kart number is nil, not really sure what to do about that so just don't crash
   defp add_racer(by_kart, nil, nickname, photo, fastest_lap, average_lap, last_lap, laps) do
-    Logger.warn("Unable to add racer with null kart number: #{inspect(%{nickname: nickname, photo: photo, fastest_lap: fastest_lap, average_lap: average_lap, last_lap: last_lap, laps: laps})}")
+    Logger.warn(
+      "Unable to add racer with null kart number: #{inspect(%{nickname: nickname, photo: photo, fastest_lap: fastest_lap, average_lap: average_lap, last_lap: last_lap, laps: laps})}"
+    )
+
     by_kart
   end
 
@@ -424,7 +581,15 @@ defmodule KartVids.Races.Listener do
     {kart_number, ""} = Integer.parse(kart_num)
 
     by_kart
-    |> Map.put(kart_num, %Racer{nickname: nickname, kart_num: kart_number, photo: photo, fastest_lap: fastest_lap, average_lap: average_lap, last_lap: last_lap, laps: laps})
+    |> Map.put(kart_num, %Racer{
+      nickname: nickname,
+      kart_num: kart_number,
+      photo: photo,
+      fastest_lap: fastest_lap,
+      average_lap: average_lap,
+      last_lap: last_lap,
+      laps: laps
+    })
   end
 
   @typep lap :: %{String.t() => float(), String.t() => String.t()}
@@ -443,7 +608,11 @@ defmodule KartVids.Races.Listener do
   def analyze_lap(%{"lap_time" => 0, "lap_number" => "0"}, _), do: {nil, nil, nil}
   def analyze_lap(%{"lap_time" => 0.0, "lap_number" => "0"}, _), do: {nil, nil, nil}
 
-  def analyze_lap(%{"lap_time" => lap_time, "lap_number" => lap}, {fastest_lap, average_lap, _last_lap}) when fastest_lap > lap_time do
+  def analyze_lap(
+        %{"lap_time" => lap_time, "lap_number" => lap},
+        {fastest_lap, average_lap, _last_lap}
+      )
+      when fastest_lap > lap_time do
     {lap, ""} = Integer.parse(lap)
     # First lap
     if average_lap == nil do
@@ -453,8 +622,13 @@ defmodule KartVids.Races.Listener do
     end
   end
 
-  def analyze_lap(%{"lap_time" => lap_time, "lap_number" => lap}, {fastest_lap, average_lap, _last_lap}) when fastest_lap <= lap_time do
+  def analyze_lap(
+        %{"lap_time" => lap_time, "lap_number" => lap},
+        {fastest_lap, average_lap, _last_lap}
+      )
+      when fastest_lap <= lap_time do
     {lap, ""} = Integer.parse(lap)
+
     # Since `nil > 0.0 == true`, no need to check for nil here since fastest_lap cannot be less than lap_time
     {fastest_lap, average_lap_time(average_lap, lap, lap_time), lap_time}
   end

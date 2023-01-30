@@ -40,7 +40,7 @@ defmodule KartVidsWeb.LocationLive.Index do
   def handle_event("delete", %{"id" => id}, socket) do
     admin_redirect(socket) do
       location = Content.get_location!(id)
-      {:ok, _} = Content.delete_location(location)
+      {:ok, _} = Content.delete_location(socket.assigns.current_user, location)
 
       {:noreply, assign(socket, :locations, list_locations())}
     else

@@ -618,12 +618,12 @@ defmodule KartVidsWeb.CoreComponents do
   attr(:rest, :global)
 
   def admin_link(assigns) do
-    rest = assigns_to_attributes(assigns, [:navigate, :patch, :current_user, :inner_block])
+    rest = assigns_to_attributes(assigns, [:current_user, :inner_block])
     assigns = assigns |> assign(:rest, rest)
 
     ~H"""
     <%= if @current_user && @current_user.admin? do %>
-      <.link navigate={@navigate} patch={@patch} {@rest}>
+      <.link {@rest}>
         <%= render_slot(@inner_block) %>
       </.link>
     <% end %>

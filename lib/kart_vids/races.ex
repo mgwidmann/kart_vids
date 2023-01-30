@@ -4,6 +4,7 @@ defmodule KartVids.Races do
   """
 
   import Ecto.Query, warn: false
+  import KartVids.Helpers
   alias KartVids.Repo
 
   alias KartVids.Races.Racer
@@ -48,18 +49,26 @@ defmodule KartVids.Races do
 
   ## Examples
 
-      iex> create_kart(%{field: value})
+      iex> create_kart(:system, %{field: value})
       {:ok, %Kart{}}
 
-      iex> create_kart(%{field: bad_value})
+      iex> create_kart(:system, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_kart(attrs \\ %{}) do
+  def create_kart(current_user, attrs \\ %{})
+
+  def create_kart(:system, attrs) do
     %Kart{}
     |> Kart.changeset(attrs)
     |> Repo.insert()
     |> broadcast()
+  end
+
+  def create_kart(current_user, attrs) do
+    admin_only(current_user) do
+      create_kart(:system, attrs)
+    end
   end
 
   @doc """
@@ -67,18 +76,26 @@ defmodule KartVids.Races do
 
   ## Examples
 
-      iex> update_kart(kart, %{field: new_value})
+      iex> update_kart(:system, kart, %{field: new_value})
       {:ok, %Kart{}}
 
-      iex> update_kart(kart, %{field: bad_value})
+      iex> update_kart(:system, kart, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_kart(%Kart{} = kart, attrs) do
+  def update_kart(current_user, kart, attrs)
+
+  def update_kart(:system, %Kart{} = kart, attrs) do
     kart
     |> Kart.changeset(attrs)
     |> Repo.update()
     |> broadcast()
+  end
+
+  def update_kart(current_user, %Kart{} = kart, attrs) do
+    admin_only(current_user) do
+      update_kart(:system, kart, attrs)
+    end
   end
 
   @doc """
@@ -93,8 +110,16 @@ defmodule KartVids.Races do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_kart(%Kart{} = kart) do
+  def delete_kart(current_user, kart)
+
+  def delete_kart(:system, %Kart{} = kart) do
     Repo.delete(kart)
+  end
+
+  def delete_kart(current_user, kart) do
+    admin_only(current_user) do
+      delete_kart(:system, kart)
+    end
   end
 
   @doc """
@@ -111,7 +136,12 @@ defmodule KartVids.Races do
   end
 
   def broadcast({:ok, %Kart{} = kart} = result) do
-    KartVidsWeb.Endpoint.broadcast!(kart_topic_name(kart.location_id, kart.kart_num), "update", kart)
+    KartVidsWeb.Endpoint.broadcast!(
+      kart_topic_name(kart.location_id, kart.kart_num),
+      "update",
+      kart
+    )
+
     KartVidsWeb.Endpoint.broadcast!(all_karts_topic_name(kart.location_id), "update", kart)
 
     result
@@ -141,7 +171,11 @@ defmodule KartVids.Races do
 
   """
   def list_races(location_id) do
-    from(r in Race, where: r.location_id == ^location_id, order_by: {:desc, r.started_at})
+    from(r in Race,
+      where: r.location_id == ^location_id,
+      order_by: {:desc, r.started_at},
+      limit: 100
+    )
     |> Repo.all()
   end
 
@@ -166,17 +200,26 @@ defmodule KartVids.Races do
 
   ## Examples
 
-      iex> create_race(%{field: value})
+      iex> create_race(:system, %{field: value})
       {:ok, %Race{}}
 
-      iex> create_race(%{field: bad_value})
+      iex> create_race(:system, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_race(attrs \\ %{}) do
+
+  def create_race(current_user, attrs \\ %{})
+
+  def create_race(:system, attrs) do
     %Race{}
     |> Race.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def create_race(current_user, attrs) do
+    admin_only(current_user) do
+      create_race(:system, attrs)
+    end
   end
 
   @doc """
@@ -184,17 +227,25 @@ defmodule KartVids.Races do
 
   ## Examples
 
-      iex> update_race(race, %{field: new_value})
+      iex> update_race(:system, race, %{field: new_value})
       {:ok, %Race{}}
 
-      iex> update_race(race, %{field: bad_value})
+      iex> update_race(:system, race, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_race(%Race{} = race, attrs) do
+  def update_race(current_user, race, attrs)
+
+  def update_race(:system, %Race{} = race, attrs) do
     race
     |> Race.changeset(attrs)
     |> Repo.update()
+  end
+
+  def update_race(current_user, %Race{} = race, attrs) do
+    admin_only(current_user) do
+      update_race(:system, race, attrs)
+    end
   end
 
   @doc """
@@ -202,14 +253,22 @@ defmodule KartVids.Races do
 
   ## Examples
 
-      iex> delete_race(race)
+      iex> delete_race(:system, race)
       {:ok, %Race{}}
 
-      iex> delete_race(race)
+      iex> delete_race(:system, race)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_race(%Race{} = race) do
+  def delete_race(current_user, race)
+
+  def delete_race(current_user, %Race{} = race) do
+    admin_only(current_user) do
+      delete_race(:system, race)
+    end
+  end
+
+  def delete_race(:system, %Race{} = race) do
     Repo.delete(race)
   end
 
@@ -255,14 +314,26 @@ defmodule KartVids.Races do
         order_by: {:desc, fragment("?::date", race.started_at)}
       )
 
-    from([race, racer] in query, select: %League{date: fragment("?::date", race.started_at), races: count(race.id, :distinct), racer_names: fragment("array_agg(distinct ?)", racer.nickname)})
+    from([race, racer] in query,
+      select: %League{
+        date: fragment("?::date", race.started_at),
+        races: count(race.id, :distinct),
+        racer_names: fragment("array_agg(distinct ?)", racer.nickname)
+      }
+    )
     |> Repo.all()
   end
 
   def league_races_on_date(%Date{} = date) do
     tomorrow = Date.add(date, 1)
 
-    from(r in Race, where: r.league? == true and (fragment("?::date", r.started_at) == ^date or fragment("?::date", r.started_at) == ^tomorrow), order_by: {:desc, r.started_at})
+    from(r in Race,
+      where:
+        r.league? == true and
+          (fragment("?::date", r.started_at) == ^date or
+             fragment("?::date", r.started_at) == ^tomorrow),
+      order_by: {:desc, r.started_at}
+    )
     |> Repo.all()
     |> Repo.preload(:racers)
   end
@@ -302,17 +373,25 @@ defmodule KartVids.Races do
 
   ## Examples
 
-      iex> create_racer(%{field: value})
+      iex> create_racer(:system, %{field: value})
       {:ok, %Racer{}}
 
-      iex> create_racer(%{field: bad_value})
+      iex> create_racer(:system, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_racer(attrs \\ %{}) do
+  def create_racer(current_user, attrs \\ %{})
+
+  def create_racer(:system, attrs) do
     %Racer{}
     |> Racer.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def create_racer(current_user, attrs) do
+    admin_only(current_user) do
+      create_racer(:system, attrs)
+    end
   end
 
   @doc """
@@ -320,17 +399,25 @@ defmodule KartVids.Races do
 
   ## Examples
 
-      iex> update_racer(racer, %{field: new_value})
+      iex> update_racer(:system, racer, %{field: new_value})
       {:ok, %Racer{}}
 
-      iex> update_racer(racer, %{field: bad_value})
+      iex> update_racer(:system, racer, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_racer(%Racer{} = racer, attrs) do
+  def update_racer(current_user, racer, attrs)
+
+  def update_racer(:system, %Racer{} = racer, attrs) do
     racer
     |> Racer.changeset(attrs)
     |> Repo.update()
+  end
+
+  def update_racer(current_user, %Racer{} = racer, attrs) do
+    admin_only(current_user) do
+      update_racer(:system, racer, attrs)
+    end
   end
 
   @doc """
@@ -345,8 +432,16 @@ defmodule KartVids.Races do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_racer(%Racer{} = racer) do
+  def delete_racer(current_user, racer)
+
+  def delete_racer(:system, %Racer{} = racer) do
     Repo.delete(racer)
+  end
+
+  def delete_racer(current_user, %Racer{} = racer) do
+    admin_only(current_user) do
+      delete_racer(:system, racer)
+    end
   end
 
   @doc """

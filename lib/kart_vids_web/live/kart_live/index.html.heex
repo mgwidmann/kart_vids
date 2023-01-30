@@ -29,5 +29,5 @@
 </.table>
 
 <.modal :if={@live_action in [:new, :edit]} id="kart-modal" show on_cancel={JS.navigate(~p"/locations/#{@location_id}/karts")}>
-  <.live_component module={KartVidsWeb.KartLive.FormComponent} id={@kart.id || :new} title={@page_title} action={@live_action} kart={@kart} navigate={~p"/locations/#{@location_id}/karts"} />
+  <.live_component module={KartVidsWeb.KartLive.FormComponent} id={@kart.id || :new} title={@page_title} action={@live_action} kart={@kart} navigate={~p"/locations/#{@location_id}/karts"} current_user={@current_user} />
 </.modal>

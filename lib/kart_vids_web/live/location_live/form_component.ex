@@ -60,28 +60,40 @@ defmodule KartVidsWeb.LocationLive.FormComponent do
   end
 
   defp save_location(socket, :edit, location_params) do
-    case Content.update_location(socket.assigns.location, location_params) do
-      {:ok, _location} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Location updated successfully")
-         |> push_navigate(to: socket.assigns.navigate)}
+    admin_redirect(socket) do
+      case Content.update_location(
+             socket.assigns.current_user,
+             socket.assigns.location,
+             location_params
+           ) do
+        {:ok, _location} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Location updated successfully")
+           |> push_navigate(to: socket.assigns.navigate)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :changeset, changeset)}
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, assign(socket, :changeset, changeset)}
+      end
+    else
+      {:noreply, socket}
     end
   end
 
   defp save_location(socket, :new, location_params) do
-    case Content.create_location(location_params) do
-      {:ok, _location} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Location created successfully")
-         |> push_navigate(to: socket.assigns.navigate)}
+    admin_redirect(socket) do
+      case Content.create_location(socket.assigns.current_user, location_params) do
+        {:ok, _location} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Location created successfully")
+           |> push_navigate(to: socket.assigns.navigate)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, changeset: changeset)}
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, assign(socket, changeset: changeset)}
+      end
+    else
+      {:noreply, socket}
     end
   end
 end

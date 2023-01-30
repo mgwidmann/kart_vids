@@ -5,7 +5,7 @@ defmodule KartVidsWeb.RacerLive.Index do
   alias KartVids.Races
   alias KartVids.Races.Racer
 
-  embed_templates "racer/*"
+  embed_templates("racer/*")
 
   @impl true
   def mount(_params, _session, socket) do
@@ -53,7 +53,7 @@ defmodule KartVidsWeb.RacerLive.Index do
   def handle_event("delete", %{"id" => id}, socket) do
     admin_redirect(socket) do
       racer = Races.get_racer!(id)
-      {:ok, _} = Races.delete_racer(racer)
+      {:ok, _} = Races.delete_racer(socket.assigns.current_user, racer)
 
       {:noreply, assign(socket, :racers, list_racers(socket.assigns.race_id))}
     else

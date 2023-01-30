@@ -8,7 +8,7 @@
 </.header>
 
 <div :for={location <- @locations}>
-  <div class="max-w-sm rounded overflow-hidden shadow-lg cursor-pointer" phx-click={JS.navigate(~p"/locations/#{location}/racing")}>
+  <div class="inline-block max-w-sm rounded overflow-hidden shadow-lg cursor-pointer" phx-click={JS.navigate(~p"/locations/#{location}/racing")}>
     <img class="w-full bg-slate-400" src={location.image_url} />
     <div class="px-6 py-4">
       <div class="font-bold text-xl mb-2"><%= location.name %></div>
@@ -26,5 +26,5 @@
 </div>
 
 <.modal :if={@live_action in [:new, :edit]} id="location-modal" show on_cancel={JS.navigate(~p"/locations")}>
-  <.live_component module={KartVidsWeb.LocationLive.FormComponent} id={@location.id || :new} title={@page_title} action={@live_action} location={@location} navigate={~p"/locations"} />
+  <.live_component module={KartVidsWeb.LocationLive.FormComponent} id={@location.id || :new} title={@page_title} action={@live_action} location={@location} navigate={~p"/locations"} current_user={@current_user}/>
 </.modal>

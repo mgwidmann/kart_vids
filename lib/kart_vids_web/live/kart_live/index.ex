@@ -48,7 +48,7 @@ defmodule KartVidsWeb.KartLive.Index do
   def handle_event("delete", %{"id" => id}, socket) do
     admin_redirect(socket) do
       kart = Races.get_kart!(id)
-      {:ok, _} = Races.delete_kart(kart)
+      {:ok, _} = Races.delete_kart(socket.assigns.current_user, kart)
 
       {:noreply, assign(socket, :karts, list_karts(socket.assigns.location_id))}
     else
@@ -61,8 +61,13 @@ defmodule KartVidsWeb.KartLive.Index do
   end
 
   @impl true
-  def handle_info(%Phoenix.Socket.Broadcast{event: "update", payload: %KartVids.Races.Kart{} = kart}, socket) do
-    karts = [kart | socket.assigns.karts |> Enum.filter(&(&1.id != kart.id))] |> Enum.sort_by(& &1.kart_num)
+  def handle_info(
+        %Phoenix.Socket.Broadcast{event: "update", payload: %KartVids.Races.Kart{} = kart},
+        socket
+      ) do
+    karts =
+      [kart | socket.assigns.karts |> Enum.filter(&(&1.id != kart.id))]
+      |> Enum.sort_by(& &1.kart_num)
 
     {:noreply,
      socket

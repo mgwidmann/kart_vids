@@ -12,5 +12,5 @@
 <%= racer_table(%{racers: @racers, location_id: @location_id, race_id: @race_id, timezone: @location.timezone, current_user: @current_user}) %>
 
 <.modal :if={@live_action in [:new, :edit]} id="racer-modal" show on_cancel={JS.navigate(~p"/locations/#{@location_id}/races/#{@race_id}/racers")}>
-  <.live_component module={KartVidsWeb.RacerLive.FormComponent} id={@racer.id || :new} title={@page_title} action={@live_action} racer={@racer} navigate={~p"/locations/#{@location_id}/races/#{@race_id}/racers"} />
+  <.live_component module={KartVidsWeb.RacerLive.FormComponent} id={@racer.id || :new} title={@page_title} action={@live_action} racer={@racer} navigate={~p"/locations/#{@location_id}/races/#{@race_id}/racers"} current_user={@current_user}/>
 </.modal>

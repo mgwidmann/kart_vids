@@ -4,6 +4,7 @@ defmodule KartVids.Content do
   """
 
   import Ecto.Query, warn: false
+  import KartVids.Helpers
   alias KartVids.Repo
 
   alias KartVids.Content.Video
@@ -161,23 +162,39 @@ defmodule KartVids.Content do
 
   ## Examples
 
-      iex> create_location(%{field: value})
+      iex> create_location(:system, %{field: value})
       {:ok, %Location{}}
 
-      iex> create_location(%{field: bad_value})
+      iex> create_location(:system, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_location(attrs \\ %{}) do
+  def create_location(current_user, attrs \\ %{})
+
+  def create_location(:system, attrs) do
     %Location{}
     |> Location.changeset(attrs)
     |> Repo.insert()
   end
 
-  def create_location!(attrs \\ %{}) do
+  def create_location(current_user, attrs) do
+    admin_only(current_user) do
+      create_location(:system, attrs)
+    end
+  end
+
+  def create_location!(current_user, attrs \\ %{})
+
+  def create_location!(:system, attrs) do
     %Location{}
     |> Location.changeset(attrs)
     |> Repo.insert!()
+  end
+
+  def create_location!(current_user, attrs) do
+    admin_only(current_user) do
+      create_location!(:system, attrs)
+    end
   end
 
   @doc """
@@ -185,17 +202,25 @@ defmodule KartVids.Content do
 
   ## Examples
 
-      iex> update_location(location, %{field: new_value})
+      iex> update_location(:system, location, %{field: new_value})
       {:ok, %Location{}}
 
-      iex> update_location(location, %{field: bad_value})
+      iex> update_location(:system, location, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_location(%Location{} = location, attrs) do
+  def update_location(current_user, location, attrs)
+
+  def update_location(:system, %Location{} = location, attrs) do
     location
     |> Location.changeset(attrs)
     |> Repo.update()
+  end
+
+  def update_location(current_user, %Location{} = location, attrs) do
+    admin_only(current_user) do
+      update_location(:system, location, attrs)
+    end
   end
 
   @doc """
@@ -210,8 +235,16 @@ defmodule KartVids.Content do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_location(%Location{} = location) do
+  def delete_location(current_user, location)
+
+  def delete_location(:system, %Location{} = location) do
     Repo.delete(location)
+  end
+
+  def delete_location(current_user, %Location{} = location) do
+    admin_only(current_user) do
+      delete_location(:system, location)
+    end
   end
 
   @doc """

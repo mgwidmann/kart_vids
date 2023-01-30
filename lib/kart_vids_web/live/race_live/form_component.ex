@@ -52,28 +52,36 @@ defmodule KartVidsWeb.RaceLive.FormComponent do
   end
 
   defp save_race(socket, :edit, race_params) do
-    case Races.update_race(socket.assigns.race, race_params) do
-      {:ok, _race} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Race updated successfully")
-         |> push_navigate(to: socket.assigns.navigate)}
+    admin_redirect(socket) do
+      case Races.update_race(socket.assigns.current_user, socket.assigns.race, race_params) do
+        {:ok, _race} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Race updated successfully")
+           |> push_navigate(to: socket.assigns.navigate)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :changeset, changeset)}
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, assign(socket, :changeset, changeset)}
+      end
+    else
+      {:noreply, socket}
     end
   end
 
   defp save_race(socket, :new, race_params) do
-    case Races.create_race(race_params) do
-      {:ok, _race} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Race created successfully")
-         |> push_navigate(to: socket.assigns.navigate)}
+    admin_redirect(socket) do
+      case Races.create_race(socket.assigns.current_user, race_params) do
+        {:ok, _race} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Race created successfully")
+           |> push_navigate(to: socket.assigns.navigate)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, changeset: changeset)}
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, assign(socket, changeset: changeset)}
+      end
+    else
+      {:noreply, socket}
     end
   end
 end
