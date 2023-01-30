@@ -10,6 +10,16 @@ defmodule KartVids.Races.Listener do
     @moduledoc false
     @type t :: %Config{location_id: nil | pos_integer(), location: Location.t(), reconnect_attempt: pos_integer()}
     defstruct location_id: nil, location: nil, reconnect_attempt: 0
+    
+    @behaviour Access
+
+    def fetch(term, key), do: Map.fetch(term, key)
+
+    def get_and_update(data, key, func) do
+      Map.get_and_update(data, key, func)
+    end
+
+    def pop(data, key), do: Map.pop(data, key)
   end
 
   defmodule State do
@@ -26,6 +36,16 @@ defmodule KartVids.Races.Listener do
             win_by: nil | String.t()
           }
     defstruct config: %Config{}, current_race: nil, current_race_started_at: nil, race_name: nil, fastest_speed_level: nil, speed_level: nil, racers: [], scoreboard: nil, last_timestamp: nil, win_by: nil
+    
+    @behaviour Access
+
+    def fetch(term, key), do: Map.fetch(term, key)
+
+    def get_and_update(data, key, func) do
+      Map.get_and_update(data, key, func)
+    end
+
+    def pop(data, key), do: Map.pop(data, key)
   end
 
   defmodule Racer do
@@ -235,7 +255,7 @@ defmodule KartVids.Races.Listener do
         {:ok, msg = %{"race" => race = %{"id" => id, "ended" => 1, "duration" => duration, "racers" => racers}}},
         %State{} = state
       ) do
-    Logger.warning("Race ID #{id} ended abruptly without scoreboard! Duration was: #{duration} Racers count: #{length(racers)}-- Message Keys: #{inspect(Map.keys(msg))}, Race Keys: #{Map.keys(race)}")
+    Logger.warning("Race ID #{id} ended abruptly without scoreboard! Duration was: #{duration} Racers count: #{length(racers)}-- Message Keys: #{inspect(Map.keys(msg))}, Race Keys: #{inspect(Map.keys(race))}")
 
     state
   end
