@@ -80,12 +80,10 @@ defmodule KartVids.Races.Listener do
 
   ### Server functions
 
-  @ws_url "ws://autobahn-livescore.herokuapp.com/?track=1&location=aisdulles"
-
   @spec start_link(Location.t()) :: {:error, any} | {:ok, pid}
   def start_link(%Location{} = location) do
     WebSockex.start_link(
-      @ws_url,
+      location.websocket_url,
       __MODULE__,
       location,
       name: via_tuple(location.id)
@@ -136,7 +134,7 @@ defmodule KartVids.Races.Listener do
 
       Process.sleep(@reconnect_timeout)
 
-      {:reconnect, WebSockex.Conn.new(@ws_url, name: via_tuple(state.config.location.id)), put_in(state, [:config, :reconnect_attempt], state.config.reconnect_attempt + 1)}
+      {:reconnect, WebSockex.Conn.new(state.config.location.websocket_url, name: via_tuple(state.config.location.id)), put_in(state, [:config, :reconnect_attempt], state.config.reconnect_attempt + 1)}
     end
   end
 

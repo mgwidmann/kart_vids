@@ -1,8 +1,13 @@
 <.back position={:top} navigate={~p"/locations"}>Back to locations</.back>
 
 <.header>
-  Location <%= @location.id %>
-  <:subtitle>Information about this location.</:subtitle>
+  <%= @location.name %>
+  <:subtitle>
+    <div class="max-w-sm rounded overflow-hidden">
+      <img class="w-full bg-slate-400" src={@location.image_url} />
+    </div>
+    Information about this location.
+  </:subtitle>
   <:actions>
     <.link navigate={~p"/locations/#{@location}/racing"}>
       <.button>Racing</.button>
@@ -28,6 +33,7 @@
   <:item title="Last Adult Kart Number"><%= @location.adult_kart_max %></:item>
   <:item title="First Junior Kart Number"><%= @location.junior_kart_min %></:item>
   <:item title="Last Junior Kart Number"><%= @location.junior_kart_max %></:item>
+  <:item title="Websocket Connection URL"><%= @location.websocket_url %></:item>
 </.list>
 
 <.modal :if={@live_action == :edit} id="location-modal" show on_cancel={JS.patch(~p"/locations/#{@location}")}>

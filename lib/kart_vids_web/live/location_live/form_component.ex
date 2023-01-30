@@ -25,6 +25,8 @@ defmodule KartVidsWeb.LocationLive.FormComponent do
         <.input field={{f, :junior_kart_min}} type="number" label="First Junior Kart Number" />
         <.input field={{f, :junior_kart_max}} type="number" label="Last Junior Kart Number" />
         <.input field={{f, :timezone}} type="select" label="Timezone" options={Tzdata.zone_lists_grouped() |> Enum.map(fn {region, list} -> {Atom.to_string(region) |> Phoenix.Naming.humanize(), list} end)} />
+        <.input field={{f, :image_url}} type="text" label="Icon Image URL" />
+        <.input field={{f, :websocket_url}} type="text" label="Websocket Connection URL" />
         <:actions>
           <.button phx-disable-with="Saving...">Save Location</.button>
         </:actions>

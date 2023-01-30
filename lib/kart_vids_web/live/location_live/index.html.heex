@@ -9,7 +9,7 @@
 
 <div :for={location <- @locations}>
   <div class="max-w-sm rounded overflow-hidden shadow-lg cursor-pointer" phx-click={JS.navigate(~p"/locations/#{location}/racing")}>
-    <img class="w-full bg-slate-400" src="https://autobahnspeed.com/wp-content/themes/autobahn/assets/images/logos/new/redwhite.svg" />
+    <img class="w-full bg-slate-400" src={location.image_url} />
     <div class="px-6 py-4">
       <div class="font-bold text-xl mb-2"><%= location.name %></div>
       <p class="text-gray-700 text-base">

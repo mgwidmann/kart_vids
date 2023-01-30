@@ -15,6 +15,8 @@ defmodule KartVids.Content.Location do
     field :junior_kart_min, :integer
     field :junior_kart_max, :integer
     field :timezone, :string
+    field :image_url, :string
+    field :websocket_url, :string
 
     timestamps()
   end
@@ -22,8 +24,8 @@ defmodule KartVids.Content.Location do
   @doc false
   def changeset(location, attrs) do
     location
-    |> cast(attrs, [:name, :street, :street_2, :city, :state, :code, :country, :adult_kart_min, :adult_kart_max, :junior_kart_min, :junior_kart_max, :timezone])
-    |> validate_required([:name, :street, :city, :state, :code, :country, :adult_kart_min, :adult_kart_max, :junior_kart_min, :junior_kart_max, :timezone])
+    |> cast(attrs, [:name, :street, :street_2, :city, :state, :code, :country, :adult_kart_min, :adult_kart_max, :junior_kart_min, :junior_kart_max, :timezone, :image_url, :websocket_url])
+    |> validate_required([:name, :street, :city, :state, :code, :country, :adult_kart_min, :adult_kart_max, :junior_kart_min, :junior_kart_max, :timezone, :image_url, :websocket_url])
     |> validate_timezone()
   end
 
