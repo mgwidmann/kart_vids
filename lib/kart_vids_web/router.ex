@@ -101,34 +101,21 @@ defmodule KartVidsWeb.Router do
     live_session :require_authenticated_user_admin,
       on_mount: [{KartVidsWeb.UserAuth, :ensure_authenticated_admin}] do
       # Locations
-      live "/locations", LocationLive.Index, :index
       live "/locations/new", LocationLive.Index, :new
       live "/locations/:id/edit", LocationLive.Index, :edit
-      live "/locations/:id/racing", LocationLive.Racing, :racing
-
-      live "/locations/:id", LocationLive.Show, :show
       live "/locations/:id/show/edit", LocationLive.Show, :edit
 
       # Karts
-      live "/locations/:location_id/karts", KartLive.Index, :index
       live "/locations/:location_id/karts/new", KartLive.Index, :new
       live "/locations/:location_id/karts/:id/edit", KartLive.Index, :edit
-
-      live "/locations/:location_id/karts/:id", KartLive.Show, :show
       live "/locations/:location_id/karts/:id/show/edit", KartLive.Show, :edit
 
       # Races
-      live "/locations/:location_id/leagues", RaceLive.Leagues, :index
-      live "/locations/:location_id/leagues/:date", RaceLive.League, :show
-      live "/locations/:location_id/races", RaceLive.Index, :index
       live "/locations/:location_id/races/new", RaceLive.Index, :new
       live "/locations/:location_id/races/:id/edit", RaceLive.Index, :edit
-
-      live "/locations/:location_id/races/:id", RaceLive.Show, :show
       live "/locations/:location_id/races/:id/show/edit", RaceLive.Show, :edit
 
       # Racer
-      live "/locations/:location_id/races/:race_id/racers", RacerLive.Index, :index
       live "/locations/:location_id/races/:race_id/racers/new", RacerLive.Index, :new
       live "/locations/:location_id/races/:race_id/racers/:id/edit", RacerLive.Index, :edit
     end
@@ -145,6 +132,24 @@ defmodule KartVidsWeb.Router do
       on_mount: [{KartVidsWeb.UserAuth, :mount_current_user}] do
       live "/users/confirm/:token", UserConfirmationLive, :edit
       live "/users/confirm", UserConfirmationInstructionsLive, :new
+
+      # Locations
+      live "/locations", LocationLive.Index, :index
+      live "/locations/:id/racing", LocationLive.Racing, :racing
+      live "/locations/:id", LocationLive.Show, :show
+
+      # Karts
+      live "/locations/:location_id/karts", KartLive.Index, :index
+      live "/locations/:location_id/karts/:id", KartLive.Show, :show
+
+      # Races
+      live "/locations/:location_id/leagues", RaceLive.Leagues, :index
+      live "/locations/:location_id/leagues/:date", RaceLive.League, :show
+      live "/locations/:location_id/races", RaceLive.Index, :index
+      live "/locations/:location_id/races/:id", RaceLive.Show, :show
+
+      # Racer
+      live "/locations/:location_id/races/:race_id/racers", RacerLive.Index, :index
     end
   end
 

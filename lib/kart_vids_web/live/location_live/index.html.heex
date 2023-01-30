@@ -1,33 +1,30 @@
 <.header>
-  Listing Locations
+  Locations
   <:actions>
-    <.link patch={~p"/admin/locations/new"}>
+    <.admin_link patch={~p"/admin/locations/new"} current_user={@current_user}>
       <.button>New Location</.button>
-    </.link>
+    </.admin_link>
   </:actions>
 </.header>
 
-<.table id="locations" rows={@locations} row_click={&JS.navigate(~p"/admin/locations/#{&1}/racing")}>
-  <:col :let={location} label="Name"><%= location.name %></:col>
-  <:col :let={location} label="Street"><%= location.street %></:col>
-  <:col :let={location} label="Street 2"><%= location.street_2 %></:col>
-  <:col :let={location} label="City"><%= location.city %></:col>
-  <:col :let={location} label="State"><%= location.state %></:col>
-  <:col :let={location} label="Code"><%= location.code %></:col>
-  <:col :let={location} label="Country"><%= location.country %></:col>
-  <:action :let={location}>
-    <.link navigate={~p"/admin/locations/#{location}"}>Show</.link>
-  </:action>
-  <:action :let={location}>
-    <.link patch={~p"/admin/locations/#{location}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={location}>
-    <.link phx-click={JS.push("delete", value: %{id: location.id})} data-confirm="Are you sure?">
-      Delete
-    </.link>
-  </:action>
-</.table>
+<div :for={location <- @locations}>
+  <div class="max-w-sm rounded overflow-hidden shadow-lg cursor-pointer" phx-click={JS.navigate(~p"/locations/#{location}/racing")}>
+    <img class="w-full bg-slate-400" src="https://autobahnspeed.com/wp-content/themes/autobahn/assets/images/logos/new/redwhite.svg" />
+    <div class="px-6 py-4">
+      <div class="font-bold text-xl mb-2"><%= location.name %></div>
+      <p class="text-gray-700 text-base">
+        <%= location.city %>, <%= location.state %>
+      </p>
+    </div>
+    <div class="px-6 pt-4 pb-2">
+      <.admin_link patch={~p"/admin/locations/#{location}/edit"} current_user={@current_user}>Edit</.admin_link>
+      <.admin_link phx-click={JS.push("delete", value: %{id: location.id})} data-confirm="Are you sure?" current_user={@current_user}>
+        Delete
+      </.admin_link>
+    </div>
+  </div>
+</div>
 
-<.modal :if={@live_action in [:new, :edit]} id="location-modal" show on_cancel={JS.navigate(~p"/admin/locations")}>
-  <.live_component module={KartVidsWeb.LocationLive.FormComponent} id={@location.id || :new} title={@page_title} action={@live_action} location={@location} navigate={~p"/admin/locations"} />
+<.modal :if={@live_action in [:new, :edit]} id="location-modal" show on_cancel={JS.navigate(~p"/locations")}>
+  <.live_component module={KartVidsWeb.LocationLive.FormComponent} id={@location.id || :new} title={@page_title} action={@live_action} location={@location} navigate={~p"/locations"} />
 </.modal>

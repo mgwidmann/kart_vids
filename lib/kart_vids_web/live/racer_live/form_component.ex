@@ -66,7 +66,7 @@ defmodule KartVidsWeb.RacerLive.FormComponent do
   end
 
   defp save_racer(socket, :new, racer_params) do
-    case Races.create_racer(racer_params |> IO.inspect(pretty: true)) do
+    case Races.create_racer(racer_params) do
       {:ok, _racer} ->
         {:noreply,
          socket

@@ -1,16 +1,16 @@
-<.back position={:top} navigate={~p"/admin/locations/#{@location_id}/races/#{@race_id}"}>Back to race</.back>
+<.back position={:top} navigate={~p"/locations/#{@location_id}/races/#{@race_id}"}>Back to race</.back>
 
 <.header>
   Listing Racers
   <:actions>
-    <.link patch={~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers/new"}>
+    <.admin_link patch={~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers/new"} current_user={@current_user}>
       <.button>New Racer</.button>
-    </.link>
+    </.admin_link>
   </:actions>
 </.header>
 
-<%= racer_table(%{racers: @racers, location_id: @location_id, race_id: @race_id, timezone: @location.timezone}) %>
+<%= racer_table(%{racers: @racers, location_id: @location_id, race_id: @race_id, timezone: @location.timezone, current_user: @current_user}) %>
 
-<.modal :if={@live_action in [:new, :edit]} id="racer-modal" show on_cancel={JS.navigate(~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers")}>
-  <.live_component module={KartVidsWeb.RacerLive.FormComponent} id={@racer.id || :new} title={@page_title} action={@live_action} racer={@racer} navigate={~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers"} />
+<.modal :if={@live_action in [:new, :edit]} id="racer-modal" show on_cancel={JS.navigate(~p"/locations/#{@location_id}/races/#{@race_id}/racers")}>
+  <.live_component module={KartVidsWeb.RacerLive.FormComponent} id={@racer.id || :new} title={@page_title} action={@live_action} racer={@racer} navigate={~p"/locations/#{@location_id}/races/#{@race_id}/racers"} />
 </.modal>

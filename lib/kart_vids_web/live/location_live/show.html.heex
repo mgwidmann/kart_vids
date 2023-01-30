@@ -1,18 +1,18 @@
-<.back position={:top} navigate={~p"/admin/locations"}>Back to locations</.back>
+<.back position={:top} navigate={~p"/locations"}>Back to locations</.back>
 
 <.header>
   Location <%= @location.id %>
   <:subtitle>Information about this location.</:subtitle>
   <:actions>
-    <.link navigate={~p"/admin/locations/#{@location}/racing"}>
+    <.link navigate={~p"/locations/#{@location}/racing"}>
       <.button>Racing</.button>
     </.link>
-    <.link navigate={~p"/admin/locations/#{@location}/karts"}>
+    <.link navigate={~p"/locations/#{@location}/karts"}>
       <.button>Karts</.button>
     </.link>
-    <.link patch={~p"/admin/locations/#{@location}/show/edit"} phx-click={JS.push_focus()}>
+    <.admin_link patch={~p"/admin/locations/#{@location}/show/edit"} phx-click={JS.push_focus()} current_user={@current_user}>
       <.button>Edit location</.button>
-    </.link>
+    </.admin_link>
   </:actions>
 </.header>
 
@@ -30,6 +30,6 @@
   <:item title="Last Junior Kart Number"><%= @location.junior_kart_max %></:item>
 </.list>
 
-<.modal :if={@live_action == :edit} id="location-modal" show on_cancel={JS.patch(~p"/admin/locations/#{@location}")}>
-  <.live_component module={KartVidsWeb.LocationLive.FormComponent} id={@location.id} title={@page_title} action={@live_action} location={@location} navigate={~p"/admin/locations/#{@location}"} />
+<.modal :if={@live_action == :edit} id="location-modal" show on_cancel={JS.patch(~p"/locations/#{@location}")}>
+  <.live_component module={KartVidsWeb.LocationLive.FormComponent} id={@location.id} title={@page_title} action={@live_action} location={@location} navigate={~p"/locations/#{@location}"} />
 </.modal>

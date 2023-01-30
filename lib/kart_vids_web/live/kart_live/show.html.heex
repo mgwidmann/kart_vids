@@ -2,9 +2,9 @@
   Kart <%= @kart.kart_num %>
   <:subtitle>Details about this particular kart which have been collected.</:subtitle>
   <:actions>
-    <.link patch={~p"/admin/locations/#{@location_id}/karts/#{@kart}/show/edit"} phx-click={JS.push_focus()}>
+    <.admin_link patch={~p"/admin/locations/#{@location_id}/karts/#{@kart}/show/edit"} phx-click={JS.push_focus()} current_user={@current_user}>
       <.button>Edit kart</.button>
-    </.link>
+    </.admin_link>
   </:actions>
 </.header>
 
@@ -16,20 +16,8 @@
   <:item title="Average RPMs"><%= @kart.average_rpms %></:item>
 </.list>
 
-<.back navigate={~p"/admin/locations/#{@location_id}/karts"}>Back to karts</.back>
+<.back navigate={~p"/locations/#{@location_id}/karts"}>Back to karts</.back>
 
-<.modal 
-  :if={@live_action == :edit} 
-  id="kart-modal" 
-  show 
-  on_cancel={JS.patch(~p"/admin/locations/#{@location_id}/karts/#{@kart}")}
->
-  <.live_component
-    module={KartVidsWeb.KartLive.FormComponent}
-    id={@kart.id}
-    title={@page_title}
-    action={@live_action}
-    kart={@kart}
-    navigate={~p"/admin/locations/#{@location_id}/karts/#{@kart}"}
-  />
+<.modal :if={@live_action == :edit} id="kart-modal" show on_cancel={JS.patch(~p"/locations/#{@location_id}/karts/#{@kart}")}>
+  <.live_component module={KartVidsWeb.KartLive.FormComponent} id={@kart.id} title={@page_title} action={@live_action} kart={@kart} navigate={~p"/locations/#{@location_id}/karts/#{@kart}"} />
 </.modal>

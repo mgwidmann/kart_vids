@@ -15,15 +15,19 @@ defmodule KartVidsWeb.LocationLive.Index do
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
-    socket
-    |> assign(:page_title, "Edit Location")
-    |> assign(:location, Content.get_location!(id))
+    admin_redirect(socket) do
+      socket
+      |> assign(:page_title, "Edit Location")
+      |> assign(:location, Content.get_location!(id))
+    end
   end
 
   defp apply_action(socket, :new, _params) do
-    socket
-    |> assign(:page_title, "New Location")
-    |> assign(:location, %Location{})
+    admin_redirect(socket) do
+      socket
+      |> assign(:page_title, "New Location")
+      |> assign(:location, %Location{})
+    end
   end
 
   defp apply_action(socket, :index, _params) do
@@ -34,10 +38,14 @@ defmodule KartVidsWeb.LocationLive.Index do
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
-    location = Content.get_location!(id)
-    {:ok, _} = Content.delete_location(location)
+    admin_redirect(socket) do
+      location = Content.get_location!(id)
+      {:ok, _} = Content.delete_location(location)
 
-    {:noreply, assign(socket, :locations, list_locations())}
+      {:noreply, assign(socket, :locations, list_locations())}
+    else
+      {:noreply, socket}
+    end
   end
 
   defp list_locations do

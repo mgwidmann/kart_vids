@@ -604,6 +604,53 @@ defmodule KartVidsWeb.CoreComponents do
     """
   end
 
+  @doc """
+  Renders an admin navigation link.
+
+  ## Examples
+
+      <.admin_link navigate={~p"/admin/posts"}>Button Text</.admin_link>
+  """
+  attr(:navigate, :any)
+  attr(:patch, :any)
+  attr(:current_user, :any, required: true)
+  slot(:inner_block, required: true)
+  attr(:rest, :global)
+
+  def admin_link(assigns) do
+    rest = assigns_to_attributes(assigns, [:navigate, :patch, :current_user, :inner_block])
+    assigns = assigns |> assign(:rest, rest)
+
+    ~H"""
+    <%= if @current_user && @current_user.admin? do %>
+      <.link navigate={@navigate} patch={@patch} {@rest}>
+        <%= render_slot(@inner_block) %>
+      </.link>
+    <% end %>
+    """
+  end
+
+  defmacro admin_redirect(socket, blocks) do
+    blocks = Keyword.put(blocks, :else, blocks[:else] || quote(do: socket))
+
+    unless blocks[:do] do
+      raise "admin_redirect must pass do block, only else block is optional"
+    end
+
+    quote do
+      if unquote(socket).assigns.current_user && unquote(socket).assigns.current_user.admin? do
+        unquote(blocks[:do])
+      else
+        socket =
+          unquote(socket)
+          |> assign(unquote(socket).assigns.__changed__)
+          |> push_navigate(to: ~p"/users/log_in")
+
+        unquote(blocks[:else])
+      end
+    end
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector, time \\ 200) do

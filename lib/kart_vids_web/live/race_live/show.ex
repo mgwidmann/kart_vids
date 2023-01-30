@@ -4,6 +4,8 @@ defmodule KartVidsWeb.RaceLive.Show do
   alias KartVids.Races
   alias KartVids.Content
 
+  embed_templates "../racer_live/racer/*"
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok, socket}
@@ -16,8 +18,11 @@ defmodule KartVidsWeb.RaceLive.Show do
     {:noreply,
      socket
      |> assign(:location, location)
+     |> assign(:location_id, location_id)
      |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:race, Races.get_race!(id))}
+     |> assign(:race_id, id)
+     |> assign(:race, Races.get_race!(id))
+     |> assign(:racers, Races.list_racers(id))}
   end
 
   defp page_title(:show), do: "Show Race"

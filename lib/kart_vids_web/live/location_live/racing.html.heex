@@ -1,4 +1,4 @@
-<.back position={:top} navigate={~p"/admin/locations"}>Back to locations</.back>
+<.back position={:top} navigate={~p"/locations"}>Back to locations</.back>
 <div>
   Race Listener Status:
   <.pill type={if(@listener_alive?, do: :success, else: :danger)}>
@@ -11,18 +11,21 @@
 </div>
 
 <.header>
-  <%= @location.name %>
+  <.link navigate={~p"/locations/#{@location}"}><%= @location.name %></.link>
+  <.link navigate={~p"/locations/#{@location}/karts"}>
+    <.button>Karts</.button>
+  </.link>
   <:actions>
     <div class="flex justify-between items-center shrink-0">
       <.simple_form :let={f} for={:race_type} phx-change="change_race_type" class="mr-2 min-w-[7rem]">
         <.input field={{f, :race_type}} type="select" options={["Best Lap": :best_lap, Position: :position]} value={@race_type} />
       </.simple_form>
-      <.link navigate={~p"/admin/locations/#{@location}/races"}>
+      <.link navigate={~p"/locations/#{@location}/races"}>
         <.button>Past Races</.button>
       </.link>
     </div>
     <div class="flex justify-end shrink-0 mt-2">
-      <.link navigate={~p"/admin/locations/#{@location}/leagues"}>
+      <.link navigate={~p"/locations/#{@location}/leagues"}>
         <.button>League Races</.button>
       </.link>
     </div>

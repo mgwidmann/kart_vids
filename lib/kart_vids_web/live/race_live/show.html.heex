@@ -1,20 +1,17 @@
-<.back position={:top} navigate={~p"/admin/locations/#{@location}/races"}>Back to races</.back>
+<.back position={:top} navigate={~p"/locations/#{@location}/races"}>Back to races</.back>
 
 <.header>
   <%= @race.name %>
   <:subtitle></:subtitle>
   <:actions>
-    <.link navigate={~p"/admin/locations/#{@location}/races/#{@race}/racers"}>
-      <.button>Racers</.button>
-    </.link>
-    <.link patch={~p"/admin/locations/#{@location}/races/#{@race}/show/edit"} phx-click={JS.push_focus()}>
+    <.admin_link patch={~p"/admin/locations/#{@location}/races/#{@race}/show/edit"} phx-click={JS.push_focus()} current_user={@current_user}>
       <.button>Edit race</.button>
-    </.link>
+    </.admin_link>
   </:actions>
 </.header>
 
 <.list>
-  <:item title="External race">
+  <:item title="External race ID">
     <%= @race.external_race_id %>
   </:item>
   <:item title="Name">
@@ -31,6 +28,8 @@
   </:item>
 </.list>
 
-<.modal :if={@live_action == :edit} id="race-modal" show on_cancel={JS.patch(~p"/admin/locations/#{@location}/races/#{@race}")}>
-  <.live_component module={KartVidsWeb.RaceLive.FormComponent} id={@race.id} title={@page_title} action={@live_action} race={@race} navigate={~p"/admin/locations/#{@location}/races/#{@race}"} />
+<%= racer_table(%{racers: @racers, location_id: @location_id, race_id: @race_id, timezone: @location.timezone, current_user: @current_user}) %>
+
+<.modal :if={@live_action == :edit} id="race-modal" show on_cancel={JS.patch(~p"/locations/#{@location}/races/#{@race}")}>
+  <.live_component module={KartVidsWeb.RaceLive.FormComponent} id={@race.id} title={@page_title} action={@live_action} race={@race} navigate={~p"/locations/#{@location}/races/#{@race}"} />
 </.modal>

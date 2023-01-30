@@ -28,15 +28,19 @@ defmodule KartVidsWeb.RacerLive.Index do
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
-    socket
-    |> assign(:page_title, "Edit Racer")
-    |> assign(:racer, Races.get_racer!(id))
+    admin_redirect(socket) do
+      socket
+      |> assign(:page_title, "Edit Racer")
+      |> assign(:racer, Races.get_racer!(id))
+    end
   end
 
   defp apply_action(socket, :new, _params) do
-    socket
-    |> assign(:page_title, "New Racer")
-    |> assign(:racer, %Racer{race_id: socket.assigns.race_id})
+    admin_redirect(socket) do
+      socket
+      |> assign(:page_title, "New Racer")
+      |> assign(:racer, %Racer{race_id: socket.assigns.race_id})
+    end
   end
 
   defp apply_action(socket, :index, _params) do
@@ -47,15 +51,18 @@ defmodule KartVidsWeb.RacerLive.Index do
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
-    racer = Races.get_racer!(id)
-    {:ok, _} = Races.delete_racer(racer)
+    admin_redirect(socket) do
+      racer = Races.get_racer!(id)
+      {:ok, _} = Races.delete_racer(racer)
 
-    {:noreply, assign(socket, :racers, list_racers(socket.assigns.race_id))}
+      {:noreply, assign(socket, :racers, list_racers(socket.assigns.race_id))}
+    else
+      {:noreply, socket}
+    end
   end
 
   defp list_racers(race_id) do
     race_id
     |> Races.list_racers()
-    |> Enum.sort_by(& &1.position)
   end
 end

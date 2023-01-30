@@ -277,7 +277,7 @@ defmodule KartVids.Races do
 
   """
   def list_racers(race_id) do
-    from(r in Racer, where: r.race_id == ^race_id)
+    from(r in Racer, where: r.race_id == ^race_id, order_by: r.position)
     |> Repo.all()
   end
 

@@ -15,14 +15,14 @@
   </:col>
   <:action :let={racer}>
     <%= if @race_id do %>
-      <.link patch={~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers/#{racer}/edit"}>Edit</.link>
+      <.admin_link patch={~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers/#{racer}/edit"} current_user={@current_user}>Edit</.admin_link>
     <% end %>
   </:action>
   <:action :let={racer}>
     <%= if @race_id do %>
-      <.link phx-click={JS.push("delete", value: %{id: racer.id})} data-confirm="Are you sure?">
+      <.admin_link phx-click={JS.push("delete", value: %{id: racer.id})} data-confirm="Are you sure?" current_user={@current_user}>
         Delete
-      </.link>
+      </.admin_link>
     <% end %>
   </:action>
 </.table>

@@ -27,15 +27,19 @@ defmodule KartVidsWeb.RaceLive.Index do
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
-    socket
-    |> assign(:page_title, "Edit Race")
-    |> assign(:race, Races.get_race!(id))
+    admin_redirect(socket) do
+      socket
+      |> assign(:page_title, "Edit Race")
+      |> assign(:race, Races.get_race!(id))
+    end
   end
 
   defp apply_action(socket, :new, _params) do
-    socket
-    |> assign(:page_title, "New Race")
-    |> assign(:race, %Race{location_id: socket.assigns.location_id})
+    admin_redirect(socket) do
+      socket
+      |> assign(:page_title, "New Race")
+      |> assign(:race, %Race{location_id: socket.assigns.location_id})
+    end
   end
 
   defp apply_action(socket, :index, _params) do
@@ -46,10 +50,14 @@ defmodule KartVidsWeb.RaceLive.Index do
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
-    race = Races.get_race!(id)
-    {:ok, _} = Races.delete_race(race)
+    admin_redirect(socket) do
+      race = Races.get_race!(id)
+      {:ok, _} = Races.delete_race(race)
 
-    {:noreply, assign(socket, :races, list_races(socket.assigns.location_id))}
+      {:noreply, assign(socket, :races, list_races(socket.assigns.location_id))}
+    else
+      {:noreply, socket}
+    end
   end
 
   defp list_races(location_id) do

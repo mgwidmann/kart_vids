@@ -1,15 +1,15 @@
+<.back position={:top} navigate={~p"/locations/#{@location_id}"}>Back to location</.back>
+
 <.header>
-  Listing Karts
+  Karts
   <:actions>
-    <.link patch={~p"/admin/locations/#{@location_id}/karts/new"}>
+    <.admin_link patch={~p"/admin/locations/#{@location_id}/karts/new"} current_user={@current_user}>
       <.button>New Kart</.button>
-    </.link>
+    </.admin_link>
   </:actions>
 </.header>
 
-<.back navigate={~p"/admin/locations/#{@location_id}"}>Back to location</.back>
-
-<.table id="karts" rows={@karts} row_click={&JS.navigate(~p"/admin/locations/#{@location_id}/karts/#{&1}")}>
+<.table id="karts" rows={@karts} row_click={&JS.navigate(~p"/locations/#{@location_id}/karts/#{&1}")}>
   <:col :let={kart} label="Kart Number"><%= kart.kart_num %></:col>
   <:col :let={kart} label="Fastest lap time"><%= kart.fastest_lap_time %></:col>
   <:col :let={kart} label="Average fastest lap time"><%= kart.average_fastest_lap_time %></:col>
@@ -17,24 +17,17 @@
   <:col :let={kart} label="Average RPMs"><%= kart.average_rpms %></:col>
   <:action :let={kart}>
     <div class="sr-only">
-      <.link navigate={~p"/admin/locations/#{@location_id}/karts/#{kart}"}>Show</.link>
+      <.link navigate={~p"/locations/#{@location_id}/karts/#{kart}"}>Show</.link>
     </div>
-    <.link patch={~p"/admin/locations/#{@location_id}/karts/#{kart}/edit"}>Edit</.link>
+    <.admin_link patch={~p"/admin/locations/#{@location_id}/karts/#{kart}/edit"} current_user={@current_user}>Edit</.admin_link>
   </:action>
   <:action :let={kart}>
-    <.link phx-click={JS.push("delete", value: %{id: kart.id})} data-confirm="Are you sure?">
+    <.admin_link phx-click={JS.push("delete", value: %{id: kart.id})} data-confirm="Are you sure?" current_user={@current_user}>
       Delete
-    </.link>
+    </.admin_link>
   </:action>
 </.table>
 
-<.modal :if={@live_action in [:new, :edit]} id="kart-modal" show on_cancel={JS.navigate(~p"/admin/locations/#{@location_id}/karts")}>
-  <.live_component
-    module={KartVidsWeb.KartLive.FormComponent}
-    id={@kart.id || :new}
-    title={@page_title}
-    action={@live_action}
-    kart={@kart}
-    navigate={~p"/admin/locations/#{@location_id}/karts"}
-  />
+<.modal :if={@live_action in [:new, :edit]} id="kart-modal" show on_cancel={JS.navigate(~p"/locations/#{@location_id}/karts")}>
+  <.live_component module={KartVidsWeb.KartLive.FormComponent} id={@kart.id || :new} title={@page_title} action={@live_action} kart={@kart} navigate={~p"/locations/#{@location_id}/karts"} />
 </.modal>

@@ -180,7 +180,9 @@ defmodule KartVidsWeb.UserAuth do
         else
           {:halt, socket}
         end
-      other -> other
+
+      other ->
+        other
     end
   end
 

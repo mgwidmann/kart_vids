@@ -1,10 +1,10 @@
-<.back position={:top} navigate={~p"/admin/locations/#{@location_id}/racing"}>Back to racing</.back>
+<.back position={:top} navigate={~p"/locations/#{@location_id}/racing"}>Back to racing</.back>
 
 <.header>
   League Race Events
 </.header>
 
-<.table id="races" rows={@leagues} row_click={&JS.navigate(~p"/admin/locations/#{@location_id}/leagues/#{&1}")}>
+<.table id="races" rows={@leagues} row_click={&JS.navigate(~p"/locations/#{@location_id}/leagues/#{&1}")}>
   <:col :let={league} label="Date">
     <%= Phoenix.Param.to_param(league) %>
   </:col>
