@@ -1,0 +1,77 @@
+<div class="w-[80px] md:w-[160px] px-1">
+  <img src={@racer_photo} class="h-[50px] w-[80px] md:h-[100px] md:w-[160px] object-cover rounded-lg" />
+  <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= @nickname %></span>
+</div>
+
+<%= if length(@laps_by_time) > 0 && length(@lap_averages) > 0 do %>
+  <div class="grid grid-cols-8 gap-4">
+    <div></div>
+    <div class="col-span-4">
+      <div class="">
+        <%= @laps_by_time
+          |> Contex.Dataset.new()
+          |> Contex.Plot.new(Contex.LinePlot, 800, 600)
+          |> Contex.Plot.axis_labels("Lap", "Time")
+          |> Contex.Plot.titles(@selected_race.race.name, @selected_race.race.started_at)
+          |> Contex.Plot.to_svg() %>
+      </div>
+      <div class="">
+        <%= @lap_averages
+          |> Contex.Dataset.new()
+          |> Contex.Plot.new(Contex.LinePlot, 800, 600)
+          |> Contex.Plot.axis_labels("Lap", "Time")
+          |> Contex.Plot.titles("Average Time", "")
+          |> Contex.Plot.to_svg() %>
+      </div>
+    </div>
+    <div class="col-span-2">
+      <.table id="laps-table" rows={@laps}>
+        <:col :let={lap} label="Lap">
+          <%= lap.lap_number %>
+        </:col>
+        <:col :let={lap} label="Time">
+          <%= format_lap(lap.lap_time) %>
+        </:col>
+        <:col :let={lap} label="Average">
+          <%= format_lap(lap.lap_average) %>
+        </:col>
+      </.table>
+    </div>
+  </div>
+<% else %>
+  <div class="grid grid-cols-8 gap-4 my-8">
+    <div class="col-span-2"></div>
+    <div class="col-span-4">
+      <h1 class="text-center text-md md:text-xl lg:text-2xl xl:text-4xl">The selected race does not have lap times recorded, please choose another.</h1>
+    </div>
+    <div class="col-span-2"></div>
+  </div>
+<% end %>
+
+<h3>
+  Select a race below to see individual race times above
+</h3>
+<.table id="racer-races" rows={@racer_races} row_click={&JS.push("select_race", value: %{race_id: &1.id})}>
+  <:col :let={racer} label="Race">
+    <.link navigate={~p"/locations/#{@location_id}/races/#{racer.race_id}/racers"} current_user={@current_user}><%= racer.race.name %></.link>
+  </:col>
+  <:col :let={racer} label="">
+    <%= if racer.id == @selected_race.id do %>
+      <Heroicons.check solid class="h-5 w-5 stroke-current" />
+    <% end %>
+  </:col>
+  <:col :let={racer} label="Date">
+    <.display_timestamp timestamp={racer.race.started_at} timezone={@location.timezone} />
+  </:col>
+  <:col :let={racer} label="Finish Position" label_mobile="Pos." row_class="bg-sky-400 sm:max-w-[75px] text-center">
+    <h1 class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.position %></h1>
+  </:col>
+  
+  <:col :let={racer} label="Kart"><span class="text-md text-center md:text-xl lg:text-2xl xl:text-4xl"><%= racer.kart_num %></span></:col>
+  <:col :let={racer} label="Best Lap" label_mobile="Best">
+    <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= format_lap(racer.fastest_lap) %></span>
+  </:col>
+  <:col :let={racer} label="Average Lap" label_mobile="Avg">
+    <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= format_lap(racer.average_lap) %></span>
+  </:col>
+</.table>

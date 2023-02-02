@@ -42,11 +42,14 @@ defmodule KartVids.MixProject do
       {:ecto_sql, "~> 3.6"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, github: "phoenixframework/phoenix_html", override: true},
-      {:phoenix_live_reload, github: "phoenixframework/phoenix_live_reload", override: true, only: :dev},
-      {:phoenix_live_view, github: "mgwidmann/phoenix_live_view", branch: "fix-redirect-with-priv", override: true},
+      {:phoenix_live_reload,
+       github: "phoenixframework/phoenix_live_reload", override: true, only: :dev},
+      {:phoenix_live_view,
+       github: "mgwidmann/phoenix_live_view", branch: "fix-redirect-with-priv", override: true},
       {:heroicons, "~> 0.5"},
       {:floki, ">= 0.30.0", only: :test},
-      {:phoenix_live_dashboard, github: "phoenixframework/phoenix_live_dashboard", override: true},
+      {:phoenix_live_dashboard,
+       github: "phoenixframework/phoenix_live_dashboard", override: true},
       {:esbuild, "~> 0.5", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.1.8", runtime: Mix.env() == :dev},
       {:swoosh, "~> 1.3"},
@@ -63,7 +66,8 @@ defmodule KartVids.MixProject do
       {:parent, "~> 0.12.1"},
       {:flames, "~> 0.7.0", github: "mgwidmann/flames", branch: "liveview"},
       {:number, "~> 1.0"},
-      {:timex, "~> 3.7.9"}
+      {:timex, "~> 3.7.9"},
+      {:contex, "~> 0.4.0"}
     ]
   end
 

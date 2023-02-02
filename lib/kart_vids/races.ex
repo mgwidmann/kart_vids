@@ -368,6 +368,25 @@ defmodule KartVids.Races do
   """
   def get_racer!(id), do: Repo.get!(Racer, id)
 
+  def list_races_by_nickname(nickname) do
+    from(r in Racer,
+      where: fragment("lower(?) = ?", r.nickname, ^String.downcase(nickname)),
+      order_by: {:desc, r.inserted_at}
+    )
+    |> Repo.all()
+    |> Repo.preload(:race)
+  end
+
+  def autocomplete_racer_nickname(search) do
+    from(r in Racer,
+      where: fragment("nickname_vector @@ to_tsquery(?)", ^"#{search}:*"),
+      select: r.nickname,
+      distinct: true,
+      limit: 5
+    )
+    |> Repo.all()
+  end
+
   @doc """
   Creates a racer.
 

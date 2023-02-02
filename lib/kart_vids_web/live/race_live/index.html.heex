@@ -2,6 +2,18 @@
 
 <.header>
   Listing Races
+  <.simple_form :let={f} for={:find_user} phx-change="search" class="w-64">
+    <.input field={{f, :nickname}} label="Find by Nickname" type="text" />
+    <div class="absolute top-100 mt-1 z-10 border bg-white shadow-xl rounded">
+      <div :for={nickname <- @racer_autocomplete} class="p-3 hover:bg-gradient-to-b hover:from-sky-800 hover:to-sky-400 hover:text-white hover:cursor-pointer">
+        <div class="divide-y">
+          <a phx-click="select" phx-value-nickname={nickname}>
+            <%= nickname %>
+          </a>
+        </div>
+      </div>
+    </div>
+  </.simple_form>
   <:actions>
     <.admin_link patch={~p"/admin/locations/#{@location_id}/races/new"} current_user={@current_user}>
       <.button>New Race</.button>

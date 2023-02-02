@@ -3,10 +3,11 @@ defmodule KartVids.Races.Racer.Lap do
   import Ecto.Changeset
 
   @primary_key false
+  @derive {Phoenix.Param, key: :lap_number}
   embedded_schema do
-    field :lap_time, :float
-    field :amb_time, :float
-    field :lap_number, :integer
+    field(:lap_time, :float)
+    field(:amb_time, :float)
+    field(:lap_number, :integer)
   end
 
   def changeset(struct, params \\ %{}) do

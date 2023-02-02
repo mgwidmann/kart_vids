@@ -22,6 +22,7 @@ defmodule KartVidsWeb.RaceLive.Index do
       |> assign(:races, list_races(location_id))
       |> assign(:location_id, location_id)
       |> assign(:location, location)
+      |> assign(:racer_autocomplete, [])
       |> apply_action(socket.assigns.live_action, params)
     }
   end
@@ -58,6 +59,22 @@ defmodule KartVidsWeb.RaceLive.Index do
     else
       {:noreply, socket}
     end
+  end
+
+  def handle_event("select", %{"nickname" => nickname}, socket) do
+    races = Races.get_racer_by_nickname(nickname)
+    IO.inspect(races)
+    {:noreply, socket}
+  end
+
+  def handle_event("search", %{"find_user" => %{"nickname" => ""}}, socket) do
+    {:noreply, assign(socket, :racer_autocomplete, [])}
+  end
+
+  def handle_event("search", %{"find_user" => %{"nickname" => nickname}}, socket) do
+    racers = Races.autocomplete_racer_nickname(nickname)
+
+    {:noreply, assign(socket, :racer_autocomplete, racers)}
   end
 
   defp list_races(location_id) do

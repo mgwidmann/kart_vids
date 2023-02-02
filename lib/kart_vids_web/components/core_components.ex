@@ -433,10 +433,14 @@ defmodule KartVidsWeb.CoreComponents do
 
   attr(:timestamp, :map, required: true)
   attr(:timezone, :string, required: true)
+  attr(:rest, :global)
 
   def display_timestamp(assigns) do
+    [rest: rest] = assigns_to_attributes(assigns, [:timestamp, :timezone])
+    assigns = assigns |> assign(:rest, rest)
+
     ~H"""
-    <span>
+    <span {@rest}>
       <%= Timex.Timezone.convert(@timestamp, @timezone) |> Calendar.strftime("%a %b %d, %Y %I:%M %p %Z") %>
     </span>
     """
@@ -657,7 +661,10 @@ defmodule KartVidsWeb.CoreComponents do
     JS.show(js,
       to: selector,
       time: time,
-      transition: {"transition-all transform ease-out duration-300", "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95", "opacity-100 translate-y-0 sm:scale-100"}
+      transition:
+        {"transition-all transform ease-out duration-300",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
+         "opacity-100 translate-y-0 sm:scale-100"}
     )
   end
 
@@ -665,7 +672,10 @@ defmodule KartVidsWeb.CoreComponents do
     JS.hide(js,
       to: selector,
       time: time,
-      transition: {"transition-all transform ease-in duration-200", "opacity-100 translate-y-0 sm:scale-100", "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
+      transition:
+        {"transition-all transform ease-in duration-200",
+         "opacity-100 translate-y-0 sm:scale-100",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
     )
   end
 
