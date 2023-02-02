@@ -148,10 +148,16 @@ defmodule KartVids.Races.Listener do
     {:via, Registry, {KartVids.Registry, {__MODULE__, location_id}}}
   end
 
-  def handle_connect(_conn, %Location{} = location) do
-    Logger.info("Connected to websocket for location #{location.id}!")
+  def handle_connect(conn, %Location{} = location) do
+    handle_connect(conn, %State{
+      config: %Config{location_id: location.id, location: location, reconnect_attempt: 0}
+    })
+  end
 
-    {:ok, %State{config: %Config{location_id: location.id, location: location}}}
+  def handle_connect(_conn, %State{config: %Config{location_id: id}} = state) do
+    Logger.info("Connected to websocket for location #{id}!")
+
+    {:ok, state}
   end
 
   @reconnect_timeout 1 * 60_000
