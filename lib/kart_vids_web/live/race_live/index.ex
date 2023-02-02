@@ -61,12 +61,6 @@ defmodule KartVidsWeb.RaceLive.Index do
     end
   end
 
-  def handle_event("select", %{"nickname" => nickname}, socket) do
-    races = Races.get_racer_by_nickname(nickname)
-    IO.inspect(races)
-    {:noreply, socket}
-  end
-
   def handle_event("search", %{"find_user" => %{"nickname" => ""}}, socket) do
     {:noreply, assign(socket, :racer_autocomplete, [])}
   end

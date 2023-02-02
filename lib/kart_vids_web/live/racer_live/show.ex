@@ -83,9 +83,6 @@ defmodule KartVidsWeb.RacerLive.Show do
   def compute_averages([]), do: []
 
   def compute_averages(laps) do
-    IO.inspect(laps)
-    last_lap = Enum.max_by(laps, & &1.lap_number)
-
     for lap <- laps do
       sublaps = laps |> Enum.filter(&(&1.lap_number <= lap.lap_number))
       count = length(sublaps)
