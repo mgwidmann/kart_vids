@@ -23,6 +23,7 @@ defmodule KartVidsWeb.RaceLive.Index do
       |> assign(:location_id, location_id)
       |> assign(:location, location)
       |> assign(:racer_autocomplete, [])
+      |> assign(:selected, nil)
       |> apply_action(socket.assigns.live_action, params)
     }
   end
@@ -69,6 +70,66 @@ defmodule KartVidsWeb.RaceLive.Index do
     racers = Races.autocomplete_racer_nickname(nickname)
 
     {:noreply, assign(socket, :racer_autocomplete, racers)}
+  end
+
+  def handle_event("select", %{"key" => "ArrowUp"}, socket) do
+    {:noreply,
+     assign(
+       socket,
+       :selected,
+       select_racer(:up, socket.assigns.racer_autocomplete, socket.assigns.selected)
+     )}
+  end
+
+  def handle_event("select", %{"key" => "ArrowDown"}, socket) do
+    {:noreply,
+     assign(
+       socket,
+       :selected,
+       select_racer(:down, socket.assigns.racer_autocomplete, socket.assigns.selected)
+     )}
+  end
+
+  def handle_event("select", %{"key" => "Enter"}, socket) do
+    {:noreply,
+     socket
+     |> push_navigate(
+       to: ~p"/locations/#{socket.assigns.location_id}/racers/#{socket.assigns.selected}"
+     )}
+  end
+
+  def handle_event("select", _, socket) do
+    {:noreply, socket}
+  end
+
+  def select_racer(:up, racers, nil), do: List.last(racers)
+  def select_racer(:down, [racer | _], nil), do: racer
+  def select_racer(_any_direction, [], nil), do: nil
+
+  def select_racer(:up, racers, selected) when is_list(racers) and is_binary(selected) do
+    selected_index = racers |> Enum.find_index(&(&1 == selected))
+    racers_len = length(racers)
+
+    cond do
+      (selected_index && selected_index - 1 < 0) || selected_index == nil ->
+        Enum.at(racers, racers_len - 1)
+
+      selected_index != nil ->
+        Enum.at(racers, selected_index - 1)
+    end
+  end
+
+  def select_racer(:down, racers, selected) when is_list(racers) and is_binary(selected) do
+    selected_index = racers |> Enum.find_index(&(&1 == selected))
+    racers_len = length(racers)
+
+    cond do
+      (selected_index && selected_index + 1 >= racers_len) || selected_index == nil ->
+        Enum.at(racers, 0)
+
+      selected_index != nil ->
+        Enum.at(racers, selected_index + 1)
+    end
   end
 
   defp list_races(location_id) do
