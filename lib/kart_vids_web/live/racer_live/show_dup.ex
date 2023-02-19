@@ -11,7 +11,7 @@ defmodule KartVidsWeb.RacerLive.ShowDup do
 
   @impl true
   def handle_params(%{"location_id" => location_id, "nickname" => nickname}, _url, socket) do
-    [{^nickname, id} | others] = Races.autocomplete_racer_nickname(nickname)
+    [{_nickname, id} | others] = Races.autocomplete_racer_nickname(nickname)
 
     if Enum.empty?(others) do
       {:noreply,
