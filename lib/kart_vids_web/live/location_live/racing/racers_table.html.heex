@@ -17,11 +17,15 @@
     </div>
   </:col>
   <:col :let={racer} label="" row_class="w-[80px] md:w-[160px]" inner_div_class="py-0 px-0 sm:px-0">
-    <.racer_photo racer={racer} />
+    <.link navigate={~p"/locations/#{@location}/racers/by_nickname/#{racer.nickname}"}>
+      <.racer_photo racer={racer} />
+    </.link>
   </:col>
   <:col :let={racer} label="Kart"><span class="text-md text-center md:text-xl xl:text-2xl"><%= racer.kart_num %></span></:col>
   <:col :let={racer} label="Name" row_class="max-w-[200px]">
-    <span class="text-md md:text-xl xl:text-2xl break-words"><%= racer.nickname %></span>
+    <.link navigate={~p"/locations/#{@location}/racers/by_nickname/#{racer.nickname}"}>
+      <span class="text-md md:text-xl xl:text-2xl break-words"><%= racer.nickname %></span>
+    </.link>
   </:col>
   <:col :let={racer} class="text-center" label="Best Lap" label_mobile="Best" row_class="px-1 text-center">
     <span id={"fastest_lap-#{racer.nickname |> sanitize_nickname()}"} class="text-md md:text-xl xl:text-2xl" phx-hook="HighlightHook">

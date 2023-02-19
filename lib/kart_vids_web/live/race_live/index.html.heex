@@ -5,8 +5,8 @@
   <.simple_form :let={f} for={:find_user} phx-change="search" class="w-64" autocomplete="off" onkeydown="return event.key != 'Enter';">
     <.input field={{f, :nickname}} label="Find by Nickname" type="text" autocomplete="off" phx-keydown="select" />
     <div class="absolute top-100 mt-1 z-10 border bg-white shadow-xl rounded">
-      <div :for={nickname <- @racer_autocomplete} class={["p-3 hover:bg-gradient-to-b hover:from-sky-800 hover:to-sky-400 hover:text-white hover:cursor-pointer", if(nickname == @selected, do: "bg-gradient-to-b from-sky-800 to-sky-400 text-white")]}>
-        <div class="divide-y" phx-click={JS.navigate(~p"/locations/#{@location_id}/racers/#{nickname}")}>
+      <div :for={{nickname, id} <- @racer_autocomplete} class={["p-3 hover:bg-gradient-to-b hover:from-sky-800 hover:to-sky-400 hover:text-white hover:cursor-pointer", if(id == @selected, do: "bg-gradient-to-b from-sky-800 to-sky-400 text-white")]}>
+        <div class="divide-y" phx-click={JS.navigate(~p"/locations/#{@location_id}/racers/#{id}")}>
           <%= nickname %>
         </div>
       </div>
@@ -22,5 +22,5 @@
 <%= race_table(%{location_id: @location_id, races: @races, timezone: @location.timezone, current_user: @current_user}) %>
 
 <.modal :if={@live_action in [:new, :edit]} id="race-modal" show on_cancel={JS.navigate(~p"/locations/#{@location_id}/races")}>
-  <.live_component module={KartVidsWeb.RaceLive.FormComponent} id={@race.id || :new} title={@page_title} action={@live_action} race={@race} navigate={~p"/locations/#{@location_id}/races"} current_user={@current_user}/>
+  <.live_component module={KartVidsWeb.RaceLive.FormComponent} id={@race.id || :new} title={@page_title} action={@live_action} race={@race} navigate={~p"/locations/#{@location_id}/races"} current_user={@current_user} />
 </.modal>

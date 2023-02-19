@@ -166,9 +166,7 @@ defmodule KartVids.Races.Listener do
     if state.config.reconnect_attempt > 10 do
       {:"$EXIT", "#{inspect(__MODULE__)}: Too many reconnect attempts!"}
     else
-      Logger.warn(
-        "Exiting due to repeated disconnect from location #{state.config.location_id}! #{inspect(connection_status)}"
-      )
+      Logger.warn("Exiting due to repeated disconnect from location #{state.config.location_id}! #{inspect(connection_status)}")
 
       Process.sleep(@reconnect_timeout)
 
@@ -254,18 +252,14 @@ defmodule KartVids.Races.Listener do
     scoreboard_by_kart = extract_scoreboard_data(scoreboard)
 
     if current_race == id do
-      Logger.info(
-        "Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was"
-      )
+      Logger.info("Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
 
       Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
 
       if fastest_speed_level == @fastest_speed_level do
         persist_kart_information(scoreboard_by_kart, location)
       else
-        Logger.info(
-          "Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest"
-        )
+        Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
       end
 
       persist_race_information(name, id, started_at, racer_data, laps, race_by, location)
@@ -358,9 +352,7 @@ defmodule KartVids.Races.Listener do
     speed = parse_speed_level(speed_level)
     win_by = Map.get(race, "win_by")
 
-    Logger.info(
-      "Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers"
-    )
+    Logger.info("Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers")
 
     state
     |> Map.merge(%{
@@ -379,14 +371,11 @@ defmodule KartVids.Races.Listener do
   def handle_race_data(
         {:ok,
          msg = %{
-           "race" =>
-             race = %{"id" => id, "ended" => 1, "duration" => duration, "racers" => racers}
+           "race" => race = %{"id" => id, "ended" => 1, "duration" => duration, "racers" => racers}
          }},
         %State{} = state
       ) do
-    Logger.warning(
-      "Race ID #{id} ended abruptly without scoreboard! Duration was: #{duration} Racers count: #{length(racers)}-- Message Keys: #{inspect(Map.keys(msg))}, Race Keys: #{inspect(Map.keys(race))}"
-    )
+    Logger.warning("Race ID #{id} ended abruptly without scoreboard! Duration was: #{duration} Racers count: #{length(racers)}-- Message Keys: #{inspect(Map.keys(msg))}, Race Keys: #{inspect(Map.keys(race))}")
 
     state
   end
@@ -412,9 +401,7 @@ defmodule KartVids.Races.Listener do
 
   # Not supposed to receive any messages, so log them if we get them
   def handle_info(msg, state) do
-    Logger.error(
-      "Received unknown message where process does not handle any messages: #{inspect(msg)}"
-    )
+    Logger.error("Received unknown message where process does not handle any messages: #{inspect(msg)}")
 
     {:ok, state}
   end
@@ -470,9 +457,7 @@ defmodule KartVids.Races.Listener do
           })
 
         true ->
-          Logger.info(
-            "Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect(performance)}"
-          )
+          Logger.info("Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect(performance)}")
       end
     end
   end
@@ -483,24 +468,32 @@ defmodule KartVids.Races.Listener do
   def persist_race_information(name, id, started_at, racers, laps, race_by, %Location{
         id: location_id
       }) do
-    Races.transaction(fn ->
-      {:ok, race} =
-        Races.create_race(:system, %{
-          name: name,
-          location_id: location_id,
-          external_race_id: id,
-          started_at: started_at,
-          ended_at: DateTime.utc_now(),
-          league?: Race.is_league_race?(name)
-        })
+    {:ok, race} =
+      Races.create_race(:system, %{
+        name: name,
+        location_id: location_id,
+        external_race_id: id,
+        started_at: started_at,
+        ended_at: DateTime.utc_now(),
+        league?: Race.is_league_race?(name)
+      })
 
-      if race_by != "laps" && race_by != "minutes" do
-        Logger.warn("Unexpected race by: #{race_by}")
-      end
+    if race_by != "laps" && race_by != "minutes" do
+      Logger.warn("Unexpected race by: #{race_by}")
+    end
 
-      for {racer_kart_num, racer} <- racers, !is_nil(racer_kart_num) do
-        racer_laps =
-          Enum.filter(laps, fn %{"kart_number" => kart_num} -> kart_num == racer_kart_num end)
+    for {racer_kart_num, racer} <- racers, !is_nil(racer_kart_num) do
+      racer_laps = Enum.filter(laps, fn %{"kart_number" => kart_num} -> kart_num == racer_kart_num end)
+
+      try do
+        {:ok, profile} =
+          Races.upsert_racer_profile(%{
+            nickname: racer.nickname,
+            photo: racer.photo,
+            fastest_lap_time: racer.fastest_lap,
+            fastest_lap_kart: racer.kart_num,
+            fastest_lap_race_id: race.id
+          })
 
         Races.create_racer(:system, %{
           average_lap: racer.average_lap,
@@ -510,10 +503,13 @@ defmodule KartVids.Races.Listener do
           photo: racer.photo,
           position: racer.position,
           race_id: race.id,
-          laps: racer_laps
+          laps: racer_laps,
+          racer_profile_id: profile.id
         })
+      rescue
+        e -> Logger.error(e)
       end
-    end)
+    end
   end
 
   def extract_scoreboard_data(results) when is_list(results) do
@@ -576,9 +572,7 @@ defmodule KartVids.Races.Listener do
 
   # Sometime kart number is nil, not really sure what to do about that so just don't crash
   defp add_racer(by_kart, nil, nickname, photo, fastest_lap, average_lap, last_lap, laps) do
-    Logger.warn(
-      "Unable to add racer with null kart number: #{inspect(%{nickname: nickname, photo: photo, fastest_lap: fastest_lap, average_lap: average_lap, last_lap: last_lap, laps: laps})}"
-    )
+    Logger.warn("Unable to add racer with null kart number: #{inspect(%{nickname: nickname, photo: photo, fastest_lap: fastest_lap, average_lap: average_lap, last_lap: last_lap, laps: laps})}")
 
     by_kart
   end

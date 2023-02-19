@@ -150,7 +150,8 @@ defmodule KartVidsWeb.Router do
 
       # Racer
       live("/locations/:location_id/races/:race_id/racers", RacerLive.Index, :index)
-      live("/locations/:location_id/racers/:nickname", RacerLive.Show, :show)
+      live("/locations/:location_id/racers/by_nickname/:nickname", RacerLive.ShowDup, :show)
+      live("/locations/:location_id/racers/:racer_profile_id", RacerLive.Show, :show)
     end
   end
 
@@ -170,7 +171,8 @@ defmodule KartVidsWeb.Router do
     else
       conn
       |> put_status(:unauthorized)
-      |> Phoenix.Controller.render(KartVidsWeb.ErrorView, "404.html")
+      |> Phoenix.Controller.put_view(KartVidsWeb.ErrorView)
+      |> Phoenix.Controller.render("404.html")
       |> halt
     end
   end

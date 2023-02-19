@@ -93,42 +93,44 @@ defmodule KartVidsWeb.RaceLive.Index do
   def handle_event("select", %{"key" => "Enter"}, socket) do
     {:noreply,
      socket
-     |> push_navigate(
-       to: ~p"/locations/#{socket.assigns.location_id}/racers/#{socket.assigns.selected}"
-     )}
+     |> push_navigate(to: ~p"/locations/#{socket.assigns.location_id}/racers/#{socket.assigns.selected}")}
   end
 
   def handle_event("select", _, socket) do
     {:noreply, socket}
   end
 
-  def select_racer(:up, racers, nil), do: List.last(racers)
-  def select_racer(:down, [racer | _], nil), do: racer
+  def select_racer(:up, racers, nil), do: List.last(racers) |> elem(1)
+  def select_racer(:down, [{_racer, id} | _], nil), do: id
   def select_racer(_any_direction, [], nil), do: nil
 
-  def select_racer(:up, racers, selected) when is_list(racers) and is_binary(selected) do
-    selected_index = racers |> Enum.find_index(&(&1 == selected))
+  def select_racer(:up, racers, selected) when is_list(racers) and is_integer(selected) do
+    selected_index = racers |> Enum.find_index(&match?({_, ^selected}, &1))
     racers_len = length(racers)
 
     cond do
       (selected_index && selected_index - 1 < 0) || selected_index == nil ->
-        Enum.at(racers, racers_len - 1)
+        {_name, id} = Enum.at(racers, racers_len - 1)
+        id
 
       selected_index != nil ->
-        Enum.at(racers, selected_index - 1)
+        {_name, id} = Enum.at(racers, selected_index - 1)
+        id
     end
   end
 
-  def select_racer(:down, racers, selected) when is_list(racers) and is_binary(selected) do
-    selected_index = racers |> Enum.find_index(&(&1 == selected))
+  def select_racer(:down, racers, selected) when is_list(racers) and is_integer(selected) do
+    selected_index = racers |> Enum.find_index(&match?({_, ^selected}, &1))
     racers_len = length(racers)
 
     cond do
       (selected_index && selected_index + 1 >= racers_len) || selected_index == nil ->
-        Enum.at(racers, 0)
+        {_name, id} = Enum.at(racers, 0)
+        id
 
       selected_index != nil ->
-        Enum.at(racers, selected_index + 1)
+        {_name, id} = Enum.at(racers, selected_index + 1)
+        id
     end
   end
 

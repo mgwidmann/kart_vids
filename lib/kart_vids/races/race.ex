@@ -1,4 +1,5 @@
 defmodule KartVids.Races.Race do
+  @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
   alias KartVids.Content.Location

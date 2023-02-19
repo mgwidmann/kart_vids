@@ -12,7 +12,7 @@ defmodule KartVidsWeb.RacerLive.Show do
 
   @impl true
   def handle_params(
-        %{"location_id" => location_id, "nickname" => nickname} = params,
+        %{"location_id" => location_id, "racer_profile_id" => racer_profile_id} = params,
         _url,
         socket
       ) do
@@ -23,22 +23,21 @@ defmodule KartVidsWeb.RacerLive.Show do
       socket
       |> assign(:location_id, location_id)
       |> assign(:location, location)
-      |> assign(:nickname, nickname)
+      |> assign(:racer_profile_id, racer_profile_id)
       |> apply_action(socket.assigns.live_action, params)
     }
   end
 
-  defp apply_action(socket, :show, %{"nickname" => nickname}) do
-    racer_races = Races.list_races_by_nickname(nickname)
-    photo = get_photo(racer_races)
-    selected_race = racer_races |> List.first()
+  defp apply_action(socket, :show, %{"racer_profile_id" => racer_profile_id}) do
+    racer_profile = Races.get_racer_profile!(racer_profile_id)
+    selected_race = racer_profile.races |> List.first()
     additional_assigns = select_race(selected_race)
 
     socket
-    |> assign(:page_title, "#{nickname}'s Races")
-    |> assign(:racer_races, racer_races)
+    |> assign(:page_title, "#{racer_profile.nickname}'s Races")
+    |> assign(:racer_profile, racer_profile)
+    |> assign(:racer_races, racer_profile.races)
     |> assign(:selected_race, selected_race)
-    |> assign(:racer_photo, photo)
     |> assign(additional_assigns)
   end
 

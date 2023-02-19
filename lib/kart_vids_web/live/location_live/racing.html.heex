@@ -37,9 +37,6 @@
   <%= if @speed_level do %>
     (Speed: <%= speed_string(@speed_level) %>)
   <% end %>
-  <%= if @speed_level && @speed_level != Listener.fastest_speed_level() do %>
-    <span class="text-2xl">🛑 SLOWED</span>
-  <% end %>
   <:subtitle>
     <%= race_state(@race_state) %> (Win By: <%= @win_by %>)
   </:subtitle>
@@ -50,14 +47,14 @@
     <%= if @race_state == :race_completed do %>
       <div class="lg:grid lg:grid-cols-3">
         <div class="col-span-1 pr-2">
-          <%= podium(%{scoreboard: @scoreboard, racers: @racers}) %>
+          <%= podium(%{location: @location, scoreboard: @scoreboard, racers: @racers}) %>
         </div>
         <div class="col-span-2">
-          <%= racers_table(%{racers: @racers, racer_change: @racer_change, first_amb: @first_amb}) %>
+          <%= racers_table(%{location: @location, racers: @racers, racer_change: @racer_change, first_amb: @first_amb}) %>
         </div>
       </div>
     <% else %>
-      <%= racers_table(%{racers: @racers, racer_change: @racer_change, first_amb: @first_amb}) %>
+      <%= racers_table(%{location: @location, racers: @racers, racer_change: @racer_change, first_amb: @first_amb}) %>
     <% end %>
   <% else %>
     <div class="flex justify-center items-center h-96">

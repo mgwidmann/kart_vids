@@ -1,30 +1,51 @@
-<div class="w-[80px] md:w-[160px] px-1">
-  <img src={@racer_photo} class="h-[50px] w-[80px] md:h-[100px] md:w-[160px] object-cover rounded-lg" />
-  <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= @nickname %></span>
+<div class="grid grid-cols-4 md:grid-cols-8 gap-4">
+  <div class="col-span-1 md:col-span-2">
+    <div class="w-[80px] md:w-[160px] px-1">
+      <img src={@racer_profile.photo} class="h-[50px] w-[80px] md:h-[100px] md:w-[160px] object-cover rounded-lg" />
+      <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= @racer_profile.nickname %></span>
+    </div>
+  </div>
+  <div class="col-span-3 md:col-span-6">
+    <div class="bg-white">
+      <div class="mx-auto max-w-7xl px-6 lg:px-8">
+        <dl class="grid grid-cols-1 gap-y-16 gap-x-8 text-center lg:grid-cols-3">
+          <div class="mx-auto flex max-w-xs flex-col gap-y-4">
+            <dt class="text-base leading-7 text-gray-600">Best ever lap time</dt>
+            <dd class="order-first text-3xl font-semibold tracking-tight text-gray-900 sm:text-5xl"><%= @racer_profile.fastest_lap_time %></dd>
+          </div>
+
+          <div class="mx-auto flex max-w-xs flex-col gap-y-4">
+            <dt class="text-base leading-7 text-gray-600">Best ever kart</dt>
+            <dd class="order-first text-3xl font-semibold tracking-tight text-gray-900 sm:text-5xl"><%= @racer_profile.fastest_lap_kart %></dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
 </div>
 
 <%= if length(@laps_by_time) > 0 && length(@lap_averages) > 0 do %>
-  <div class="grid grid-cols-8 gap-4">
+  <div class="grid grid-cols-4 md:grid-cols-8 gap-4">
     <div></div>
     <div class="col-span-4">
       <div class="">
         <%= @laps_by_time
-          |> Contex.Dataset.new()
-          |> Contex.Plot.new(Contex.LinePlot, 800, 600)
-          |> Contex.Plot.axis_labels("Lap", "Time")
-          |> Contex.Plot.titles(@selected_race.race.name, @selected_race.race.started_at)
-          |> Contex.Plot.to_svg() %>
+        |> Contex.Dataset.new()
+        |> Contex.Plot.new(Contex.LinePlot, 800, 600)
+        |> Contex.Plot.axis_labels("Lap", "Time")
+        |> Contex.Plot.titles(@selected_race.race.name, @selected_race.race.started_at)
+        |> Contex.Plot.to_svg() %>
       </div>
       <div class="">
         <%= @lap_averages
-          |> Contex.Dataset.new()
-          |> Contex.Plot.new(Contex.LinePlot, 800, 600)
-          |> Contex.Plot.axis_labels("Lap", "Time")
-          |> Contex.Plot.titles("Average Time", "")
-          |> Contex.Plot.to_svg() %>
+        |> Contex.Dataset.new()
+        |> Contex.Plot.new(Contex.LinePlot, 800, 600)
+        |> Contex.Plot.axis_labels("Lap", "Time")
+        |> Contex.Plot.titles("Average Time", "")
+        |> Contex.Plot.to_svg() %>
       </div>
     </div>
-    <div class="col-span-2">
+    <div class="col-span-4 md:col-span-2">
       <.table id="laps-table" rows={@laps}>
         <:col :let={lap} label="Lap">
           <%= lap.lap_number %>
@@ -40,11 +61,11 @@
   </div>
 <% else %>
   <div class="grid grid-cols-8 gap-4 my-8">
-    <div class="col-span-2"></div>
-    <div class="col-span-4">
+    <div class="md:col-span-2"></div>
+    <div class="col-span-8 md:col-span-4">
       <h1 class="text-center text-md md:text-xl lg:text-2xl xl:text-4xl">The selected race does not have lap times recorded, please choose another.</h1>
     </div>
-    <div class="col-span-2"></div>
+    <div class="md:col-span-2"></div>
   </div>
 <% end %>
 
@@ -66,7 +87,7 @@
   <:col :let={racer} label="Finish Position" label_mobile="Pos." row_class="bg-sky-400 sm:max-w-[75px] text-center">
     <h1 class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.position %></h1>
   </:col>
-  
+
   <:col :let={racer} label="Kart"><span class="text-md text-center md:text-xl lg:text-2xl xl:text-4xl"><%= racer.kart_num %></span></:col>
   <:col :let={racer} label="Best Lap" label_mobile="Best">
     <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= format_lap(racer.fastest_lap) %></span>

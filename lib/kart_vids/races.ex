@@ -7,8 +7,7 @@ defmodule KartVids.Races do
   import KartVids.Helpers
   alias KartVids.Repo
 
-  alias KartVids.Races.Racer
-  alias KartVids.Races.Kart
+  alias KartVids.Races.{Racer, RacerProfile, Kart}
 
   @doc """
   Returns the list of karts.
@@ -378,9 +377,9 @@ defmodule KartVids.Races do
   end
 
   def autocomplete_racer_nickname(search) do
-    from(r in Racer,
+    from(r in RacerProfile,
       where: fragment("nickname_vector @@ to_tsquery(?)", ^"#{search}:*"),
-      select: r.nickname,
+      select: {r.nickname, r.id},
       distinct: true,
       limit: 5
     )
@@ -474,5 +473,126 @@ defmodule KartVids.Races do
   """
   def change_racer(%Racer{} = racer, attrs \\ %{}) do
     Racer.changeset(racer, attrs)
+  end
+
+  @doc """
+  Creates or updates a racer profile with the given attributes.
+
+  ## Examples
+
+      iex> upsert_racer_profile(%{fastest_lap_time: 19.23, nickname: "Speedy", photo: "https://images.com/speedy.jpg"})
+      {:ok, %RacerProfile{}}
+  """
+  def upsert_racer_profile(attrs) do
+    profile = get_racer_profile_by_attrs(attrs)
+
+    if profile do
+      fastest_lap_time = profile.fastest_lap_time
+      attrs_fastest_lap = attrs["fastest_lap_time"] || attrs[:fastest_lap_time]
+
+      attrs =
+        if fastest_lap_time < attrs_fastest_lap do
+          Map.drop(attrs, [:fastest_lap_time, :fastest_lap_kart, :fastest_lap_race_id, "fastest_lap_time", "fastest_lap_kart", "fastest_lap_race_id"])
+        else
+          attrs
+        end
+
+      update_racer_profile(profile, attrs)
+    else
+      create_racer_profile(attrs)
+    end
+  end
+
+  @doc """
+  Creates a racer profile.
+
+  ## Examples
+
+      iex> create_racer_profile(%{field: value})
+      {:ok, %RacerProfile{}}
+
+      iex> create_racer_profile(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_racer_profile(attrs) do
+    %RacerProfile{}
+    |> RacerProfile.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Gets a single racer profile.
+
+  Raises `Ecto.NoResultsError` if the RacerProfile does not exist.
+
+  ## Examples
+
+      iex> get_racer_profile!(123)
+      %RacerProfile{}
+
+      iex> get_racer_profile!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_racer_profile!(id), do: Repo.get!(RacerProfile, id) |> Repo.preload(races: [:race])
+
+  def get_racer_profiles!(ids) when is_list(ids) do
+    from(r in RacerProfile, where: r.id in ^ids)
+    |> Repo.all()
+  end
+
+  def get_racer_profile_by_attrs(%{"nickname" => nickname, "photo" => photo}), do: get_racer_profile_by_attrs(%{nickname: nickname, photo: photo})
+
+  def get_racer_profile_by_attrs(%{nickname: nickname, photo: photo}) do
+    from(r in RacerProfile, where: r.nickname == ^nickname and r.photo == ^photo, limit: 1)
+    |> Repo.one()
+  end
+
+  @doc """
+  Updates a racer profile.
+
+  ## Examples
+
+      iex> update_racer_profile(racer_profile, %{field: new_value})
+      {:ok, %RacerProfile{}}
+
+      iex> update_racer_profile(racer_profile, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_racer_profile(%RacerProfile{} = racer_profile, attrs) do
+    racer_profile
+    |> RacerProfile.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a racer profile.
+
+  ## Examples
+
+      iex> delete_racer_profile(racer_profile)
+      {:ok, %RacerProfile{}}
+
+      iex> delete_racer_profile(racer_profile)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_racer_profile(%RacerProfile{} = racer_profile) do
+    Repo.delete(racer_profile)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking racer profile changes.
+
+  ## Examples
+
+      iex> change_racer_profile(racer_profile)
+      %Ecto.Changeset{data: %RacerProfile{}}
+
+  """
+  def change_racer_profile(%RacerProfile{} = racer_profile, attrs \\ %{}) do
+    RacerProfile.changeset(racer_profile, attrs)
   end
 end

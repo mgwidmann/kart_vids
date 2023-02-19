@@ -1,8 +1,9 @@
 defmodule KartVids.Races.Racer do
+  @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias KartVids.Races.Race
+  alias KartVids.Races.{Race, RacerProfile}
   alias KartVids.Races.Racer.Lap
 
   schema "racers" do
@@ -14,6 +15,7 @@ defmodule KartVids.Races.Racer do
     field :position, :integer
 
     belongs_to :race, Race
+    belongs_to :racer_profile, RacerProfile
 
     embeds_many :laps, Lap
 
@@ -23,7 +25,7 @@ defmodule KartVids.Races.Racer do
   @doc false
   def changeset(racer, attrs) do
     racer
-    |> cast(attrs, [:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id])
+    |> cast(attrs, [:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id, :racer_profile_id])
     |> cast_embed(:laps)
     |> validate_required([:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id])
   end
