@@ -535,10 +535,24 @@ defmodule KartVidsWeb.CoreComponents do
     """
   end
 
+  attr(:size, :atom, default: :large, values: ~w(small large)a)
+  attr(:photo, :string)
+  attr(:class, :string, default: nil)
+
   def racer_photo(assigns) do
-    ~H"""
-    <img src={@racer.photo} class="h-[50px] w-[80px] md:h-[100px] md:w-[160px] object-cover" />
-    """
+    size = Map.get(assigns, :size, :large)
+
+    case size do
+      :large ->
+        ~H"""
+        <img src={@photo} class={["h-[50px] w-[80px] md:h-[100px] md:w-[160px] object-cover", @class]} />
+        """
+
+      :small ->
+        ~H"""
+        <img src={@photo} class={["h-[50px] w-[80px] object-cover", @class]} />
+        """
+    end
   end
 
   @doc """
@@ -661,10 +675,7 @@ defmodule KartVidsWeb.CoreComponents do
     JS.show(js,
       to: selector,
       time: time,
-      transition:
-        {"transition-all transform ease-out duration-300",
-         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
-         "opacity-100 translate-y-0 sm:scale-100"}
+      transition: {"transition-all transform ease-out duration-300", "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95", "opacity-100 translate-y-0 sm:scale-100"}
     )
   end
 
@@ -672,10 +683,7 @@ defmodule KartVidsWeb.CoreComponents do
     JS.hide(js,
       to: selector,
       time: time,
-      transition:
-        {"transition-all transform ease-in duration-200",
-         "opacity-100 translate-y-0 sm:scale-100",
-         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
+      transition: {"transition-all transform ease-in duration-200", "opacity-100 translate-y-0 sm:scale-100", "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
     )
   end
 

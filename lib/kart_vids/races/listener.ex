@@ -507,7 +507,7 @@ defmodule KartVids.Races.Listener do
           racer_profile_id: profile.id
         })
       rescue
-        e -> Logger.error(e)
+        err -> Logger.error("Failure to upsert profile: #{racer.nickname} #{racer.photo} #{racer.fastest_lap} #{racer.kart_num} -- #{Exception.format(:error, err, __STACKTRACE__)}")
       end
     end
   end

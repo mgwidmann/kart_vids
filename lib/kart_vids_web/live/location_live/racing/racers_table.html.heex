@@ -18,7 +18,7 @@
   </:col>
   <:col :let={racer} label="" row_class="w-[80px] md:w-[160px]" inner_div_class="py-0 px-0 sm:px-0">
     <.link navigate={~p"/locations/#{@location}/racers/by_nickname/#{racer.nickname}"}>
-      <.racer_photo racer={racer} />
+      <.racer_photo photo={racer.photo} />
     </.link>
   </:col>
   <:col :let={racer} label="Kart"><span class="text-md text-center md:text-xl xl:text-2xl"><%= racer.kart_num %></span></:col>

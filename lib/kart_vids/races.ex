@@ -378,8 +378,8 @@ defmodule KartVids.Races do
 
   def autocomplete_racer_nickname(search) do
     from(r in RacerProfile,
-      where: fragment("nickname_vector @@ to_tsquery(?)", ^"#{search}:*"),
-      select: {r.nickname, r.id},
+      where: fragment("nickname_vector @@ to_tsquery(quote_literal(?) || ':*')", ^search),
+      select: {r.nickname, r.id, r.photo},
       distinct: true,
       limit: 5
     )
