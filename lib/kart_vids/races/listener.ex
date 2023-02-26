@@ -482,30 +482,33 @@ defmodule KartVids.Races.Listener do
       Logger.warn("Unexpected race by: #{race_by}")
     end
 
-    for {racer_kart_num, racer} <- racers, !is_nil(racer_kart_num) do
+    for {racer_kart_num, racer} <- racers, racer_kart_num != nil, racer.nickname != nil, racer.photo != nil do
       racer_laps = Enum.filter(laps, fn %{"kart_number" => kart_num} -> kart_num == racer_kart_num end)
 
       try do
-        {:ok, profile} =
-          Races.upsert_racer_profile(%{
-            nickname: racer.nickname,
-            photo: racer.photo,
-            fastest_lap_time: racer.fastest_lap,
-            fastest_lap_kart: racer.kart_num,
-            fastest_lap_race_id: race.id
-          })
+        case Races.upsert_racer_profile(%{
+               nickname: racer.nickname,
+               photo: racer.photo,
+               fastest_lap_time: racer.fastest_lap,
+               fastest_lap_kart: racer.kart_num,
+               fastest_lap_race_id: race.id
+             }) do
+          {:ok, profile} ->
+            Races.create_racer(:system, %{
+              average_lap: racer.average_lap,
+              fastest_lap: racer.fastest_lap,
+              kart_num: racer.kart_num,
+              nickname: racer.nickname,
+              photo: racer.photo,
+              position: racer.position,
+              race_id: race.id,
+              laps: racer_laps,
+              racer_profile_id: profile.id
+            })
 
-        Races.create_racer(:system, %{
-          average_lap: racer.average_lap,
-          fastest_lap: racer.fastest_lap,
-          kart_num: racer.kart_num,
-          nickname: racer.nickname,
-          photo: racer.photo,
-          position: racer.position,
-          race_id: race.id,
-          laps: racer_laps,
-          racer_profile_id: profile.id
-        })
+          {:error, changeset} ->
+            Logger.warn("Unable to upsert profile due to validation failure for #{racer.nickname} #{racer.photo} - Lap: #{racer.fastest_lap} Kart: #{racer.kart_num} - #{inspect(changeset)}")
+        end
       rescue
         err -> Logger.error("Failure to upsert profile: #{racer.nickname} #{racer.photo} #{racer.fastest_lap} #{racer.kart_num} -- #{Exception.format(:error, err, __STACKTRACE__)}")
       end

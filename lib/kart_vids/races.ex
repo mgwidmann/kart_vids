@@ -544,10 +544,12 @@ defmodule KartVids.Races do
 
   def get_racer_profile_by_attrs(%{"nickname" => nickname, "photo" => photo}), do: get_racer_profile_by_attrs(%{nickname: nickname, photo: photo})
 
-  def get_racer_profile_by_attrs(%{nickname: nickname, photo: photo}) do
+  def get_racer_profile_by_attrs(%{nickname: nickname, photo: photo}) when not is_nil(nickname) and not is_nil(photo) do
     from(r in RacerProfile, where: r.nickname == ^nickname and r.photo == ^photo, limit: 1)
     |> Repo.one()
   end
+
+  def get_racer_profile_by_attrs(_), do: nil
 
   @doc """
   Updates a racer profile.
