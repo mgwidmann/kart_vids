@@ -262,11 +262,7 @@ defmodule KartVids.Races.Listener do
         Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
       end
 
-      persist_race_information(name, id, started_at, racer_data, laps, race_by, location)
-    end
-
-    if win_by != "laptime" && win_by != "position" do
-      Logger.warn("Unexpected win by: #{win_by}")
+      persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, location)
     end
 
     # Update for broadcast but don't keep it
@@ -465,7 +461,7 @@ defmodule KartVids.Races.Listener do
   # Do nothing if there are no laps
   def persist_race_information(_name, _id, _started_at, _racers, [], _race_by, _location), do: nil
 
-  def persist_race_information(name, id, started_at, racers, laps, race_by, %Location{
+  def persist_race_information(name, id, started_at, racers, laps, race_by, win_by, %Location{
         id: location_id
       }) do
     {:ok, race} =
@@ -480,6 +476,10 @@ defmodule KartVids.Races.Listener do
 
     if race_by != "laps" && race_by != "minutes" do
       Logger.warn("Unexpected race by: #{race_by}")
+    end
+
+    if win_by != "laptime" && win_by != "position" do
+      Logger.warn("Unexpected win by: #{win_by}")
     end
 
     for {racer_kart_num, racer} <- racers, racer_kart_num != nil, racer.nickname != nil, racer.photo != nil do
@@ -503,7 +503,9 @@ defmodule KartVids.Races.Listener do
               position: racer.position,
               race_id: race.id,
               laps: racer_laps,
-              racer_profile_id: profile.id
+              racer_profile_id: profile.id,
+              race_by: race_by,
+              win_by: win_by
             })
 
           {:error, changeset} ->
