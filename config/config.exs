@@ -74,6 +74,18 @@ config :phoenix, :json_library, Jason
 config :kart_vids,
   aws_region: "us-east-1"
 
+config :kart_vids, KartVids.Races.RacerProfile.Cache,
+  backend: :shards,
+  gc_interval: :timer.hours(12),
+  # Max entries in cache
+  max_size: 1000,
+  # Max memory in cache in bytes
+  allocated_memory: 150_000,
+  # GC min timeout: 10 sec
+  gc_cleanup_min_timeout: :timer.seconds(10),
+  # GC max timeout: 10 min
+  gc_cleanup_max_timeout: :timer.minutes(10)
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

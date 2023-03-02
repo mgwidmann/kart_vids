@@ -20,6 +20,7 @@ defmodule KartVids.Application do
       Flames.Supervisor,
       # Start the PubSub system
       {Phoenix.PubSub, name: KartVids.PubSub},
+      KartVids.Races.RacerProfile.Cache,
       # Start the Endpoint (http/https)
       KartVidsWeb.Endpoint,
       # Start a worker by calling: KartVids.Worker.start_link(arg)

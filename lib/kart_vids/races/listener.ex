@@ -73,7 +73,8 @@ defmodule KartVids.Races.Listener do
             average_lap: float(),
             last_lap: float(),
             position: pos_integer(),
-            laps: list(map())
+            laps: list(map()),
+            racer_profile_id: pos_integer() | nil
           }
     defstruct nickname: "",
               photo: "",
@@ -82,7 +83,8 @@ defmodule KartVids.Races.Listener do
               average_lap: 999.99,
               last_lap: 999.99,
               position: 99,
-              laps: []
+              laps: [],
+              racer_profile_id: nil
   end
 
   @fastest_speed_level 1
@@ -251,19 +253,24 @@ defmodule KartVids.Races.Listener do
     racer_data = extract_racer_data(racers)
     scoreboard_by_kart = extract_scoreboard_data(scoreboard)
 
-    if current_race == id do
-      Logger.info("Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
+    profile_id_by_kart =
+      if current_race == id do
+        Logger.info("Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
 
-      Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
+        Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
 
-      if fastest_speed_level == @fastest_speed_level do
-        persist_kart_information(scoreboard_by_kart, location)
+        if fastest_speed_level == @fastest_speed_level do
+          persist_kart_information(scoreboard_by_kart, location)
+        else
+          Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
+        end
+
+        persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, location)
       else
-        Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
+        get_profile_ids_for_racer_data(racer_data)
       end
 
-      persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, location)
-    end
+    racer_data = augment_racer_data(racer_data, profile_id_by_kart)
 
     # Update for broadcast but don't keep it
     state
@@ -350,6 +357,10 @@ defmodule KartVids.Races.Listener do
 
     Logger.info("Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers")
 
+    racer_data = extract_racer_data(racers)
+    profile_ids_by_kart = get_profile_ids_for_racer_data(racer_data)
+    racer_data = augment_racer_data(racer_data, profile_ids_by_kart)
+
     state
     |> Map.merge(%{
       current_race: id,
@@ -357,7 +368,7 @@ defmodule KartVids.Races.Listener do
       race_name: name,
       fastest_speed_level: speed,
       speed_level: speed,
-      racers: extract_racer_data(racers),
+      racers: racer_data,
       scoreboard: nil,
       win_by: win_by
     })
@@ -459,7 +470,7 @@ defmodule KartVids.Races.Listener do
   end
 
   # Do nothing if there are no laps
-  def persist_race_information(_name, _id, _started_at, _racers, [], _race_by, _location), do: nil
+  def persist_race_information(_name, _id, _started_at, _racers, [], _race_by, _location), do: %{}
 
   def persist_race_information(name, id, started_at, racers, laps, race_by, win_by, %Location{
         id: location_id
@@ -482,7 +493,7 @@ defmodule KartVids.Races.Listener do
       Logger.warn("Unexpected win by: #{win_by}")
     end
 
-    for {racer_kart_num, racer} <- racers, racer_kart_num != nil, racer.nickname != nil, racer.photo != nil do
+    for {racer_kart_num, racer} <- racers, racer_kart_num != nil, racer.nickname != nil, racer.photo != nil, into: %{} do
       racer_laps = Enum.filter(laps, fn %{"kart_number" => kart_num} -> kart_num == racer_kart_num end)
 
       try do
@@ -508,11 +519,18 @@ defmodule KartVids.Races.Listener do
               win_by: win_by
             })
 
+            {racer.kart_num, profile.id}
+
           {:error, changeset} ->
             Logger.warn("Unable to upsert profile due to validation failure for #{racer.nickname} #{racer.photo} - Lap: #{racer.fastest_lap} Kart: #{racer.kart_num} - #{inspect(changeset)}")
+
+            {racer.kart_num, nil}
         end
       rescue
-        err -> Logger.error("Failure to upsert profile: #{racer.nickname} #{racer.photo} #{racer.fastest_lap} #{racer.kart_num} -- #{Exception.format(:error, err, __STACKTRACE__)}")
+        err ->
+          Logger.error("Failure to upsert profile: #{racer.nickname} #{racer.photo} #{racer.fastest_lap} #{racer.kart_num} -- #{Exception.format(:error, err, __STACKTRACE__)}")
+
+          {racer.kart_num, nil}
       end
     end
   end
@@ -644,6 +662,26 @@ defmodule KartVids.Races.Listener do
   end
 
   def fastest_speed_level(), do: @fastest_speed_level
+
+  def augment_racer_data(racer_data, profile_id_by_kart) do
+    # Update racer data with racer_profile_id info
+    racer_data
+    |> Stream.map(fn {kart_num, racer} ->
+      profile_id = profile_id_by_kart[kart_num]
+      racer = %{racer | racer_profile_id: profile_id}
+      {kart_num, racer}
+    end)
+    |> Enum.into(%{})
+  end
+
+  def get_profile_ids_for_racer_data(racer_data) do
+    # Look up profile info by composite keys
+    profiles = racer_data |> Enum.map(fn {_kart_num, racer} -> %{nickname: racer.nickname, photo: racer.photo, id: Races.get_racer_profile_id(racer.nickname, racer.photo)} end)
+
+    for {kart_num, racer} <- racer_data, profile <- profiles, profile != nil, profile.nickname == racer.nickname, profile.photo == racer.photo, into: %{} do
+      {kart_num, profile.id}
+    end
+  end
 end
 
 # {

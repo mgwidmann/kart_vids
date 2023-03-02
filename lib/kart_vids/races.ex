@@ -2,12 +2,13 @@ defmodule KartVids.Races do
   @moduledoc """
   The Races context.
   """
-
+  use Nebulex.Caching
   import Ecto.Query, warn: false
   import KartVids.Helpers
   alias KartVids.Repo
 
   alias KartVids.Races.{Racer, RacerProfile, Kart}
+  alias KartVids.Races.RacerProfile.Cache, as: RacerProfileCache
 
   @doc """
   Returns the list of karts.
@@ -542,14 +543,32 @@ defmodule KartVids.Races do
     |> Repo.all()
   end
 
-  def get_racer_profile_by_attrs(%{"nickname" => nickname, "photo" => photo}), do: get_racer_profile_by_attrs(%{nickname: nickname, photo: photo})
+  def get_racer_profile_by_attrs(%{"nickname" => nickname, "photo" => photo}), do: get_racer_profile_by_attrs(nickname, photo)
 
   def get_racer_profile_by_attrs(%{nickname: nickname, photo: photo}) when not is_nil(nickname) and not is_nil(photo) do
-    from(r in RacerProfile, where: r.nickname == ^nickname and r.photo == ^photo, limit: 1)
-    |> Repo.one()
+    get_racer_profile_by_attrs(nickname, photo)
   end
 
   def get_racer_profile_by_attrs(_), do: nil
+
+  @spec get_racer_profile_by_attrs(String.t(), String.t()) :: RacerProfile.t()
+  def get_racer_profile_by_attrs(nickname, photo) do
+    query_racer_profile_by_attrs(nickname, photo)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  @racer_profile_ttl :timer.hours(1)
+  @decorate cacheable(cache: RacerProfileCache, key: {RacerProfile, {nickname, photo}}, opts: [ttl: @racer_profile_ttl])
+  @spec get_racer_profile_id(String.t(), String.t()) :: pos_integer()
+  def get_racer_profile_id(nickname, photo) do
+    from(r in query_racer_profile_by_attrs(nickname, photo), select: r.id, limit: 1)
+    |> Repo.one()
+  end
+
+  defp query_racer_profile_by_attrs(nickname, photo, query \\ RacerProfile) do
+    from(r in query, or_where: r.nickname == ^nickname and r.photo == ^photo)
+  end
 
   @doc """
   Updates a racer profile.
