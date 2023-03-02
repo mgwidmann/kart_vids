@@ -24,7 +24,7 @@
   </div>
 </div>
 
-<%= if length(@laps_by_time) > 0 && length(@lap_averages) > 0 do %>
+<%= if !Enum.empty?(@laps_by_time) && !Enum.empty?(@lap_averages) do %>
   <div class="grid grid-cols-4 md:grid-cols-8 gap-4">
     <div></div>
     <div class="col-span-4">
