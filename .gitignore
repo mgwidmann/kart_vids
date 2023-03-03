@@ -32,3 +32,5 @@ kart_vids-*.tar
 npm-debug.log
 /assets/node_modules/
 .fetch
+
+*.sql

@@ -7,7 +7,7 @@ defmodule KartVids.Races do
   import KartVids.Helpers
   alias KartVids.Repo
 
-  alias KartVids.Races.{Racer, RacerProfile, Kart}
+  alias KartVids.Races.{Racer, RacerProfile, Kart, Season}
   alias KartVids.Races.RacerProfile.Cache, as: RacerProfileCache
 
   @doc """
@@ -615,5 +615,100 @@ defmodule KartVids.Races do
   """
   def change_racer_profile(%RacerProfile{} = racer_profile, attrs \\ %{}) do
     RacerProfile.changeset(racer_profile, attrs)
+  end
+
+  @doc """
+  Returns the list of active seasons.
+
+  ## Examples
+
+      iex> list_active_seasons()
+      [%Kart{}, ...]
+
+  """
+  def list_active_seasons() do
+    from(s in Season, where: s.ended == false)
+    |> Repo.all()
+  end
+
+  @doc """
+  Gets a single season.
+
+  Raises `Ecto.NoResultsError` if the Season does not exist.
+
+  ## Examples
+
+      iex> get_season!(123)
+      %Kart{}
+
+      iex> get_season!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_season!(id), do: Repo.get!(Season, id)
+
+  @doc """
+  Creates a Season.
+
+  ## Examples
+
+      iex> create_season(%{field: value})
+      {:ok, %Season{}}
+
+      iex> create_season(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_season(attrs) do
+    %Season{}
+    |> Season.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a season.
+
+  ## Examples
+
+      iex> update_season(season, %{field: new_value})
+      {:ok, %Season{}}
+
+      iex> update_season(season, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_season(%Season{} = season, attrs) do
+    season
+    |> Season.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a season.
+
+  ## Examples
+
+      iex> delete_season(season)
+      {:ok, %Season{}}
+
+      iex> delete_season(season)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_season(%Season{} = season) do
+    Repo.delete(season)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking season changes.
+
+  ## Examples
+
+      iex> change_season(season)
+      %Ecto.Changeset{data: %Season{}}
+
+  """
+  def change_season(%Season{} = season, attrs \\ %{}) do
+    Season.changeset(season, attrs)
   end
 end
