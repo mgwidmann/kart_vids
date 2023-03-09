@@ -11,6 +11,7 @@ defmodule KartVids.Races.Race do
     field :started_at, :utc_datetime
     field :ended_at, :utc_datetime
     field :league?, :boolean, source: :league, default: false
+    field :league_type, Ecto.Enum, values: [none: 0, practice: 100, qualifier: 200, feature: 300]
 
     belongs_to :location, Location
 
@@ -22,8 +23,12 @@ defmodule KartVids.Races.Race do
   @doc false
   def changeset(race, attrs) do
     race
-    |> cast(attrs, [:external_race_id, :name, :started_at, :ended_at, :location_id, :league?])
+    |> cast(attrs, [:external_race_id, :name, :started_at, :ended_at, :location_id, :league?, :league_type])
     |> validate_required([:external_race_id, :name, :started_at, :ended_at, :location_id])
+  end
+
+  def league_types() do
+    Ecto.Enum.mappings(__MODULE__, :league_type)
   end
 
   @feature_race ["aekc race"]

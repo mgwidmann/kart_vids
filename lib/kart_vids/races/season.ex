@@ -38,6 +38,11 @@ defmodule KartVids.Races.Season do
     Ecto.Enum.mappings(__MODULE__, :weekly_start_day)
   end
 
+  def weekly_start_day(number) when number >= 1 and number <= 7 do
+    inverted = for({k, v} <- weekly_start_days(), into: %{}, do: {v, k})
+    inverted[number]
+  end
+
   def driver_types() do
     Ecto.Enum.mappings(__MODULE__, :driver_type)
   end

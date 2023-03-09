@@ -17,7 +17,7 @@
   </.link>
   <:actions>
     <div class="flex justify-between items-center shrink-0">
-      <.simple_form :let={f} for={:race_type} phx-change="change_race_type" class="mr-2 min-w-[7rem]">
+      <.simple_form :let={f} for={%{}} as={:race_type} phx-change="change_race_type" class="mr-2 min-w-[7rem]">
         <.input field={{f, :race_type}} type="select" options={["Best Lap": :best_lap, Position: :position]} value={@race_type} />
       </.simple_form>
       <.link navigate={~p"/locations/#{@location}/races"}>

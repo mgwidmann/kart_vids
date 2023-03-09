@@ -6,7 +6,11 @@
     <%= race.name %>
   </:col>
   <:col :let={race} label="League?">
-    <%= if(race.league?, do: "Yes", else: "No") %>
+    <%= if race.league? do %>
+      <%= (race.league_type || "yes") |> Phoenix.Naming.humanize() %>
+    <% else %>
+      No
+    <% end %>
   </:col>
   <:col :let={race} label="Started at">
     <.display_timestamp timestamp={race.started_at} timezone={@timezone} />

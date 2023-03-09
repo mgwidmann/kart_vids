@@ -19,6 +19,7 @@ defmodule KartVidsWeb.RaceLive.FormComponent do
         <.input field={{f, :started_at}} type="datetime-local" label="Started At" />
         <.input field={{f, :ended_at}} type="datetime-local" label="Ended At" />
         <.input field={{f, :league?}} type="checkbox" label="Is League Race?" />
+        <.input field={{f, :league_type}} type="select" label="League Race Type" options={Races.Race.league_types() |> Keyword.keys()} />
         <:actions>
           <.button phx-disable-with="Saving...">Save Race</.button>
         </:actions>

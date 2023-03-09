@@ -5,7 +5,9 @@ defmodule KartVids.Races do
   use Nebulex.Caching
   import Ecto.Query, warn: false
   import KartVids.Helpers
+  alias KartVids.Races.SeasonRacer
   alias KartVids.Repo
+  require Logger
 
   alias KartVids.Races.{Racer, RacerProfile, Kart, Season}
   alias KartVids.Races.RacerProfile.Cache, as: RacerProfileCache
@@ -194,6 +196,27 @@ defmodule KartVids.Races do
 
   """
   def get_race!(id), do: Repo.get!(Race, id)
+
+  @doc """
+  Gets a single race by external id.
+
+  Raises `Ecto.NoResultsError` if the Race does not exist.
+
+  ## Examples
+
+      iex> get_race_by_external_id!("123")
+      %Race{}
+
+      iex> get_race_by_external_id!("456")
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_race_by_external_id!(id), do: Repo.get_by!(Race, external_race_id: id)
+
+  def race_with_racers(race) do
+    race
+    |> Repo.preload(racers: :racer_profile)
+  end
 
   @doc """
   Creates a race.
@@ -561,9 +584,14 @@ defmodule KartVids.Races do
   @racer_profile_ttl :timer.hours(1)
   @decorate cacheable(cache: RacerProfileCache, key: {RacerProfile, {nickname, photo}}, opts: [ttl: @racer_profile_ttl])
   @spec get_racer_profile_id(String.t(), String.t()) :: pos_integer()
-  def get_racer_profile_id(nickname, photo) do
+  def get_racer_profile_id(nickname, photo) when not is_nil(nickname) and not is_nil(photo) do
     from(r in query_racer_profile_by_attrs(nickname, photo), select: r.id, limit: 1)
     |> Repo.one()
+  end
+
+  def get_racer_profile_id(nickname, photo) do
+    Logger.warn("Failed attempt to get racer #{nickname} #{photo}")
+    nil
   end
 
   defp query_racer_profile_by_attrs(nickname, photo, query \\ RacerProfile) do
@@ -629,6 +657,8 @@ defmodule KartVids.Races do
   def list_active_seasons() do
     from(s in Season, where: s.ended == false)
     |> Repo.all()
+    |> Repo.preload(:location)
+    |> Repo.preload(:season_racers)
   end
 
   @doc """
@@ -663,6 +693,14 @@ defmodule KartVids.Races do
     %Season{}
     |> Season.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def create_season_racer(%Season{id: season_id, season_racers: racers}, racer_profile_id) do
+    unless Enum.any?(racers, &(&1.id == racer_profile_id)) do
+      %SeasonRacer{}
+      |> SeasonRacer.changeset(%{season_id: season_id, racer_profile_id: racer_profile_id})
+      |> Repo.insert()
+    end
   end
 
   @doc """

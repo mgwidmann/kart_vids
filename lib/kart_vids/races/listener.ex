@@ -31,6 +31,7 @@ defmodule KartVids.Races.Listener do
     @type t :: %State{
             config: Config.t(),
             current_race: nil | Stirng.t(),
+            current_race_started_at: nil | String.t(),
             race_name: nil | String.t(),
             fastest_speed_level: nil | pos_integer(),
             speed_level: nil | pos_integer(),
@@ -267,6 +268,10 @@ defmodule KartVids.Races.Listener do
 
         persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, location)
       else
+        if unquote(Mix.env()) == :prod do
+          Logger.info("Race #{current_race} #{name} Complete! Started at #{started_at || "(unknown)"} with #{length(racers)} racers")
+        end
+
         get_profile_ids_for_racer_data(racer_data)
       end
 
@@ -315,6 +320,10 @@ defmodule KartVids.Races.Listener do
          }},
         %State{current_race: id, fastest_speed_level: fastest_speed_level} = state
       ) do
+    if unquote(Mix.env()) == :prod do
+      Logger.info("Race #{name} (#{id}) continues with #{length(racers)} racers")
+    end
+
     speed = parse_speed_level(speed_level)
     win_by = Map.get(race, "win_by")
     new_speed = min(speed, fastest_speed_level || 99)
@@ -545,10 +554,15 @@ defmodule KartVids.Races.Listener do
       },
       karts
       when not is_nil(kart_num) ->
-        {position, ""} = Integer.parse(position)
-        {rpm, ""} = Integer.parse(rpm)
-        {lap_time, ""} = Float.parse(lap_time)
-        Map.put(karts, kart_num, %{lap_time: lap_time, rpm: rpm, position: position})
+        with {position, ""} <- Integer.parse(position),
+             {rpm, ""} <- Integer.parse(rpm),
+             {lap_time, ""} <- Float.parse(lap_time) do
+          Map.put(karts, kart_num, %{lap_time: lap_time, rpm: rpm, position: position})
+        else
+          err ->
+            Logger.warn("Extract scoreboard parsing issue for #{lap_time}| #{kart_num} | #{rpm} | #{position} : #{inspect(err)}")
+            karts
+        end
 
       _, karts ->
         karts
