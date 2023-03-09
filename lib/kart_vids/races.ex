@@ -598,6 +598,11 @@ defmodule KartVids.Races do
     from(r in query, or_where: r.nickname == ^nickname and r.photo == ^photo)
   end
 
+  def list_racer_profile_by_nickname(nickname) when is_binary(nickname) do
+    from(r in RacerProfile, where: r.nickname == ^nickname)
+    |> Repo.all()
+  end
+
   @doc """
   Updates a racer profile.
 

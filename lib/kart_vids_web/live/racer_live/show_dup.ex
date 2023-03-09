@@ -11,21 +11,25 @@ defmodule KartVidsWeb.RacerLive.ShowDup do
 
   @impl true
   def handle_params(%{"location_id" => location_id, "nickname" => nickname}, _url, socket) do
-    [{_nickname, id, _photo} | others] = Races.autocomplete_racer_nickname(nickname)
+    case Races.list_racer_profile_by_nickname(nickname) do
+      [racer_profile | others] ->
+        if Enum.empty?(others) do
+          {:noreply,
+           socket
+           |> push_navigate(to: ~p"/locations/#{location_id}/racers/#{racer_profile.id}")}
+        else
+          location = Content.get_location!(location_id)
+          racers = [racer_profile | others]
 
-    if Enum.empty?(others) do
-      {:noreply,
-       socket
-       |> push_navigate(to: ~p"/locations/#{location_id}/racers/#{id}")}
-    else
-      location = Content.get_location!(location_id)
-      racers = Races.get_racer_profiles!([id | Enum.map(others, &elem(&1, 1))])
+          {:noreply,
+           socket
+           |> assign(:location_id, location_id)
+           |> assign(:location, location)
+           |> assign(:racers, racers)}
+        end
 
-      {:noreply,
-       socket
-       |> assign(:location_id, location_id)
-       |> assign(:location, location)
-       |> assign(:racers, racers)}
+      [] ->
+        {:noreply, socket |> put_flash(:error, "The user \"#{nickname}\" cannot be found.") |> push_redirect(to: ~p"/locations/#{location_id}/racing")}
     end
   end
 end
