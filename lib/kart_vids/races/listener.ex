@@ -678,6 +678,22 @@ defmodule KartVids.Races.Listener do
     # Look up profile info by composite keys
     profiles = racer_data |> Enum.map(fn {_kart_num, racer} -> %{nickname: racer.nickname, photo: racer.photo, id: Races.get_racer_profile_id(racer.nickname, racer.photo)} end)
 
+    # For development, make sure the application doesn't spin logging queries over and over
+    # Must use unquote because Mix.env() is not available once compiled as a release
+    unless unquote(Mix.env()) == :prod do
+      for {kart_num, racer} <- racer_data do
+        unless Races.get_racer_profile_id(racer.nickname, racer.photo) do
+          Races.upsert_racer_profile(%{
+            nickname: racer.nickname,
+            photo: racer.photo,
+            fastest_lap_time: racer.fastest_lap,
+            fastest_lap_kart: kart_num
+            # fastest_lap_race_id:
+          })
+        end
+      end
+    end
+
     for {kart_num, racer} <- racer_data, profile <- profiles, profile != nil, profile.nickname == racer.nickname, profile.photo == racer.photo, into: %{} do
       {kart_num, profile.id}
     end

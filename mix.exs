@@ -69,7 +69,8 @@ defmodule KartVids.MixProject do
       # => When using :shards as backend
       {:shards, "~> 1.0"},
       # => When using Caching Annotations
-      {:decorator, "~> 1.4"}
+      {:decorator, "~> 1.4"},
+      {:observer_cli, "~> 1.7"}
     ]
   end
 
