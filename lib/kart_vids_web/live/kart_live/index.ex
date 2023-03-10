@@ -15,11 +15,14 @@ defmodule KartVidsWeb.KartLive.Index do
     |> Races.all_karts_topic_name()
     |> KartVidsWeb.Endpoint.subscribe()
 
-    {:noreply,
-     socket
-     |> assign(:location_id, location_id)
-     |> apply_action(socket.assigns.live_action, params)
-     |> assign(:karts, list_karts(location_id))}
+    {
+      :noreply,
+      socket
+      |> assign(:location_id, location_id)
+      |> apply_action(socket.assigns.live_action, params)
+      |> assign(:karts, list_karts(location_id))
+      |> assign(:best_karts, Races.get_racer_profile_best_karts_count())
+    }
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do

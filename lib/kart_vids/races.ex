@@ -391,6 +391,11 @@ defmodule KartVids.Races do
   """
   def get_racer!(id), do: Repo.get!(Racer, id)
 
+  def get_racer_fastest_kart(kart_num) do
+    from(r in RacerProfile, where: r.fastest_lap_kart == ^kart_num, order_by: {:asc, r.fastest_lap_time}, limit: 1)
+    |> Repo.one()
+  end
+
   def list_races_by_nickname(nickname) do
     from(r in Racer,
       where: fragment("lower(?) = ?", r.nickname, ^String.downcase(nickname)),
@@ -601,6 +606,14 @@ defmodule KartVids.Races do
   def list_racer_profile_by_nickname(nickname) when is_binary(nickname) do
     from(r in RacerProfile, where: r.nickname == ^nickname)
     |> Repo.all()
+  end
+
+  def get_racer_profile_best_karts_count() do
+    from(r in RacerProfile, select: %{kart_num: r.fastest_lap_kart, count: count(r.id)}, distinct: r.fastest_lap_kart, group_by: r.fastest_lap_kart)
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn %{count: count, kart_num: kart_num}, acc ->
+      Map.put(acc, kart_num, count)
+    end)
   end
 
   @doc """

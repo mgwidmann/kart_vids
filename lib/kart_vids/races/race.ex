@@ -31,6 +31,15 @@ defmodule KartVids.Races.Race do
     Ecto.Enum.mappings(__MODULE__, :league_type)
   end
 
+  @spec league_type_none :: :none
+  def league_type_none(), do: :none
+  @spec league_type_practice :: :practice
+  def league_type_practice(), do: :practice
+  @spec league_type_qualifier :: :qualifier
+  def league_type_qualifier(), do: :qualifier
+  @spec league_type_feature :: :feature
+  def league_type_feature(), do: :feature
+
   @feature_race ["aekc race"]
   @qualifying_race ["qualifying", "qualifier", "pro"]
   @league_race @feature_race ++ @qualifying_race

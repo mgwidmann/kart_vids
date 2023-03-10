@@ -5,7 +5,7 @@ defmodule KartVids.Races.Season.Analyzer do
   # alias KartVids.Races.League
   alias KartVids.Races
   alias KartVids.Content.Location
-  alias KartVids.Races.Season
+  alias KartVids.Races.{Season, Race}
   alias KartVids.Races.Listener, as: RaceListener
 
   def start_link(season) do
@@ -24,7 +24,7 @@ defmodule KartVids.Races.Season.Analyzer do
 
   @analyze_season_timeout :timer.minutes(1)
 
-  def handle_info(:analyze_season, state = %State{last_race: last_race, season: season}) do
+  def handle_info(:analyze_season, state = %State{last_race: last_race, season: season, practice: practice, qualifiers: qualifiers, feature: feature}) do
     Process.send_after(self(), :analyze_season, @analyze_season_timeout)
 
     if season_watch?(season) do
@@ -39,6 +39,10 @@ defmodule KartVids.Races.Season.Analyzer do
           Races.create_season_racer(season, racer.racer_profile_id)
         end
       end
+
+      update_race(race, practice, Race.league_type_practice())
+      update_race(race, qualifiers, Race.league_type_qualifier())
+      update_race(race, feature, Race.league_type_feature())
 
       {:noreply, %State{state | watching: true}}
     else
@@ -60,6 +64,7 @@ defmodule KartVids.Races.Season.Analyzer do
     {:noreply, state}
   end
 
+  @minimum_racers 3
   def handle_info(
         %Phoenix.Socket.Broadcast{event: "race_completed", payload: %RaceListener.State{current_race: current_race, config: %RaceListener.Config{location_id: location_id}}},
         state = %State{season: %Season{location_id: location_id, season_racers: racers, daily_qualifiers: daily_qualifiers}, practice: practice, qualifiers: qualifiers, feature: feature, watching: true}
@@ -68,7 +73,7 @@ defmodule KartVids.Races.Season.Analyzer do
     race = Races.get_race_by_external_id!(current_race) |> Races.race_with_racers()
 
     state =
-      if Enum.all?(race.racers, &MapSet.member?(profile_ids, &1.racer_profile_id)) do
+      if Enum.count(race.racers, &MapSet.member?(profile_ids, &1.racer_profile_id)) >= @minimum_racers do
         cond do
           # Any racer did not get their practice race
           !Enum.any?(race.racers, &Map.get(practice, &1.id)) ->
@@ -104,6 +109,22 @@ defmodule KartVids.Races.Season.Analyzer do
     Logger.warn("Season #{state.season.id}: Unknown message received, ignoring: #{inspect(msg)}")
 
     {:noreply, state}
+  end
+
+  def update_race(race = %Race{id: id}, tracking, type) do
+    tracking
+    |> Enum.find(fn
+      {_profile_id, ^id} ->
+        Races.update_race(:system, race, %{league?: true, league_type: type})
+
+      {_profile_id, race_ids} when is_list(race_ids) ->
+        if Enum.any?(race_ids, &match?(^id, &1)) do
+          Races.update_race(:system, race, %{league?: true, league_type: type})
+        end
+
+      _ ->
+        false
+    end)
   end
 
   @watch_window 6

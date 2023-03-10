@@ -10,11 +10,16 @@ defmodule KartVidsWeb.KartLive.Show do
 
   @impl true
   def handle_params(%{"location_id" => location_id, "id" => id}, _, socket) do
-    {:noreply,
-     socket
-     |> assign(:location_id, location_id)
-     |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:kart, Races.get_kart!(id))}
+    kart = Races.get_kart!(id)
+
+    {
+      :noreply,
+      socket
+      |> assign(:location_id, location_id)
+      |> assign(:page_title, page_title(socket.assigns.live_action))
+      |> assign(:kart, kart)
+      |> assign(:fastest_racer, Races.get_racer_fastest_kart(kart.kart_num))
+    }
   end
 
   defp page_title(:show), do: "Show Kart"

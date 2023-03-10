@@ -1,3 +1,5 @@
+<.back position={:top} navigate={~p"/locations/#{@location_id}/karts"}>Back to karts</.back>
+
 <.header>
   Kart <%= @kart.kart_num %>
   <:subtitle>Details about this particular kart which have been collected.</:subtitle>
@@ -10,14 +12,20 @@
 
 <.list>
   <:item title="Kart Number"><%= @kart.kart_num %></:item>
-  <:item title="Fastest lap time"><%= @kart.fastest_lap_time %></:item>
-  <:item title="Average fastest lap time"><%= @kart.average_fastest_lap_time %></:item>
+  <:item title="Fastest lap time"><%= format_lap(@kart.fastest_lap_time) %></:item>
+  <:item title="Average fastest lap time"><%= format_lap(@kart.average_fastest_lap_time) %></:item>
   <:item title="Number of races"><%= @kart.number_of_races %></:item>
   <:item title="Average RPMs"><%= @kart.average_rpms %></:item>
+  <:item title="Fastest Racer">
+    <%= if @fastest_racer do %>
+      <.link href={~p"/locations/#{@location_id}/racers/#{@fastest_racer.id}"}>
+        <.racer_photo photo={@fastest_racer.photo} class="object-cover rounded-lg" />
+        <span class="block text-md md:text-xl lg:text-2xl xl:text-4xl"><%= @fastest_racer.nickname %></span>
+      </.link>
+    <% end %>
+  </:item>
 </.list>
 
-<.back navigate={~p"/locations/#{@location_id}/karts"}>Back to karts</.back>
-
 <.modal :if={@live_action == :edit} id="kart-modal" show on_cancel={JS.patch(~p"/locations/#{@location_id}/karts/#{@kart}")}>
-  <.live_component module={KartVidsWeb.KartLive.FormComponent} id={@kart.id} title={@page_title} action={@live_action} kart={@kart} navigate={~p"/locations/#{@location_id}/karts/#{@kart}"} current_user={@current_user}/>
+  <.live_component module={KartVidsWeb.KartLive.FormComponent} id={@kart.id} title={@page_title} action={@live_action} kart={@kart} navigate={~p"/locations/#{@location_id}/karts/#{@kart}"} current_user={@current_user} />
 </.modal>
