@@ -63,5 +63,5 @@
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.7.0", "bc84380c9ab48177092f43ac89e4dfa2c6d62b40b8bd132b1059ecc7232f9a78", [:rebar3], [], "hexpm", "25eee6d67df61960cf6a794239566599b09e17e668d3700247bc498638152521"},
   "websock": {:hex, :websock, "0.5.0", "f6bbce90226121d62a0715bca7c986c5e43de0ccc9475d79c55381d1796368cc", [:mix], [], "hexpm", "b51ac706df8a7a48a2c622ee02d09d68be8c40418698ffa909d73ae207eb5fb8"},
   "websock_adapter": {:hex, :websock_adapter, "0.4.5", "30038a3715067f51a9580562c05a3a8d501126030336ffc6edb53bf57d6d2d26", [:mix], [{:bandit, "~> 0.6", [hex: :bandit, repo: "hexpm", optional: true]}, {:plug, "~> 1.14", [hex: :plug, repo: "hexpm", optional: false]}, {:plug_cowboy, "~> 2.6", [hex: :plug_cowboy, repo: "hexpm", optional: true]}, {:websock, "~> 0.4", [hex: :websock, repo: "hexpm", optional: false]}], "hexpm", "1d9812dc7e703c205049426fd4fe0852a247a825f91b099e53dc96f68bafe4c8"},
-  "websockex": {:git, "https://github.com/mgwidmann/websockex.git", "be639fa6fab3d5cd1b8a6f1c78ee58708c2173c8", [branch: "report-errors"]},
+  "websockex": {:git, "https://github.com/mgwidmann/websockex.git", "54ac6eaffdadefcc647c45b9bcb6debccea90380", [branch: "report-errors"]},
 }
