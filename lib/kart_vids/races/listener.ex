@@ -521,7 +521,8 @@ defmodule KartVids.Races.Listener do
               laps: racer_laps,
               racer_profile_id: profile.id,
               race_by: race_by,
-              win_by: win_by
+              win_by: win_by,
+              location_id: location_id
             })
 
             {racer.kart_num, profile.id}

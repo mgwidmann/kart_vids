@@ -14,6 +14,7 @@ defmodule KartVidsWeb.RacerLive.FormComponent do
 
       <.simple_form :let={f} for={@changeset} id="racer-form" phx-target={@myself} phx-change="validate" phx-submit="save">
         <.input field={{f, :race_id}} type="hidden" />
+        <.input field={{f, :location_id}} type="hidden" />
         <.input field={{f, :nickname}} type="text" label="nickname" />
         <.input field={{f, :photo}} type="text" label="photo" />
         <.input field={{f, :kart_num}} type="number" label="kart_num" />

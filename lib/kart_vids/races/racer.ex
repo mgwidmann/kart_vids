@@ -3,6 +3,7 @@ defmodule KartVids.Races.Racer do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias KartVids.Content.Location
   alias KartVids.Races.{Race, RacerProfile}
   alias KartVids.Races.Racer.Lap
 
@@ -18,6 +19,7 @@ defmodule KartVids.Races.Racer do
 
     belongs_to :race, Race
     belongs_to :racer_profile, RacerProfile
+    belongs_to :location, Location
 
     embeds_many :laps, Lap
 
@@ -27,7 +29,7 @@ defmodule KartVids.Races.Racer do
   @doc false
   def changeset(racer, attrs) do
     racer
-    |> cast(attrs, [:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id, :racer_profile_id, :race_by, :win_by])
+    |> cast(attrs, [:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id, :racer_profile_id, :race_by, :win_by, :location_id])
     |> cast_embed(:laps)
     |> validate_required([:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id, :racer_profile_id, :race_by, :win_by])
   end
