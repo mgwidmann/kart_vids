@@ -7,6 +7,7 @@ defmodule KartVids.Races.Kart do
     field :average_fastest_lap_time, :float
     field :average_rpms, :integer
     field :fastest_lap_time, :float
+    field :std_dev, :float
     field :kart_num, :integer
     field :number_of_races, :integer
     field :type, Ecto.Enum, values: [:adult, :junior, :unknown]
@@ -19,7 +20,7 @@ defmodule KartVids.Races.Kart do
   @doc false
   def changeset(kart, attrs) do
     kart
-    |> cast(attrs, [:kart_num, :fastest_lap_time, :average_fastest_lap_time, :number_of_races, :average_rpms, :type, :location_id])
+    |> cast(attrs, [:kart_num, :fastest_lap_time, :average_fastest_lap_time, :number_of_races, :average_rpms, :type, :std_dev, :location_id])
     |> validate_required([:kart_num, :fastest_lap_time, :average_fastest_lap_time, :number_of_races, :average_rpms, :type, :location_id])
   end
 

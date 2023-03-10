@@ -89,8 +89,6 @@ defmodule KartVids.Races.Listener do
   end
 
   @fastest_speed_level 1
-  @min_lap_time 15.0
-  @max_lap_time 30.0
 
   @spec whereis(number | Location.t()) :: pid() | nil
   def whereis(%Location{id: id}), do: whereis(id)
@@ -260,9 +258,12 @@ defmodule KartVids.Races.Listener do
 
         Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
 
+        race_info = persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, location)
+
+        # Persist kart information so the data will be used in calculations
         persist_kart_information(scoreboard_by_kart, location)
 
-        persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, location)
+        race_info
       else
         if unquote(Mix.env()) == :prod do
           Logger.info("Race #{current_race} #{name} Complete! Started at #{started_at || "(unknown)"} with #{length(racers)} racers")
@@ -430,34 +431,52 @@ defmodule KartVids.Races.Listener do
     "race_location:#{location_id}"
   end
 
+  @top_std_dev 50
+  @num_std_dev_mean 2
+  @num_std_dev 3
+  @large_std_dev_limit 0.75
+  @min_time 10.0
+
   def persist_kart_information(kart_performance, %Location{id: location_id} = location)
       when is_map(kart_performance) do
     for {kart_num, performance} <- kart_performance, !is_nil(kart_num) do
       {kart_num, ""} = Integer.parse(kart_num)
       kart = Races.find_kart_by_location_and_number(location_id, kart_num)
+      times = Races.get_fastest_lap_times_for_kart(location_id, kart_num)
+      std_dev = compute_std_dev(times)
+      mean = compute_mean(times, std_dev)
+      std_dev = compute_std_dev(times, mean)
+
+      func_std_dev =
+        if std_dev >= @large_std_dev_limit do
+          std_dev
+        else
+          std_dev * @num_std_dev
+        end
+
+      fastest_time = times |> Enum.filter(&(&1 > @min_time)) |> Enum.sort() |> Enum.filter(&(&1 > mean - func_std_dev)) |> List.first()
 
       cond do
-        kart && performance[:lap_time] > @min_lap_time && performance[:lap_time] < @max_lap_time ->
+        kart && performance[:lap_time] > fastest_time - func_std_dev && performance[:lap_time] < fastest_time + func_std_dev ->
           Races.update_kart(
             :system,
             kart,
             %{
-              average_fastest_lap_time:
-                (kart.average_fastest_lap_time * kart.number_of_races + performance[:lap_time]) /
-                  (kart.number_of_races + 1),
+              average_fastest_lap_time: mean,
               average_rpms:
                 div(
                   kart.average_rpms * kart.number_of_races + performance[:rpm],
                   kart.number_of_races + 1
                 ),
-              fastest_lap_time: min(kart.fastest_lap_time, performance[:lap_time]),
+              fastest_lap_time: fastest_time,
+              std_dev: std_dev,
               kart_num: kart_num,
-              number_of_races: kart.number_of_races + 1,
+              number_of_races: length(times),
               type: Kart.kart_type(kart_num, location)
             }
           )
 
-        !kart && performance[:lap_time] > @min_lap_time && performance[:lap_time] < @max_lap_time ->
+        !kart && performance[:lap_time] ->
           Races.create_kart(:system, %{
             average_fastest_lap_time: performance[:lap_time],
             average_rpms: performance[:rpm],
@@ -472,6 +491,33 @@ defmodule KartVids.Races.Listener do
           Logger.info("Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect(performance)}")
       end
     end
+  end
+
+  def compute_std_dev(times, mean \\ nil) do
+    top = times |> Enum.sort() |> Enum.filter(&(&1 > @min_time)) |> Enum.take(@top_std_dev)
+    mean = if(mean, do: mean, else: Enum.sum(top) / @top_std_dev)
+
+    top
+    |> Enum.map(&:math.pow(&1 - mean, 2))
+    |> Enum.sum()
+    |> Kernel./(@top_std_dev - 1)
+    |> :math.sqrt()
+  end
+
+  def compute_mean(times, std_dev) do
+    top = times |> Enum.sort() |> Enum.filter(&(&1 > @min_time)) |> Enum.take(@top_std_dev)
+    median = Enum.at(top, div(@top_std_dev, 2))
+
+    func_std_dev =
+      if std_dev >= @large_std_dev_limit do
+        std_dev
+      else
+        std_dev * @num_std_dev_mean
+      end
+
+    times2 = times |> Enum.sort() |> Enum.filter(&(&1 + func_std_dev > median))
+    top2 = times2 |> Enum.take(@top_std_dev)
+    Enum.sum(top2) / @top_std_dev
   end
 
   # Do nothing if there are no laps

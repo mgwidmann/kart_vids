@@ -18,7 +18,7 @@
   <:item title="Average RPMs"><%= @kart.average_rpms %></:item>
   <:item title="Fastest Racer">
     <%= if @fastest_racer do %>
-      <.link href={~p"/locations/#{@location_id}/racers/#{@fastest_racer.id}"}>
+      <.link href={~p"/locations/#{@location_id}/racers/#{@fastest_racer.racer_profile_id}"}>
         <.racer_photo photo={@fastest_racer.photo} class="object-cover rounded-lg" />
         <span class="block text-md md:text-xl lg:text-2xl xl:text-4xl"><%= @fastest_racer.nickname %></span>
       </.link>

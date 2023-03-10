@@ -18,7 +18,7 @@ defmodule KartVidsWeb.KartLive.Show do
       |> assign(:location_id, location_id)
       |> assign(:page_title, page_title(socket.assigns.live_action))
       |> assign(:kart, kart)
-      |> assign(:fastest_racer, Races.get_racer_fastest_kart(kart.kart_num))
+      |> assign(:fastest_racer, Races.get_racer_fastest_kart(kart))
     }
   end
 

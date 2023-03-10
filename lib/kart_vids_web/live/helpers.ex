@@ -5,10 +5,12 @@ defmodule KartVidsWeb.Live.Helpers do
 
   @no_data "..."
 
-  def format_lap(nil), do: @no_data
-  def format_lap(lap) when lap < 10.0, do: @no_data
+  def format_lap(lap, small_allowed \\ false)
 
-  def format_lap(lap) do
+  def format_lap(nil, _), do: @no_data
+  def format_lap(lap, false) when lap < 10.0, do: @no_data
+
+  def format_lap(lap, _) do
     lap
     |> Kernel./(1)
     |> Decimal.from_float()

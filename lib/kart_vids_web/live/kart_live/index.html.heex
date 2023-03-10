@@ -11,8 +11,9 @@
 
 <.table id="karts" rows={@karts} row_click={&JS.navigate(~p"/locations/#{@location_id}/karts/#{&1}")}>
   <:col :let={kart} label="Kart Number"><%= kart.kart_num %></:col>
-  <:col :let={kart} label="Fastest lap time"><%= format_lap(kart.fastest_lap_time) %></:col>
-  <:col :let={kart} label="Average fastest lap time"><%= format_lap(kart.average_fastest_lap_time) %></:col>
+  <:col :let={kart} label="Fastest lap time (Top 50)"><%= format_lap(kart.fastest_lap_time) %></:col>
+  <:col :let={kart} label="Average fastest lap time (Top 50)"><%= format_lap(kart.average_fastest_lap_time) %></:col>
+  <:col :let={kart} label="Std Dev (Top 50)"><%= format_lap(kart.std_dev, true) %></:col>
   <:col :let={kart} label="Number of races"><%= kart.number_of_races %></:col>
   <:col :let={kart} label="Average RPMs"><%= kart.average_rpms %></:col>
   <:col :let={kart} label="Racer's Best Kart"><%= Map.get(@best_karts, kart.kart_num) %></:col>

@@ -46,6 +46,11 @@ defmodule KartVids.Races do
     Repo.get_by(Kart, %{location_id: location_id, kart_num: kart_num})
   end
 
+  def get_fastest_lap_times_for_kart(location_id, kart_num) do
+    from(r in Racer, where: r.location_id == ^location_id and r.kart_num == ^kart_num, select: r.fastest_lap)
+    |> Repo.all()
+  end
+
   @doc """
   Creates a kart.
 
@@ -391,9 +396,21 @@ defmodule KartVids.Races do
   """
   def get_racer!(id), do: Repo.get!(Racer, id)
 
-  def get_racer_fastest_kart(kart_num) do
-    from(r in RacerProfile, where: r.fastest_lap_kart == ^kart_num, order_by: {:asc, r.fastest_lap_time}, limit: 1)
-    |> Repo.one()
+  def get_racer_fastest_kart(kart) do
+    from(r in Racer, where: r.kart_num == ^kart.kart_num, order_by: {:asc, r.fastest_lap}, limit: 10)
+    |> Repo.all()
+    |> Enum.reject(fn racer ->
+      # TODO: Cleanup
+      func_std_dev =
+        if kart.std_dev > 0.75 do
+          kart.std_dev
+        else
+          kart.std_dev * 3
+        end
+
+      racer.fastest_lap + func_std_dev < kart.average_fastest_lap_time
+    end)
+    |> List.first()
   end
 
   def list_races_by_nickname(nickname) do
