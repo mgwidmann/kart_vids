@@ -288,10 +288,6 @@ defmodule KartVidsWeb.LocationLive.Racing do
     JS.transition("scaleInOut", to: "#scoreboard-#{racer.nickname}")
   end
 
-  def speed_string(1), do: "Fastest"
-  def speed_string(2), do: "Slow"
-  def speed_string(number), do: "Slower (#{number})"
-
   def scoreboard_result(scoreboard, position) do
     Enum.find(scoreboard, fn {_kart, score} -> score[:position] == position end)
   end

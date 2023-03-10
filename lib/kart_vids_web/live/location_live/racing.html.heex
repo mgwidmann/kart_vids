@@ -34,9 +34,6 @@
 <.header>
   <%= @race_name %>
   <br class="block sm:hidden" />
-  <%= if @speed_level do %>
-    (Speed: <%= speed_string(@speed_level) %>)
-  <% end %>
   <:subtitle>
     <%= race_state(@race_state) %> (Win By: <%= @win_by %>)
   </:subtitle>

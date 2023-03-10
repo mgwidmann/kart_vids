@@ -260,11 +260,7 @@ defmodule KartVids.Races.Listener do
 
         Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
 
-        if fastest_speed_level == @fastest_speed_level do
-          persist_kart_information(scoreboard_by_kart, location)
-        else
-          Logger.info("Dropping race because speed level was only level #{state.fastest_speed_level} at its fastest")
-        end
+        persist_kart_information(scoreboard_by_kart, location)
 
         persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, location)
       else
