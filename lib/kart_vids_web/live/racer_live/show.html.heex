@@ -18,6 +18,17 @@
             <dt class="text-base leading-7 text-gray-600">Best ever kart</dt>
             <dd class="order-first text-3xl font-semibold tracking-tight text-gray-900 sm:text-5xl"><%= @racer_profile.fastest_lap_kart %></dd>
           </div>
+
+          <div class="mx-auto flex max-w-xs flex-col gap-y-4">
+            <dt class="text-base leading-7 text-gray-600">Recent Best (Kart)</dt>
+            <dd class="order-first text-3xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
+              <%= if @recent_best do %>
+                <%= @recent_best.fastest_lap %> (<%= @recent_best.kart_num %>)
+              <% else %>
+                ...
+              <% end %>
+            </dd>
+          </div>
         </dl>
       </div>
     </div>

@@ -28,17 +28,23 @@ defmodule KartVidsWeb.RacerLive.Show do
     }
   end
 
+  @recent_hours 24
+
   defp apply_action(socket, :show, %{"racer_profile_id" => racer_profile_id}) do
     racer_profile = Races.get_racer_profile!(racer_profile_id)
     races = racer_profile.races |> Enum.sort_by(& &1.race.external_race_id, :desc)
     selected_race = races |> List.first()
     additional_assigns = select_race(selected_race)
 
+    recent_timeframe = Timex.now() |> Timex.subtract(Timex.Duration.from_hours(@recent_hours))
+    recent_best = races |> Enum.filter(&Timex.after?(&1.race.started_at, recent_timeframe)) |> Enum.min_by(& &1.fastest_lap, fn -> nil end)
+
     socket
     |> assign(:page_title, "#{racer_profile.nickname}'s Races")
     |> assign(:racer_profile, racer_profile)
     |> assign(:racer_races, races)
     |> assign(:selected_race, selected_race)
+    |> assign(:recent_best, recent_best)
     |> assign(additional_assigns)
   end
 

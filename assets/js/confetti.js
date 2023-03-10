@@ -1,9 +1,16 @@
+const NUMBER_OF_CONFETTI_EXPLOSIONS = 5;
 export const ConfettiHook = {
     mounted() {
         this.confetti = new JSConfetti();
         this.confetti.addConfetti({ confettiNumber: 1000, });
+        this.counter = 0;
         this.timer = setInterval(() => {
-            this.confetti.addConfetti({ confettiNumber: 1000, });
+            if (this.counter < NUMBER_OF_CONFETTI_EXPLOSIONS - 1) {
+                this.counter++;
+                this.confetti.addConfetti({ confettiNumber: 1000, });
+            } else {
+                this.destroyed();
+            }
         }, 3000);
     },
     updated() {
