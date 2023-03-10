@@ -12,8 +12,9 @@ defmodule KartVidsWeb.RacerLive.ShowDup do
   @impl true
   def handle_params(%{"location_id" => location_id, "nickname" => nickname, "search" => true}, _url, socket) do
     case Races.autocomplete_racer_nickname(nickname) do
-      [{_nickname, id, _photo} | others] ->
-        racers = Races.get_racer_profiles!([id | Enum.map(others, &elem(&1, 1))])
+      # At least two matches
+      [{_nickname, id, _photo}, another | others] ->
+        racers = Races.get_racer_profiles!([id | Enum.map([another | others], &elem(&1, 1))])
         show_dups(socket, racers, location_id)
 
       [{_nickname, id, _photo}] ->
