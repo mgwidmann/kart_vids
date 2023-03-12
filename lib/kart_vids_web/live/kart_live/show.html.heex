@@ -13,7 +13,8 @@
 <.list>
   <:item title="Kart Number"><%= @kart.kart_num %></:item>
   <:item title="Fastest lap time"><%= format_lap(@kart.fastest_lap_time) %></:item>
-  <:item title="Average fastest lap time"><%= format_lap(@kart.average_fastest_lap_time) %></:item>
+  <:item title="Average fastest lap time (Top 50)"><%= format_lap(@kart.average_fastest_lap_time) %></:item>
+  <:item title="Standard Deviation (Top 50)"><%= format_lap(@kart.std_dev, true) %></:item>
   <:item title="Number of races"><%= @kart.number_of_races %></:item>
   <:item title="Average RPMs"><%= @kart.average_rpms %></:item>
   <:item title="Fastest Racer">

@@ -21,7 +21,13 @@
       <.racer_photo photo={racer.photo} />
     </.link>
   </:col>
-  <:col :let={racer} label="Kart"><span class="text-md text-center md:text-xl xl:text-2xl"><%= racer.kart_num %></span></:col>
+  <:col :let={racer} label="Kart">
+    <.link navigate={~p"/locations/#{@location}/karts/by_number/#{racer.kart_num}"}>
+      <span class="text-md text-center md:text-xl xl:text-2xl">
+        <%= racer.kart_num %>
+      </span>
+    </.link>
+  </:col>
   <:col :let={racer} label="Name" row_class="max-w-[200px]">
     <.link navigate={~p"/locations/#{@location}/racers/by_nickname/#{racer.nickname}"}>
       <span class="text-md md:text-xl xl:text-2xl break-words"><%= racer.nickname %></span>

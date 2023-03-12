@@ -9,8 +9,8 @@ defmodule KartVidsWeb.KartLive.Show do
   end
 
   @impl true
-  def handle_params(%{"location_id" => location_id, "id" => id}, _, socket) do
-    kart = Races.get_kart!(id)
+  def handle_params(params = %{"location_id" => location_id}, _, socket) do
+    kart = get_kart(params)
 
     {
       :noreply,
@@ -24,4 +24,7 @@ defmodule KartVidsWeb.KartLive.Show do
 
   defp page_title(:show), do: "Show Kart"
   defp page_title(:edit), do: "Edit Kart"
+
+  defp get_kart(%{"id" => id}), do: Races.get_kart!(id)
+  defp get_kart(%{"location_id" => location_id, "kart_number" => kart_number}), do: Races.find_kart_by_location_and_number(location_id, kart_number)
 end

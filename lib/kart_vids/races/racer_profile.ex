@@ -10,6 +10,7 @@ defmodule KartVids.Races.RacerProfile do
     field :fastest_lap_kart, :integer
     field :nickname, :string
     field :photo, :string
+    field :external_racer_id, :string
 
     belongs_to :fastest_lap_race, Race
 
@@ -21,7 +22,7 @@ defmodule KartVids.Races.RacerProfile do
   @doc false
   def changeset(racer_profile, attrs) do
     racer_profile
-    |> cast(attrs, [:fastest_lap_time, :fastest_lap_kart, :fastest_lap_race_id, :nickname, :photo])
+    |> cast(attrs, [:fastest_lap_time, :fastest_lap_kart, :fastest_lap_race_id, :nickname, :photo, :external_racer_id])
     |> validate_required([:fastest_lap_time, :fastest_lap_kart, :fastest_lap_race_id, :nickname, :photo])
   end
 end

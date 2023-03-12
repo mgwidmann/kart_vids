@@ -67,6 +67,7 @@ defmodule KartVids.Races.Listener do
     @moduledoc false
     @derive {Phoenix.Param, key: :nickname}
     @type t :: %Racer{
+            external_racer_id: String.t(),
             nickname: String.t(),
             photo: String.t(),
             kart_num: pos_integer(),
@@ -77,7 +78,8 @@ defmodule KartVids.Races.Listener do
             laps: list(map()),
             racer_profile_id: pos_integer() | nil
           }
-    defstruct nickname: "",
+    defstruct external_racer_id: nil,
+              nickname: "",
               photo: "",
               kart_num: -1,
               fastest_lap: 999.99,
@@ -231,10 +233,45 @@ defmodule KartVids.Races.Listener do
     {:ok, state}
   end
 
+  # bestSectorTime and sectorsCount are 0
+  @expected_message_keys ~w(race scoreboard bestSectorTime sectorsCount)
+  # lapsOrMinutes is 0
+  @expected_race_keys ~w(duration ended heat_status_id heat_type_id id laps race_by race_name race_number racers speed_level speed_level_id starts_at starts_at_iso track track_id win_by lapsOrMinutes)
+  @expected_racer_keys ~w(finish_position first_name group_id id is_first_time kart_number laps last_name nickname photo_url ranking_by_rpm rpm rpm_change start_position total_customers total_races total_visits)
+  @expected_lap_keys ~w(amb_time id kart_number lap_number lap_time racer_id)
+  @expected_scoreboard_keys ~w(ambtime average_lap_time fastest_lap_time first_name gap is_first_time kart_num lap_num last_lap_time last_name nickname position racer_id rpm total_races)
+
+  defmacrop log_unexpected_keys(map_or_list, name, keys) do
+    set_keys = Macro.expand(keys, __ENV__) |> MapSet.new()
+
+    quote bind_quoted: [map_or_list: map_or_list, set_keys: Macro.escape(set_keys), name: name] do
+      log_map = fn map ->
+        map_keys = Map.keys(map) |> MapSet.new()
+        difference = MapSet.difference(map_keys, set_keys)
+
+        unless Enum.empty?(difference) do
+          Logger.warn(
+            "Unexpected keys received from broadcast for the #{inspect(name)} field. Extra keys were: #{inspect(difference)}\nMap Keys: #{inspect(map_keys)}\nExpected: #{inspect(set_keys)}\nThe value of these keys were: #{inspect(Map.take(map, MapSet.to_list(difference)))}"
+          )
+        end
+      end
+
+      case map_or_list do
+        map when is_map(map) ->
+          log_map.(map)
+
+        list when is_list(list) ->
+          for item <- list do
+            log_map.(item)
+          end
+      end
+    end
+  end
+
   ## Handle Race Finish
   def handle_race_data(
         {:ok,
-         %{
+         msg = %{
            "race" =>
              race = %{
                "id" => id,
@@ -252,7 +289,11 @@ defmodule KartVids.Races.Listener do
           config: %Config{location: location}
         } = state
       ) do
+    log_unexpected_keys(msg, "message", @expected_message_keys)
+    log_unexpected_keys(race, "race", @expected_race_keys)
+    log_unexpected_keys(scoreboard, "scoreboard", @expected_scoreboard_keys)
     laps = Map.get(race, "laps", [])
+    log_unexpected_keys(laps, "race.laps", @expected_lap_keys)
     race_by = Map.get(race, "race_by")
     win_by = Map.get(race, "win_by")
     speed = parse_speed_level(speed_level)
@@ -312,7 +353,7 @@ defmodule KartVids.Races.Listener do
   # Race we are already tracking, where ids match
   def handle_race_data(
         {:ok,
-         %{
+         msg = %{
            "race" =>
              race = %{
                "id" => id,
@@ -324,6 +365,9 @@ defmodule KartVids.Races.Listener do
          }},
         %State{current_race: id, fastest_speed_level: fastest_speed_level} = state
       ) do
+    log_unexpected_keys(msg, "message", @expected_message_keys)
+    log_unexpected_keys(race, "race", @expected_race_keys)
+
     if unquote(Mix.env()) == :prod do
       Logger.info("Race #{name} (#{id}) continues with #{length(racers)} racers")
     end
@@ -352,7 +396,7 @@ defmodule KartVids.Races.Listener do
   # Race just beginning
   def handle_race_data(
         {:ok,
-         %{
+         msg = %{
            "race" =>
              race = %{
                "id" => id,
@@ -365,6 +409,8 @@ defmodule KartVids.Races.Listener do
          }},
         %State{} = state
       ) do
+    log_unexpected_keys(msg, "message", @expected_message_keys)
+    log_unexpected_keys(race, "race", @expected_race_keys)
     speed = parse_speed_level(speed_level)
     win_by = Map.get(race, "win_by")
 
@@ -397,6 +443,9 @@ defmodule KartVids.Races.Listener do
          }},
         %State{} = state
       ) do
+    log_unexpected_keys(msg, "message", @expected_message_keys)
+    log_unexpected_keys(race, "race", @expected_race_keys)
+
     unless duration > @minimum_duration_report_warning do
       Logger.warning("Race ID #{id} ended abruptly without scoreboard! Duration was: #{duration} Racers count: #{length(racers)}-- Message Keys: #{inspect(Map.keys(msg))}, Race Keys: #{inspect(Map.keys(race))}")
     end
@@ -406,6 +455,7 @@ defmodule KartVids.Races.Listener do
 
   # JSON was parsable but we didn't match anything above
   def handle_race_data({:ok, message}, %State{} = state) do
+    log_unexpected_keys(message, "message", @expected_message_keys)
     Logger.warn("Unknown Message Received: #{inspect(message)}")
 
     state
@@ -571,7 +621,8 @@ defmodule KartVids.Races.Listener do
                photo: racer.photo,
                fastest_lap_time: racer.fastest_lap,
                fastest_lap_kart: racer.kart_num,
-               fastest_lap_race_id: race.id
+               fastest_lap_race_id: race.id,
+               external_racer_id: racer.external_racer_id
              }) do
           {:ok, profile} ->
             Races.create_racer(:system, %{
@@ -611,14 +662,15 @@ defmodule KartVids.Races.Listener do
         "fastest_lap_time" => lap_time,
         "kart_num" => kart_num,
         "rpm" => rpm,
-        "position" => position
+        "position" => position,
+        "racer_id" => external_racer_id
       },
       karts
       when not is_nil(kart_num) ->
         with {position, ""} <- Integer.parse(position),
              {rpm, ""} <- Integer.parse(rpm),
              {lap_time, ""} <- Float.parse(lap_time) do
-          Map.put(karts, kart_num, %{lap_time: lap_time, rpm: rpm, position: position})
+          Map.put(karts, kart_num, %{lap_time: lap_time, rpm: rpm, position: position, external_racer_id: external_racer_id})
         else
           err ->
             Logger.warn("Extract scoreboard parsing issue for #{lap_time}| #{kart_num} | #{rpm} | #{position} : #{inspect(err)}")
@@ -649,37 +701,41 @@ defmodule KartVids.Races.Listener do
   end
 
   def extract_racer_data(by_kart, [
-        %{"kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo}
+        racer = %{"id" => external_racer_id, "kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo}
         | racers
       ]) do
+    log_unexpected_keys(racer, "racers[*]", @expected_racer_keys)
     {fastest_lap, average_lap, last_lap} = analyze_laps(laps)
 
     by_kart
-    |> add_racer(kart_num, nickname, photo, fastest_lap, average_lap, last_lap, laps)
+    |> add_racer(external_racer_id, kart_num, nickname, photo, fastest_lap, average_lap, last_lap, laps)
     |> extract_racer_data(racers)
   end
 
   # No lap data, use nil for all lap related fields
   def extract_racer_data(by_kart, [
-        %{"kart_number" => kart_num, "nickname" => nickname, "photo_url" => photo} | racers
+        racer = %{"id" => external_racer_id, "kart_number" => kart_num, "nickname" => nickname, "photo_url" => photo} | racers
       ]) do
+    log_unexpected_keys(racer, "racers[*]", @expected_racer_keys)
+
     by_kart
-    |> add_racer(kart_num, nickname, photo, nil, nil, nil, [])
+    |> add_racer(external_racer_id, kart_num, nickname, photo, nil, nil, nil, [])
     |> extract_racer_data(racers)
   end
 
   # Sometime kart number is nil, not really sure what to do about that so just don't crash
-  defp add_racer(by_kart, nil, nickname, photo, fastest_lap, average_lap, last_lap, laps) do
-    Logger.warn("Unable to add racer with null kart number: #{inspect(%{nickname: nickname, photo: photo, fastest_lap: fastest_lap, average_lap: average_lap, last_lap: last_lap, laps: laps})}")
+  defp add_racer(by_kart, external_racer_id, nil, nickname, photo, fastest_lap, average_lap, last_lap, laps) do
+    Logger.warn("Unable to add racer with null kart number: #{inspect(%{external_racer_id: external_racer_id, nickname: nickname, photo: photo, fastest_lap: fastest_lap, average_lap: average_lap, last_lap: last_lap, laps: laps})}")
 
     by_kart
   end
 
-  defp add_racer(by_kart, kart_num, nickname, photo, fastest_lap, average_lap, last_lap, laps) do
+  defp add_racer(by_kart, external_racer_id, kart_num, nickname, photo, fastest_lap, average_lap, last_lap, laps) do
     {kart_number, ""} = Integer.parse(kart_num)
 
     by_kart
     |> Map.put(kart_num, %Racer{
+      external_racer_id: external_racer_id,
       nickname: nickname,
       kart_num: kart_number,
       photo: photo,
@@ -707,11 +763,13 @@ defmodule KartVids.Races.Listener do
   def analyze_lap(%{"lap_time" => 0.0, "lap_number" => "0"}, _), do: {nil, nil, nil}
 
   def analyze_lap(
-        %{"lap_time" => lap_time, "lap_number" => lap},
+        lap_msg = %{"lap_time" => lap_time, "lap_number" => lap},
         {fastest_lap, average_lap, _last_lap}
       )
       # nil > 0.0 == true, so this will trigger for nil data
       when fastest_lap > lap_time do
+    log_unexpected_keys(lap_msg, "laps", @expected_lap_keys)
+
     {lap, ""} = Integer.parse(lap)
     # First lap
     if average_lap == nil || fastest_lap == nil do
@@ -722,10 +780,12 @@ defmodule KartVids.Races.Listener do
   end
 
   def analyze_lap(
-        %{"lap_time" => lap_time, "lap_number" => lap},
+        lap_msg = %{"lap_time" => lap_time, "lap_number" => lap},
         {fastest_lap, average_lap, _last_lap}
       )
       when fastest_lap <= lap_time do
+    log_unexpected_keys(lap_msg, "laps", @expected_lap_keys)
+
     {lap, ""} = Integer.parse(lap)
 
     # Since `nil > 0.0 == true`, no need to check for nil here since fastest_lap cannot be less than lap_time
