@@ -207,7 +207,7 @@ defmodule KartVidsWeb.CoreComponents do
   end
 
   attr(:type, :atom, default: :brand)
-  attr(:class, :string)
+  attr(:class, :string, default: "")
   slot(:inner_block, required: true)
 
   def pill(assigns) do

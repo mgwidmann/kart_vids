@@ -32,7 +32,7 @@ defmodule KartVidsWeb.RacerLive.Show do
 
   defp apply_action(socket, :show, %{"racer_profile_id" => racer_profile_id}) do
     racer_profile = Races.get_racer_profile!(racer_profile_id)
-    races = racer_profile.races |> Enum.sort_by(& &1.race.external_race_id, :desc)
+    races = racer_profile.races |> Enum.sort_by(& &1.race.started_at, :desc)
     selected_race = races |> List.first()
     additional_assigns = select_race(selected_race)
 
