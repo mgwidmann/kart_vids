@@ -503,7 +503,7 @@ defmodule KartVids.Races.Listener do
   @num_std_dev_mean 2
   @num_std_dev 3
   @large_std_dev_limit 0.75
-  @min_time 10.0
+  @min_time 15.0
 
   def persist_kart_information(kart_performance, %Location{id: location_id} = location)
       when is_map(kart_performance) do
