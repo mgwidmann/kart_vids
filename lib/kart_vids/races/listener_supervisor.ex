@@ -1,19 +1,41 @@
 defmodule KartVids.Races.ListenerSupervisor do
   @moduledoc false
   use Parent.GenServer
+  use EnumType
   require Logger
+  alias KartVids.Races.ListenerSupervisor.Status
   alias KartVids.Content
+  alias KartVids.Content.Location
   alias KartVids.Races.Listener
 
   @spec start_link(any) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(arg), do: Parent.GenServer.start_link(__MODULE__, arg, name: __MODULE__)
 
+  @listener_status_check_mins 1
+
   @impl GenServer
-  @spec init(any) :: {:ok, nil}
+  @spec init(any) :: {:ok, %{statuses: %{}}}
   def init(_) do
     send(self(), :start_locations)
-    {:ok, nil}
+    :timer.send_interval(:timer.minutes(@listener_status_check_mins), :check_listeners)
+    {:ok, %{statuses: %{}}}
   end
+
+  def listener_status(%Location{id: id}), do: listener_status(id)
+
+  def listener_status(id) when is_number(id) do
+    GenServer.call(__MODULE__, {:listener_status, id})
+  end
+
+  defenum Status do
+    value(Online, :online)
+    value(NotResponding, :not_responding)
+    value(Offline, :offline)
+
+    default(Offline)
+  end
+
+  alias Status
 
   @delay_minutes 1
   # 5 minutes
@@ -24,6 +46,22 @@ defmodule KartVids.Races.ListenerSupervisor do
     Logger.info("Websocket connection unstable, will retry connecting in #{@delay_minutes} minutes #{inspect(stopped_children)}")
     Process.send_after(self(), {:restart, stopped_children}, @delay)
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_call({:listener_status, id}, _from, state = %{statuses: statuses}) do
+    {:reply, Map.get(statuses, id, Status.Offline), state}
+  end
+
+  def handle_info(:check_listeners, state) do
+    locations = Content.list_locations()
+
+    statuses =
+      for location <- locations, into: %{} do
+        {location.id, get_location_status(location)}
+      end
+
+    {:noreply, %{state | statuses: statuses}}
   end
 
   def handle_info({:restart, stopped_children}, state) do
@@ -56,6 +94,8 @@ defmodule KartVids.Races.ListenerSupervisor do
 
     if Enum.all?(results, & &1) do
       Logger.info("All done starting location listeners!")
+      # Initial check since timer will invoke after timeout
+      send(self(), :check_listeners)
     else
       Logger.info("Some locations did not start successfully...")
     end
@@ -69,6 +109,16 @@ defmodule KartVids.Races.ListenerSupervisor do
 
   def handle_info(message, state) do
     super(message, state)
+  end
+
+  defp get_location_status(location) do
+    pid = Listener.whereis(location)
+
+    cond do
+      is_nil(pid) || !Process.alive?(pid) -> Status.Offline
+      !Listener.ping(pid) -> Status.NotResponding
+      true -> Status.Online
+    end
   end
 
   @retry_minutes 1
@@ -88,6 +138,12 @@ defmodule KartVids.Races.ListenerSupervisor do
         other ->
           Logger.warn("Start child did not succeed, will try again in #{@retry_minutes} minute(s), cause: #{inspect(other)}")
           Process.send_after(self(), {:start_location, location}, @retry_minutes_in_ms)
+      end
+
+      status = get_location_status(location)
+
+      if status != Status.Online do
+        Logger.warn("Location #{location.name} (#{location.id}) started successfully but then refused to respond to pings, got status: #{status}")
       end
 
       true

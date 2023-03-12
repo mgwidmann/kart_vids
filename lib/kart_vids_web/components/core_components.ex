@@ -207,6 +207,7 @@ defmodule KartVidsWeb.CoreComponents do
   end
 
   attr(:type, :atom, default: :brand)
+  attr(:class, :string)
   slot(:inner_block, required: true)
 
   def pill(assigns) do
@@ -221,7 +222,7 @@ defmodule KartVidsWeb.CoreComponents do
     assigns = Map.put(assigns, :type, type)
 
     ~H"""
-    <small class={["ml-3 rounded-full px-2 text-[0.8125rem] font-medium leading-6", @type]}>
+    <small class={["ml-3 rounded-full px-2 text-[0.8125rem] font-medium leading-6", @type, @class]}>
       <%= render_slot(@inner_block) %>
     </small>
     """

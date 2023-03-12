@@ -70,7 +70,8 @@ defmodule KartVids.MixProject do
       {:shards, "~> 1.0"},
       # => When using Caching Annotations
       {:decorator, "~> 1.4"},
-      {:observer_cli, "~> 1.7"}
+      {:observer_cli, "~> 1.7"},
+      {:enum_type, "~> 1.1"}
     ]
   end
 

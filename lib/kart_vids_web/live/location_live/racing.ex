@@ -5,6 +5,8 @@ defmodule KartVidsWeb.LocationLive.Racing do
   alias KartVids.Content
   alias KartVids.Races.Race
   alias KartVids.Races.Listener
+  alias KartVids.Races.ListenerSupervisor
+  alias KartVids.Races.ListenerSupervisor.Status, as: ListenerStatus
   alias KartVids.Races.Listener.Racer
   alias Phoenix.LiveView.JS
 
@@ -24,27 +26,27 @@ defmodule KartVidsWeb.LocationLive.Racing do
   @spec handle_params(map(), any, Phoenix.LiveView.Socket.t()) :: {:noreply, Phoenix.LiveView.Socket.t()}
   def handle_params(%{"id" => id}, _, socket) do
     location = Content.get_location!(id)
-    listener = Listener.whereis(location)
     Listener.subscribe(location)
 
     Process.send_after(self(), :check_listener, @check_timeout)
 
-    {:noreply,
-     socket
-     |> assign(:page_title, "Racing: #{location.name}")
-     |> assign(:location, location)
-     |> assign(:listener, listener)
-     |> assign(:fastest_speed_level, nil)
-     |> assign(:speed_level, nil)
-     |> assign(:racers, nil)
-     |> assign(:racer_change, nil)
-     |> assign(:race_state, nil)
-     |> assign(:race_name, nil)
-     |> assign(:race_type, nil)
-     |> assign(:first_amb, 0.0)
-     |> assign(:scoreboard, nil)
-     |> assign(:win_by, nil)
-     |> assign(:listener_alive?, !is_nil(listener) && Process.alive?(listener))}
+    {
+      :noreply,
+      socket
+      |> assign(:page_title, "Racing: #{location.name}")
+      |> assign(:location, location)
+      |> assign(:listener_status, ListenerSupervisor.listener_status(location))
+      |> assign(:fastest_speed_level, nil)
+      |> assign(:speed_level, nil)
+      |> assign(:racers, nil)
+      |> assign(:racer_change, nil)
+      |> assign(:race_state, nil)
+      |> assign(:race_name, nil)
+      |> assign(:race_type, nil)
+      |> assign(:first_amb, 0.0)
+      |> assign(:scoreboard, nil)
+      |> assign(:win_by, nil)
+    }
   end
 
   @impl true
@@ -112,13 +114,13 @@ defmodule KartVidsWeb.LocationLive.Racing do
   end
 
   def handle_info(:check_listener, socket) do
-    listener = Listener.whereis(socket.assigns.location)
     Process.send_after(self(), :check_listener, @check_timeout)
 
-    {:noreply,
-     socket
-     |> assign(:listener, listener)
-     |> assign(:listener_alive?, !is_nil(listener) && Process.alive?(listener))}
+    {
+      :noreply,
+      socket
+      |> assign(:listener_status, ListenerSupervisor.listener_status(socket.assigns.location))
+    }
   end
 
   def handle_info(msg, socket) do

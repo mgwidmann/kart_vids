@@ -612,7 +612,7 @@ defmodule KartVids.Races do
   end
 
   def get_racer_profile_id(nickname, photo) do
-    Logger.warn("Failed attempt to get racer #{nickname} #{photo}")
+    Logger.warn("Failed attempt to get racer: Nickname: #{nickname} Photo: #{photo}")
     nil
   end
 

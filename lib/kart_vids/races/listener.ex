@@ -100,6 +100,13 @@ defmodule KartVids.Races.Listener do
     end
   end
 
+  def ping(pid) when is_pid(pid) do
+    GenServer.call(pid, :ping)
+  catch
+    :exit, _value ->
+      false
+  end
+
   @spec subscribe(number | Location.t()) :: :ok | {:error, {:already_registered, pid}}
   def subscribe(%Location{id: id}), do: subscribe(id)
 
@@ -260,7 +267,7 @@ defmodule KartVids.Races.Listener do
 
         race_info = persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, location)
 
-        # Persist kart information so the data will be used in calculations
+        # Persist race information first so the data will be used in calculations for karts
         persist_kart_information(scoreboard_by_kart, location)
 
         race_info
@@ -381,6 +388,8 @@ defmodule KartVids.Races.Listener do
     |> broadcast("race_data")
   end
 
+  # Minimum time to log warning about abrupt ending of races, anything less than 3 minutes means the racers likely didn't actually race, convert from ms to seconds
+  @minimum_duration_report_warning :timer.minutes(3) |> div(1000)
   def handle_race_data(
         {:ok,
          msg = %{
@@ -388,7 +397,9 @@ defmodule KartVids.Races.Listener do
          }},
         %State{} = state
       ) do
-    Logger.warning("Race ID #{id} ended abruptly without scoreboard! Duration was: #{duration} Racers count: #{length(racers)}-- Message Keys: #{inspect(Map.keys(msg))}, Race Keys: #{inspect(Map.keys(race))}")
+    unless duration > @minimum_duration_report_warning do
+      Logger.warning("Race ID #{id} ended abruptly without scoreboard! Duration was: #{duration} Racers count: #{length(racers)}-- Message Keys: #{inspect(Map.keys(msg))}, Race Keys: #{inspect(Map.keys(race))}")
+    end
 
     state
   end
@@ -412,7 +423,14 @@ defmodule KartVids.Races.Listener do
     speed
   end
 
-  # Not supposed to receive any messages, so log them if we get them
+  # This is not actually a GenServer...
+  def handle_info({:"$gen_call", caller, :ping}, state = %State{config: %Config{location_id: location_id}}) do
+    Logger.info("Listener (#{location_id}) answering :ping call")
+    GenServer.reply(caller, :pong)
+    {:ok, state}
+  end
+
+  # Not supposed to receive any other messages, so log them if we get them
   def handle_info(msg, state) do
     Logger.error("Received unknown message where process does not handle any messages: #{inspect(msg)}")
 
@@ -574,7 +592,7 @@ defmodule KartVids.Races.Listener do
             {racer.kart_num, profile.id}
 
           {:error, changeset} ->
-            Logger.warn("Unable to upsert profile due to validation failure for #{racer.nickname} #{racer.photo} - Lap: #{racer.fastest_lap} Kart: #{racer.kart_num} - #{inspect(changeset)}")
+            Logger.warn("Unable to upsert profile due to validation failure for #{racer.nickname} #{racer.photo} - Lap: #{racer.fastest_lap} Kart: #{racer.kart_num} - #{inspect(changeset)}\n\nLaps:\n#{inspect(racer_laps)}")
 
             {racer.kart_num, nil}
         end
@@ -692,10 +710,11 @@ defmodule KartVids.Races.Listener do
         %{"lap_time" => lap_time, "lap_number" => lap},
         {fastest_lap, average_lap, _last_lap}
       )
+      # nil > 0.0 == true, so this will trigger for nil data
       when fastest_lap > lap_time do
     {lap, ""} = Integer.parse(lap)
     # First lap
-    if average_lap == nil do
+    if average_lap == nil || fastest_lap == nil do
       {lap_time, lap_time, lap_time}
     else
       {lap_time, average_lap_time(average_lap, lap, lap_time), lap_time}

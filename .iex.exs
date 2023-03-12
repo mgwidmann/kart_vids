@@ -6,4 +6,5 @@ alias KartVids.Accounts.{User}
 alias KartVids.Content
 alias KartVids.Content.{Location, Video}
 alias KartVids.Races.Listener
-alias KartVids.Races.ProfileMigrator
+alias KartVids.Races.ListenerSupervisor
+alias KartVids.Races.KartMigrator
