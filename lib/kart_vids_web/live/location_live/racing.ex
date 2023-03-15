@@ -24,8 +24,8 @@ defmodule KartVidsWeb.LocationLive.Racing do
 
   @impl true
   @spec handle_params(map(), any, Phoenix.LiveView.Socket.t()) :: {:noreply, Phoenix.LiveView.Socket.t()}
-  def handle_params(%{"id" => id}, _, socket) do
-    location = Content.get_location!(id)
+  def handle_params(%{"location_id" => id}, _, socket) do
+    location = socket.assigns[:location] || Content.get_location!(id)
     Listener.subscribe(location)
 
     Process.send_after(self(), :check_listener, @check_timeout)

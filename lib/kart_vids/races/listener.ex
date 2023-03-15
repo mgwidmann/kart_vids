@@ -32,6 +32,7 @@ defmodule KartVids.Races.Listener do
             config: Config.t(),
             current_race: nil | Stirng.t(),
             current_race_started_at: nil | String.t(),
+            last_race: nil | String.t(),
             race_name: nil | String.t(),
             fastest_speed_level: nil | pos_integer(),
             speed_level: nil | pos_integer(),
@@ -44,6 +45,7 @@ defmodule KartVids.Races.Listener do
     defstruct config: %Config{},
               current_race: nil,
               current_race_started_at: nil,
+              last_race: nil,
               race_name: nil,
               fastest_speed_level: nil,
               speed_level: nil,
@@ -154,8 +156,20 @@ defmodule KartVids.Races.Listener do
     |> Supervisor.child_spec([])
   end
 
-  def via_tuple(location_id) do
+  defp via_tuple(location_id) do
     {:via, Registry, {KartVids.Registry, {__MODULE__, location_id}}}
+  end
+
+  defp agent_via_tuple(location_id) do
+    {:via, Registry, {KartVids.Registry, {__MODULE__.State, location_id}}}
+  end
+
+  defp update_agent(location_id, state) do
+    Agent.update(agent_via_tuple(location_id), fn _state -> state end)
+  end
+
+  def listener_state(location_id) do
+    Agent.get(agent_via_tuple(location_id), & &1)
   end
 
   def handle_connect(conn, %Location{} = location) do
@@ -167,17 +181,20 @@ defmodule KartVids.Races.Listener do
   def handle_connect(_conn, %State{config: %Config{location_id: id}} = state) do
     Logger.info("Connected to websocket for location #{id}!")
 
+    Agent.start_link(fn -> state end, name: agent_via_tuple(id))
+
     {:ok, state}
   end
 
-  @reconnect_timeout 1 * 60_000
+  @reconnect_timeout 1 * 10_000
 
   def handle_disconnect(connection_status, %State{} = state) do
     if state.config.reconnect_attempt > 10 do
+      Logger.warn("Exiting due to repeated disconnect from location #{state.config.location_id}! #{inspect(connection_status)}")
+      Agent.stop(agent_via_tuple(state.config.location_id))
+
       {:"$EXIT", "#{inspect(__MODULE__)}: Too many reconnect attempts!"}
     else
-      Logger.warn("Exiting due to repeated disconnect from location #{state.config.location_id}! #{inspect(connection_status)}")
-
       Process.sleep(@reconnect_timeout)
 
       {:reconnect,
@@ -192,6 +209,8 @@ defmodule KartVids.Races.Listener do
       json
       |> Jason.decode()
       |> handle_race_data(state)
+
+    update_agent(state.config.location_id, state)
 
     {:ok, state}
   end
@@ -338,6 +357,7 @@ defmodule KartVids.Races.Listener do
     state
     |> Map.merge(%{
       current_race: nil,
+      last_race: id,
       current_race_started_at: nil,
       race_name: nil,
       racers: racer_data,
@@ -499,50 +519,17 @@ defmodule KartVids.Races.Listener do
     "race_location:#{location_id}"
   end
 
-  @top_std_dev 50
-  @num_std_dev_mean 2
-  @num_std_dev 3
-  @large_std_dev_limit 0.75
-  @min_time 15.0
-
   def persist_kart_information(kart_performance, %Location{id: location_id} = location)
       when is_map(kart_performance) do
-    for {kart_num, performance} <- kart_performance, !is_nil(kart_num) do
+    for {kart_num, performance} <- kart_performance, !is_nil(kart_num), !is_nil(performance) do
       {kart_num, ""} = Integer.parse(kart_num)
       kart = Races.find_kart_by_location_and_number(location_id, kart_num)
-      times = Races.get_fastest_lap_times_for_kart(location_id, kart_num)
-      std_dev = compute_std_dev(times)
-      mean = compute_mean(times, std_dev)
-      std_dev = compute_std_dev(times, mean)
 
-      func_std_dev =
-        if std_dev >= @large_std_dev_limit do
-          std_dev
-        else
-          std_dev * @num_std_dev
-        end
-
-      fastest_time = times |> Enum.filter(&(&1 > @min_time)) |> Enum.sort() |> Enum.filter(&(&1 > mean - func_std_dev)) |> List.first()
+      stats = KartVids.Karts.compute_stats_for_kart(location, kart)
 
       cond do
-        kart && performance[:lap_time] > fastest_time - func_std_dev && performance[:lap_time] < fastest_time + func_std_dev ->
-          Races.update_kart(
-            :system,
-            kart,
-            %{
-              average_fastest_lap_time: mean,
-              average_rpms:
-                div(
-                  kart.average_rpms * kart.number_of_races + performance[:rpm],
-                  kart.number_of_races + 1
-                ),
-              fastest_lap_time: fastest_time,
-              std_dev: std_dev,
-              kart_num: kart_num,
-              number_of_races: length(times),
-              type: Kart.kart_type(kart_num, location)
-            }
-          )
+        kart ->
+          Races.update_kart(:system, kart, Map.merge(stats, %{average_rpms: div(kart.average_rpms * kart.number_of_races + performance[:rpm], kart.number_of_races + 1), type: Kart.kart_type(kart_num, location)}))
 
         !kart && performance[:lap_time] ->
           Races.create_kart(:system, %{
@@ -557,35 +544,12 @@ defmodule KartVids.Races.Listener do
 
         true ->
           Logger.info("Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect(performance)}")
+
+          if performance.lap_time < stats.fastest_lap_time do
+            Logger.warning("Kart #{kart_num} was excluded because performance data was too low out of bounds: #{inspect(performance)}")
+          end
       end
     end
-  end
-
-  def compute_std_dev(times, mean \\ nil) do
-    top = times |> Enum.sort() |> Enum.filter(&(&1 > @min_time)) |> Enum.take(@top_std_dev)
-    mean = if(mean, do: mean, else: Enum.sum(top) / @top_std_dev)
-
-    top
-    |> Enum.map(&:math.pow(&1 - mean, 2))
-    |> Enum.sum()
-    |> Kernel./(@top_std_dev - 1)
-    |> :math.sqrt()
-  end
-
-  def compute_mean(times, std_dev) do
-    top = times |> Enum.sort() |> Enum.filter(&(&1 > @min_time)) |> Enum.take(@top_std_dev)
-    median = Enum.at(top, div(@top_std_dev, 2))
-
-    func_std_dev =
-      if std_dev >= @large_std_dev_limit do
-        std_dev
-      else
-        std_dev * @num_std_dev_mean
-      end
-
-    times2 = times |> Enum.sort() |> Enum.filter(&(&1 + func_std_dev > median))
-    top2 = times2 |> Enum.take(@top_std_dev)
-    Enum.sum(top2) / @top_std_dev
   end
 
   # Do nothing if there are no laps
@@ -637,6 +601,7 @@ defmodule KartVids.Races.Listener do
               racer_profile_id: profile.id,
               race_by: race_by,
               win_by: win_by,
+              external_racer_id: racer.external_racer_id,
               location_id: location_id
             })
 
@@ -812,13 +777,13 @@ defmodule KartVids.Races.Listener do
 
   def get_profile_ids_for_racer_data(racer_data) do
     # Look up profile info by composite keys
-    profiles = racer_data |> Enum.map(fn {_kart_num, racer} -> %{nickname: racer.nickname, photo: racer.photo, id: Races.get_racer_profile_id(racer.nickname, racer.photo)} end)
+    profiles = racer_data |> Enum.map(fn {_kart_num, racer} -> %{nickname: racer.nickname, photo: racer.photo, id: Races.get_racer_profile_id(racer)} end)
 
     # For development, make sure the application doesn't spin logging queries over and over
     # Must use unquote because Mix.env() is not available once compiled as a release
     unless unquote(Mix.env()) == :prod do
       for {kart_num, racer} <- racer_data do
-        unless Races.get_racer_profile_id(racer.nickname, racer.photo) do
+        unless Races.get_racer_profile_id(racer) do
           Races.upsert_racer_profile(%{
             nickname: racer.nickname,
             photo: racer.photo,

@@ -1,28 +1,25 @@
 <.table id="races" rows={@races} row_click={&JS.navigate(~p"/locations/#{@location_id}/races/#{&1}/racers")}>
-  <:col :let={race} label="External race">
-    <%= race.external_race_id %>
-  </:col>
   <:col :let={race} label="Name">
     <%= race.name %>
   </:col>
   <:col :let={race} label="League?">
-    <%= if race.league? do %>
-      <%= (race.league_type || "yes") |> Phoenix.Naming.humanize() %>
-    <% else %>
-      No
-    <% end %>
+    <.league_string league?={race.league?} league_type={race.league_type} />
   </:col>
   <:col :let={race} label="Started at">
     <.display_timestamp timestamp={race.started_at} timezone={@timezone} />
   </:col>
-  <:col :let={race} label="Ended at">
-    <.display_timestamp timestamp={race.ended_at} timezone={@timezone} />
+  <:col :let={race} label="Duration">
+    <%= if race.started_at && race.ended_at do %>
+      <%= Timex.diff(race.started_at, race.ended_at, :seconds) |> Timex.Duration.from_seconds() |> Timex.Format.Duration.Formatters.Humanized.format() %>
+    <% end %>
   </:col>
   <:action :let={race}>
     <div class="sr-only">
       <.link navigate={~p"/locations/#{@location_id}/races/#{race}"}>Show</.link>
     </div>
     <.admin_link patch={~p"/admin/locations/#{@location_id}/races/#{race}/edit"} current_user={@current_user}>Edit</.admin_link>
+    <br />
+    <br />
     <.admin_link phx-click={JS.push("delete", value: %{id: race.id})} data-confirm="Are you sure?" current_user={@current_user}>
       Delete
     </.admin_link>

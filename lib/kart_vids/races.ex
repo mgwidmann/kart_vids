@@ -9,6 +9,8 @@ defmodule KartVids.Races do
   alias KartVids.Repo
   require Logger
 
+  alias KartVids.Karts
+  alias KartVids.Content.{Location}
   alias KartVids.Races.{Racer, RacerProfile, Kart, Season}
   alias KartVids.Races.RacerProfile.Cache, as: RacerProfileCache
 
@@ -49,6 +51,11 @@ defmodule KartVids.Races do
   def get_fastest_lap_times_for_kart(location_id, kart_num) do
     from(r in Racer, where: r.location_id == ^location_id and r.kart_num == ^kart_num, select: r.fastest_lap)
     |> Repo.all()
+  end
+
+  def kart_with_fastest_racer(%Kart{} = kart) do
+    kart
+    |> Repo.preload(:fastest_racer)
   end
 
   @doc """
@@ -173,15 +180,14 @@ defmodule KartVids.Races do
 
   ## Examples
 
-      iex> list_races()
+      iex> list_races(location_id, ~D[2023-01-01])
       [%Race{}, ...]
 
   """
-  def list_races(location_id) do
+  def list_races(location_id, by_date) do
     from(r in Race,
-      where: r.location_id == ^location_id,
-      order_by: {:desc, r.started_at},
-      limit: 100
+      where: r.location_id == ^location_id and fragment("?::date", r.started_at) == fragment("?::date", ^by_date),
+      order_by: {:desc, r.started_at}
     )
     |> Repo.all()
   end
@@ -396,20 +402,33 @@ defmodule KartVids.Races do
   """
   def get_racer!(id), do: Repo.get!(Racer, id)
 
-  def get_racer_fastest_kart(kart) do
-    from(r in Racer, where: r.kart_num == ^kart.kart_num, order_by: {:asc, r.fastest_lap}, limit: 10)
-    |> Repo.all()
-    |> Enum.reject(fn racer ->
-      # TODO: Cleanup
-      func_std_dev =
-        if kart.std_dev > 0.75 do
-          kart.std_dev
-        else
-          kart.std_dev * 3
-        end
+  def get_racer_fastest_kart(location, kart)
 
-      racer.fastest_lap + func_std_dev < kart.average_fastest_lap_time
-    end)
+  def get_racer_fastest_kart(%Location{adult_kart_reset_on: adult_kart_reset_on} = location, %Kart{type: :adult, kart_num: kart_num} = kart) when not is_nil(adult_kart_reset_on) do
+    from(r in Racer, join: race in Race, on: r.race_id == race.id, where: r.kart_num == ^kart_num and fragment("?::date >= ?", race.started_at, ^adult_kart_reset_on), order_by: {:asc, r.fastest_lap}, limit: 10)
+    |> do_get_racer_fastest(location, kart)
+  end
+
+  def get_racer_fastest_kart(%Location{} = location, %Kart{type: :adult, kart_num: kart_num} = kart) do
+    from(r in Racer, where: r.kart_num == ^kart_num, order_by: {:asc, r.fastest_lap}, limit: 10)
+    |> do_get_racer_fastest(location, kart)
+  end
+
+  def get_racer_fastest_kart(%Location{junior_kart_reset_on: junior_kart_reset_on} = location, %Kart{type: :junior, kart_num: kart_num} = kart) when not is_nil(junior_kart_reset_on) do
+    from(r in Racer, join: race in Race, on: r.race_id == race.id, where: r.kart_num == ^kart_num and fragment("?::date >= ?", race.started_at, ^junior_kart_reset_on), order_by: {:asc, r.fastest_lap}, limit: 10)
+    |> do_get_racer_fastest(location, kart)
+  end
+
+  def get_racer_fastest_kart(%Location{} = location, %Kart{type: :junior, kart_num: kart_num} = kart) do
+    from(r in Racer, where: r.kart_num == ^kart_num, order_by: {:asc, r.fastest_lap}, limit: 10)
+    |> do_get_racer_fastest(location, kart)
+  end
+
+  defp do_get_racer_fastest(query, location, %Kart{} = kart) do
+    query
+    |> Repo.all()
+    |> Karts.quality_filter(location, kart.std_dev, & &1.fastest_lap)
+    |> Enum.to_list()
     |> List.first()
   end
 
@@ -529,7 +548,7 @@ defmodule KartVids.Races do
       iex> upsert_racer_profile(%{fastest_lap_time: 19.23, nickname: "Speedy", photo: "https://images.com/speedy.jpg"})
       {:ok, %RacerProfile{}}
   """
-  def upsert_racer_profile(attrs) do
+  def upsert_racer_profile(attrs, force_update \\ false) do
     profile = get_racer_profile_by_attrs(attrs)
 
     if profile do
@@ -537,7 +556,7 @@ defmodule KartVids.Races do
       attrs_fastest_lap = attrs["fastest_lap_time"] || attrs[:fastest_lap_time]
 
       attrs =
-        if fastest_lap_time < attrs_fastest_lap do
+        if !force_update && fastest_lap_time > Karts.minimum_lap_time() && fastest_lap_time < attrs_fastest_lap do
           Map.drop(attrs, [:fastest_lap_time, :fastest_lap_kart, :fastest_lap_race_id, "fastest_lap_time", "fastest_lap_kart", "fastest_lap_race_id"])
         else
           attrs
@@ -588,37 +607,58 @@ defmodule KartVids.Races do
     |> Repo.all()
   end
 
-  def get_racer_profile_by_attrs(%{"nickname" => nickname, "photo" => photo}), do: get_racer_profile_by_attrs(nickname, photo)
+  def get_racer_profile_by_attrs(attrs = %{"external_racer_id" => external_racer_id}) when is_binary(external_racer_id), do: attrs |> Map.put(:external_racer_id, external_racer_id) |> get_racer_profile_by_attrs()
 
-  def get_racer_profile_by_attrs(%{nickname: nickname, photo: photo}) when not is_nil(nickname) and not is_nil(photo) do
-    get_racer_profile_by_attrs(nickname, photo)
+  def get_racer_profile_by_attrs(attrs = %{external_racer_id: external_racer_id}) when is_binary(external_racer_id) do
+    query_racer_profile_by_attrs(attrs)
+    |> limit(1)
+    |> Repo.one()
+    # Try without the external_racer_id key if it can be found another way
+    |> Kernel.||(Map.drop(attrs, [:external_racer_id, "external_racer_id"]) |> get_racer_profile_by_attrs())
+  end
+
+  def get_racer_profile_by_attrs(%{"nickname" => nickname, "photo" => photo} = attrs), do: attrs |> Map.put(:nickname, nickname) |> Map.put(:photo, photo) |> get_racer_profile_by_attrs()
+
+  def get_racer_profile_by_attrs(%{nickname: nickname, photo: photo} = attrs) when not is_nil(nickname) and not is_nil(photo) do
+    query_racer_profile_by_attrs(attrs)
+    |> limit(1)
+    |> Repo.one()
+    |> Kernel.||(Map.drop(attrs, [:nickname, :photo, "nickname", "photo"]) |> get_racer_profile_by_attrs())
   end
 
   def get_racer_profile_by_attrs(_), do: nil
 
-  @spec get_racer_profile_by_attrs(String.t(), String.t()) :: RacerProfile.t()
-  def get_racer_profile_by_attrs(nickname, photo) do
-    query_racer_profile_by_attrs(nickname, photo)
-    |> limit(1)
-    |> Repo.one()
-  end
-
   @racer_profile_ttl :timer.hours(1)
-  @decorate cacheable(cache: RacerProfileCache, key: {RacerProfile, {nickname, photo}}, opts: [ttl: @racer_profile_ttl])
-  @spec get_racer_profile_id(String.t(), String.t()) :: pos_integer()
-  def get_racer_profile_id(nickname, photo) when not is_nil(nickname) and not is_nil(photo) do
-    from(r in query_racer_profile_by_attrs(nickname, photo), select: r.id, limit: 1)
+  @decorate cacheable(cache: RacerProfileCache, key: {RacerProfile, Map.get(attrs, :external_racer_id) || {attrs[:nickname], attrs[:photo]}}, opts: [ttl: @racer_profile_ttl])
+  @spec get_racer_profile_id(%{atom() => String.t()}) :: pos_integer()
+  def get_racer_profile_id(attrs) do
+    from(r in query_racer_profile_by_attrs(attrs), select: r.id, limit: 1)
     |> Repo.one()
+    |> tap(fn
+      nil ->
+        Logger.warning("Failed to lookup racer profile by attrs: #{inspect(attrs)}")
+
+      v ->
+        v
+    end)
   end
 
-  def get_racer_profile_id(nickname, photo) do
-    Logger.warn("Failed attempt to get racer: Nickname: #{nickname} Photo: #{photo}")
-    nil
+  defp query_racer_profile_by_attrs(query \\ RacerProfile, attrs)
+
+  defp query_racer_profile_by_attrs(query, attrs = %{external_racer_id: external_racer_id}) when not is_nil(external_racer_id) do
+    from(r in query, or_where: r.external_racer_id == ^external_racer_id)
+    |> query_racer_profile_by_attrs(Map.drop(attrs, [:external_racer_id]))
   end
 
-  defp query_racer_profile_by_attrs(nickname, photo, query \\ RacerProfile) do
+  defp query_racer_profile_by_attrs(query, %{nickname: nickname, photo: photo}) when not is_nil(nickname) and not is_nil(photo) do
     from(r in query, or_where: r.nickname == ^nickname and r.photo == ^photo)
   end
+
+  defp query_racer_profile_by_attrs(RacerProfile, attrs) do
+    raise "Not enough attributes to generate a query for looking up racer profile ID: #{inspect(attrs)}"
+  end
+
+  defp query_racer_profile_by_attrs(%Ecto.Query{} = query, _), do: query
 
   def list_racer_profile_by_nickname(nickname) when is_binary(nickname) do
     from(r in RacerProfile, where: r.nickname == ^nickname)

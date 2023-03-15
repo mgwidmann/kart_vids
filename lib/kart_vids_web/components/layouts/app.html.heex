@@ -1,41 +1,4 @@
-<header class="px-4 sm:px-6 lg:px-8 text-white border-b-4 border-slate-300 bg-gradient-to-b from-sky-800 to-sky-400">
-  <div class="flex items-center justify-between py-3">
-    <div class="flex items-center gap-4">
-      <a href={~p"/"}>
-        <image src={~p"/images/KartVids-64.png"} />
-      </a>
-      <span class="font-mono text-2xl">KART VIDS</span>
-    </div>
-    <div class="flex items-center gap-4 text-right">
-      <ul>
-        <%= if @current_user do %>
-          <li>
-            <%= @current_user.email %>
-          </li>
-          <li>
-            <%= if @current_user.admin? do %>
-              <.link href={~p"/locations"}>Locations</.link>
-              &nbsp;|&nbsp;
-            <% end %>
-            <.link href={~p"/videos"}>Videos</.link>
-            &nbsp;|&nbsp;
-            <.link href={~p"/users/settings"}>Settings</.link>
-          </li>
-          <li>
-            <.link href={~p"/users/log_out"} method="delete">Log out</.link>
-          </li>
-        <% else %>
-          <li>
-            <.link href={~p"/users/register"}>Register</.link>
-          </li>
-          <li>
-            <.link href={~p"/users/log_in"}>Log in</.link>
-          </li>
-        <% end %>
-      </ul>
-    </div>
-  </div>
-</header>
+<.navigation_header current_user={@current_user} />
 <main class="px-4 pt-4 pb-20 sm:px-6 lg:px-8">
   <div class="mx-auto">
     <.flash kind={:info} title="Success!" flash={@flash} />

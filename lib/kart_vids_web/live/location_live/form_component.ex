@@ -24,6 +24,10 @@ defmodule KartVidsWeb.LocationLive.FormComponent do
         <.input field={{f, :adult_kart_max}} type="number" label="Last Adult Kart Number" />
         <.input field={{f, :junior_kart_min}} type="number" label="First Junior Kart Number" />
         <.input field={{f, :junior_kart_max}} type="number" label="Last Junior Kart Number" />
+        <.input field={{f, :adult_kart_reset_on}} type="date" label="Adult Karts data reset on" />
+        <.input field={{f, :junior_kart_reset_on}} type="date" label="Junior Karts data reset on" />
+        <.input field={{f, :min_lap_time}} type="number" label="Minimum Possible Lap Time (for Kart statistics)" step="any" />
+        <.input field={{f, :max_lap_time}} type="number" label="Maximum Possible Lap Time (for Kart statistics)" step="any" />
         <.input field={{f, :timezone}} type="select" label="Timezone" options={Tzdata.zone_lists_grouped() |> Enum.map(fn {region, list} -> {Atom.to_string(region) |> Phoenix.Naming.humanize(), list} end)} />
         <.input field={{f, :image_url}} type="text" label="Icon Image URL" />
         <.input field={{f, :websocket_url}} type="text" label="Websocket Connection URL" />

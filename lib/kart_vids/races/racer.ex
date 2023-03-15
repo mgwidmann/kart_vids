@@ -14,6 +14,7 @@ defmodule KartVids.Races.Racer do
     field :nickname, :string
     field :photo, :string
     field :position, :integer
+    field :external_racer_id, :string
     field :race_by, Ecto.Enum, values: [laps: 100, minutes: 200]
     field :win_by, Ecto.Enum, values: [laptime: 100, position: 200]
 
@@ -29,7 +30,7 @@ defmodule KartVids.Races.Racer do
   @doc false
   def changeset(racer, attrs) do
     racer
-    |> cast(attrs, [:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id, :racer_profile_id, :race_by, :win_by, :location_id])
+    |> cast(attrs, [:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id, :racer_profile_id, :race_by, :win_by, :location_id, :external_racer_id])
     |> cast_embed(:laps)
     |> validate_required([:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id, :racer_profile_id, :race_by, :win_by])
   end

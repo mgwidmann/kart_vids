@@ -1,5 +1,6 @@
 defmodule KartVidsWeb.RaceLive.Leagues do
   use KartVidsWeb, :live_view
+  import KartVidsWeb.Components.Racing
 
   alias KartVids.Races
 

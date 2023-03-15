@@ -2,6 +2,7 @@ defmodule KartVids.Races.Kart do
   use Ecto.Schema
   import Ecto.Changeset
   alias KartVids.Content.Location
+  alias KartVids.Races.Racer
 
   schema "karts" do
     field :average_fastest_lap_time, :float
@@ -12,6 +13,8 @@ defmodule KartVids.Races.Kart do
     field :number_of_races, :integer
     field :type, Ecto.Enum, values: [:adult, :junior, :unknown]
 
+    belongs_to :fastest_racer, Racer
+
     belongs_to :location, Location
 
     timestamps()
@@ -20,8 +23,8 @@ defmodule KartVids.Races.Kart do
   @doc false
   def changeset(kart, attrs) do
     kart
-    |> cast(attrs, [:kart_num, :fastest_lap_time, :average_fastest_lap_time, :number_of_races, :average_rpms, :type, :std_dev, :location_id])
-    |> validate_required([:kart_num, :fastest_lap_time, :average_fastest_lap_time, :number_of_races, :average_rpms, :type, :location_id])
+    |> cast(attrs, [:kart_num, :fastest_lap_time, :average_fastest_lap_time, :number_of_races, :average_rpms, :type, :std_dev, :location_id, :fastest_racer_id])
+    |> validate_required([:kart_num, :number_of_races, :average_rpms, :type, :location_id])
   end
 
   def kart_type(num, %Location{adult_kart_min: min, adult_kart_max: max}) when is_number(num) and num >= min and num <= max, do: :adult

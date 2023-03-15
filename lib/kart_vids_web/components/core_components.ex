@@ -13,6 +13,7 @@ defmodule KartVidsWeb.CoreComponents do
 
   alias Phoenix.LiveView.JS
   import KartVidsWeb.Gettext
+  use KartVidsWeb, :verified_routes
 
   @doc """
   Renders a modal.
@@ -454,11 +455,12 @@ defmodule KartVidsWeb.CoreComponents do
 
   slot(:inner_block, required: true)
   slot(:subtitle)
+  slot(:subheader)
   slot(:actions)
 
   def header(assigns) do
     ~H"""
-    <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
+    <header class={[@actions != [] && "", @class]}>
       <div>
         <h1 class="text-lg font-semibold leading-8 text-zinc-800">
           <%= render_slot(@inner_block) %>
@@ -467,7 +469,14 @@ defmodule KartVidsWeb.CoreComponents do
           <%= render_slot(@subtitle) %>
         </p>
       </div>
-      <div class="flex-none"><%= render_slot(@actions) %></div>
+      <div class="grid grid-cols-4 w-full">
+        <div class="col-span-3">
+          <%= render_slot(@subheader) %>
+        </div>
+        <div class="flex justify-end">
+          <%= render_slot(@actions) %>
+        </div>
+      </div>
     </header>
     """
   end
@@ -483,6 +492,8 @@ defmodule KartVidsWeb.CoreComponents do
       </.table>
   """
   attr(:id, :string, required: true)
+  attr(:class, :string, default: "mt-11 w-full")
+  attr(:container_class, :string, default: "")
   attr(:row_click, JS, default: nil)
   attr(:rows, :list, required: true)
   attr(:row_add, :any, default: nil)
@@ -500,8 +511,8 @@ defmodule KartVidsWeb.CoreComponents do
 
   def table(assigns) do
     ~H"""
-    <div id={@id} class="overflow-y-auto sm:overflow-visible px-0">
-      <table class="mt-11 w-full">
+    <div id={@id} class={["overflow-y-auto sm:overflow-visible px-0", @container_class]}>
+      <table class={@class}>
         <thead class="text-left text-[0.8125rem] leading-6 text-zinc-500">
           <tr>
             <th :for={col <- @col} class={["p-0 pb-4 sm:px-3 font-normal", col[:class]]}>
@@ -579,6 +590,44 @@ defmodule KartVidsWeb.CoreComponents do
           <dd class="text-sm leading-6 text-zinc-700"><%= render_slot(item) %></dd>
         </div>
       </dl>
+    </div>
+    """
+  end
+
+  slot :tab, required: true do
+    slot :body, required: true do
+    end
+  end
+
+  # <th :for={col <- @col}
+
+  def tabs(assigns) do
+    ~H"""
+    <ul class="mb-5 flex list-none flex-col flex-wrap border-b-0 pl-0 md:flex-row" role="tablist">
+      <li role="presentation">
+        <a
+          phx-click={JS.toggle("#top-records, #top-excluded")}
+          class="my-2 block border-x-0 border-t-0 border-b-2 border-transparent px-7 pt-4 pb-3.5 text-xs font-medium uppercase leading-tight text-neutral-500 hover:isolate hover:border-transparent hover:bg-neutral-100 focus:isolate focus:border-transparent data-[te-nav-active]:border-primary data-[te-nav-active]:text-primary dark:text-neutral-400 dark:hover:bg-transparent dark:data-[te-nav-active]:border-primary-400 dark:data-[te-nav-active]:text-primary-400"
+        >
+          Top Records
+        </a>
+      </li>
+      <li role="presentation">
+        <a
+          phx-click={JS.toggle("#top-records, #top-excluded")}
+          class="focus:border-transparen my-2 block border-x-0 border-t-0 border-b-2 border-transparent px-7 pt-4 pb-3.5 text-xs font-medium uppercase leading-tight text-neutral-500 hover:isolate hover:border-transparent hover:bg-neutral-100 focus:isolate data-[te-nav-active]:border-primary data-[te-nav-active]:text-primary dark:text-neutral-400 dark:hover:bg-transparent dark:data-[te-nav-active]:border-primary-400 dark:data-[te-nav-active]:text-primary-400"
+        >
+          Top Excluded
+        </a>
+      </li>
+    </ul>
+    <div class="mb-6">
+      <div class="opacity-0 opacity-100 transition-opacity duration-150 ease-linear" id="top-records" role="tabpanel" aria-labelledby="tabs-home-tab">
+        Tab 1 content
+      </div>
+      <div class="hidden opacity-0 transition-opacity duration-150 ease-linear" id="top-excluded" role="tabpanel" aria-labelledby="tabs-profile-tab">
+        Tab 2 content
+      </div>
     </div>
     """
   end
@@ -766,6 +815,51 @@ defmodule KartVidsWeb.CoreComponents do
 
     ~H"""
     <video data-phx-upload-ref={@entry.upload_ref} data-phx-entry-ref={@ref} data-phx-hook="Phoenix.LiveImgPreview" data-phx-update="ignore" {@rest} />
+    """
+  end
+
+  attr(:current_user, :any)
+
+  def navigation_header(assigns) do
+    ~H"""
+    <header class="px-4 sm:px-6 lg:px-8 text-white border-b-4 border-slate-300 bg-gradient-to-b from-sky-800 to-sky-400">
+      <div class="flex items-center justify-between py-3">
+        <div class="flex items-center gap-4">
+          <a href={~p"/"}>
+            <image src={~p"/images/KartVids-64.png"} />
+          </a>
+          <span class="font-mono text-2xl">KART VIDS</span>
+        </div>
+        <div class="flex items-center gap-4 text-right">
+          <ul>
+            <%= if @current_user do %>
+              <li>
+                <%= @current_user.email %>
+              </li>
+              <li>
+                <%= if @current_user.admin? do %>
+                  <.link href={~p"/locations"}>Locations</.link>
+                  &nbsp;|&nbsp;
+                <% end %>
+                <.link href={~p"/videos"}>Videos</.link>
+                &nbsp;|&nbsp;
+                <.link href={~p"/users/settings"}>Settings</.link>
+              </li>
+              <li>
+                <.link href={~p"/users/log_out"} method="delete">Log out</.link>
+              </li>
+            <% else %>
+              <li>
+                <.link href={~p"/users/register"}>Register</.link>
+              </li>
+              <li>
+                <.link href={~p"/users/log_in"}>Log in</.link>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    </header>
     """
   end
 end

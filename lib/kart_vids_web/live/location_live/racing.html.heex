@@ -7,23 +7,14 @@
 </div>
 
 <.header>
-  <.link navigate={~p"/locations/#{@location}"}><%= @location.name %></.link>
-  <.link navigate={~p"/locations/#{@location}/karts"}>
-    <.button>Karts</.button>
-  </.link>
+  <:subheader>
+    <.link navigate={~p"/locations/#{@location}"}><%= @location.name %></.link>
+  </:subheader>
   <:actions>
-    <div class="flex justify-between items-center shrink-0">
+    <div class="flex justify-between items-center gap-1 shrink-0">
       <.simple_form :let={f} for={%{}} as={:race_type} phx-change="change_race_type" class="mr-2 min-w-[7rem]">
         <.input field={{f, :race_type}} type="select" options={["Best Lap": :best_lap, Position: :position]} value={@race_type} />
       </.simple_form>
-      <.link navigate={~p"/locations/#{@location}/races"}>
-        <.button>Past Races</.button>
-      </.link>
-    </div>
-    <div class="flex justify-end shrink-0 mt-2">
-      <.link navigate={~p"/locations/#{@location}/leagues"}>
-        <.button>League Races</.button>
-      </.link>
     </div>
   </:actions>
 </.header>

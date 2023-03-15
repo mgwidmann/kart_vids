@@ -12,6 +12,7 @@
 
 <.list>
   <:item title="Kart Number"><%= @kart.kart_num %></:item>
+  <:item title="Kart Type"><%= @kart.type |> to_string() |> Phoenix.Naming.humanize() %></:item>
   <:item title="Fastest lap time"><%= format_lap(@kart.fastest_lap_time) %></:item>
   <:item title="Average fastest lap time (Top 50)"><%= format_lap(@kart.average_fastest_lap_time) %></:item>
   <:item title="Standard Deviation (Top 50)"><%= format_lap(@kart.std_dev, true) %></:item>
@@ -19,13 +20,42 @@
   <:item title="Average RPMs"><%= @kart.average_rpms %></:item>
   <:item title="Fastest Racer">
     <%= if @fastest_racer do %>
-      <.link href={~p"/locations/#{@location_id}/racers/#{@fastest_racer.racer_profile_id}"}>
+      <.link href={~p"/locations/#{@location_id}/racers/#{@fastest_racer.racer_profile_id}?selected=#{@fastest_racer.race_id}"}>
         <.racer_photo photo={@fastest_racer.photo} class="object-cover rounded-lg" />
         <span class="block text-md md:text-xl lg:text-2xl xl:text-4xl"><%= @fastest_racer.nickname %></span>
       </.link>
     <% end %>
   </:item>
 </.list>
+
+<ul class="mb-5 flex list-none flex-col flex-wrap border-b-1 border-grey-400 pl-0 md:flex-row" role="tablist">
+  <li role="presentation">
+    <a
+      id="top-records-tab"
+      phx-click={JS.show(to: "#top-records") |> JS.hide(to: "#top-excluded") |> JS.add_class("border-sky-400", to: "#top-records-tab") |> JS.remove_class("border-sky-400", to: "#top-excluded-tab")}
+      class="cursor-pointer my-2 block border-x-0 border-t-0 border-b-2 px-7 pt-4 pb-3.5 text-xs font-medium uppercase leading-tight text-neutral-500 hover:isolate hover:bg-neutral-100 focus:isolate border-sky-400 text-primary"
+    >
+      Top Records
+    </a>
+  </li>
+  <li role="presentation">
+    <a
+      id="top-excluded-tab"
+      phx-click={JS.show(to: "#top-excluded") |> JS.hide(to: "#top-records") |> JS.add_class("border-sky-400", to: "#top-excluded-tab") |> JS.remove_class("border-sky-400", to: "#top-records-tab")}
+      class="cursor-pointer my-2 block border-x-0 border-t-0 border-b-2 px-7 pt-4 pb-3.5 text-xs font-medium uppercase leading-tight text-neutral-500 hover:isolate hover:bg-neutral-100 focus:isolate text-primary"
+    >
+      Top Excluded
+    </a>
+  </li>
+</ul>
+<div class="mb-6">
+  <div class="opacity-0 opacity-100 transition-opacity duration-150 ease-linear" id="top-records" role="tabpanel" aria-labelledby="tabs-home-tab">
+    <%= racer_table(%{racers: @top_records, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user}) %>
+  </div>
+  <div class="hidden opacity-0 opacity-100 transition-opacity duration-150 ease-linear" id="top-excluded" role="tabpanel" aria-labelledby="tabs-profile-tab">
+    <%= racer_table(%{racers: @top_excluded, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user}) %>
+  </div>
+</div>
 
 <.modal :if={@live_action == :edit} id="kart-modal" show on_cancel={JS.patch(~p"/locations/#{@location_id}/karts/#{@kart}")}>
   <.live_component module={KartVidsWeb.KartLive.FormComponent} id={@kart.id} title={@page_title} action={@live_action} kart={@kart} navigate={~p"/locations/#{@location_id}/karts/#{@kart}"} current_user={@current_user} />

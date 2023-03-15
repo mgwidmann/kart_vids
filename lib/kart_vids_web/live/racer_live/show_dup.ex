@@ -25,6 +25,16 @@ defmodule KartVidsWeb.RacerLive.ShowDup do
     end
   end
 
+  def handle_params(%{"location_id" => location_id, "external_racer_id" => external_racer_id}, _url, socket) do
+    racer_profile = Races.get_racer_profile_by_attrs(%{external_racer_id: external_racer_id})
+
+    if racer_profile do
+      navigate_directly(socket, racer_profile.id, location_id)
+    else
+      cannot_be_found(socket, external_racer_id, location_id)
+    end
+  end
+
   def handle_params(%{"location_id" => location_id, "nickname" => nickname}, _url, socket) do
     case Races.list_racer_profile_by_nickname(nickname) do
       [racer_profile | others] ->
@@ -40,7 +50,7 @@ defmodule KartVidsWeb.RacerLive.ShowDup do
   end
 
   defp show_dups(socket, racers, location_id) do
-    location = Content.get_location!(location_id)
+    location = socket.assigns[:location] || Content.get_location!(location_id)
 
     {:noreply,
      socket

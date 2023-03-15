@@ -16,7 +16,7 @@ defmodule KartVidsWeb.RacerLive.Show do
         _url,
         socket
       ) do
-    location = Content.get_location!(location_id)
+    location = socket.assigns[:location] || Content.get_location!(location_id)
 
     {
       :noreply,
@@ -30,14 +30,20 @@ defmodule KartVidsWeb.RacerLive.Show do
 
   @recent_hours 24
 
-  defp apply_action(socket, :show, %{"racer_profile_id" => racer_profile_id}) do
+  defp apply_action(socket, :show, %{"racer_profile_id" => racer_profile_id} = params) do
     racer_profile = Races.get_racer_profile!(racer_profile_id)
-    races = racer_profile.races |> Enum.sort_by(& &1.race.started_at, :desc)
-    selected_race = races |> List.first()
+
+    races = racer_profile.races |> Enum.sort_by(& &1.race.started_at, {:desc, DateTime})
+    {selected_id, ""} = Integer.parse(params["selected"] || "-1")
+    selected_race = races |> Enum.find(&(&1.race.id == selected_id)) || List.first(races)
     additional_assigns = select_race(selected_race)
 
     recent_timeframe = Timex.now() |> Timex.subtract(Timex.Duration.from_hours(@recent_hours))
-    recent_best = races |> Enum.filter(&Timex.after?(&1.race.started_at, recent_timeframe)) |> Enum.min_by(& &1.fastest_lap, fn -> nil end)
+
+    recent_best =
+      races
+      |> Enum.filter(&Timex.after?(&1.race.started_at, recent_timeframe))
+      |> Enum.min_by(& &1.fastest_lap, fn -> nil end)
 
     socket
     |> assign(:page_title, "#{racer_profile.nickname}'s Races")

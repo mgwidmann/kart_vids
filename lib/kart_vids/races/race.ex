@@ -11,7 +11,7 @@ defmodule KartVids.Races.Race do
     field :started_at, :utc_datetime
     field :ended_at, :utc_datetime
     field :league?, :boolean, source: :league, default: false
-    field :league_type, Ecto.Enum, values: [none: 0, practice: 100, qualifier: 200, feature: 300]
+    field :league_type, Ecto.Enum, values: [none: 0, practice: 100, qualifier: 200, feature: 300], default: :none
 
     belongs_to :location, Location
 

@@ -1,4 +1,4 @@
-<.table id="racers" rows={@racers} row_click={&JS.navigate(~p"/locations/#{@location_id}/racers/by_nickname/#{&1.nickname}")}>
+<.table id="racers" rows={@racers} row_click={&JS.navigate(if(&1.external_racer_id, do: ~p"/locations/#{@location_id}/racers/by_external/#{&1.external_racer_id}", else: ~p"/locations/#{@location_id}/racers/by_nickname/#{&1.nickname}"))}>
   <:col :let={racer} label="Position" label_mobile="Pos." row_class="bg-sky-400 sm:max-w-[75px] text-center">
     <h1 class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.position %></h1>
   </:col>

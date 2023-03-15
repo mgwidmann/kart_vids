@@ -1,44 +1,71 @@
 defmodule KartVids.Races.KartMigrator do
   @moduledoc false
   import Ecto.Query
+  require Logger
   alias KartVids.Repo
+  alias KartVids.Content
   alias KartVids.Races
-  alias KartVids.Races.{Kart, Listener}
+  alias KartVids.Races.{Kart, RacerProfile}
+  alias KartVids.Karts
 
   @step 10
 
   def migrate(location_id) do
-    count = Repo.one(from k in Kart, where: k.location_id == ^location_id, select: count(k.id))
+    location = Content.get_location!(location_id)
+    count = Repo.one(from(k in Kart, where: k.location_id == ^location_id, select: count(k.id)))
 
     for s <- 0..count//@step do
       karts = Repo.all(from(k in Kart, limit: @step, offset: ^s, order_by: k.id))
 
       for kart <- karts do
-        times = Races.get_fastest_lap_times_for_kart(location_id, kart.kart_num)
-        std_dev = Listener.compute_std_dev(times)
-        mean = Listener.compute_mean(times, std_dev)
-        std_dev = Listener.compute_std_dev(times, mean)
+        migrate_kart(location, kart)
+      end
+    end
 
-        func_std_dev =
-          if std_dev >= 0.75 do
-            std_dev
-          else
-            std_dev * 3
-          end
+    count = from(rp in RacerProfile, select: count(rp.id)) |> Repo.one()
 
-        fastest_time = times |> Enum.filter(&(&1 > 10.0)) |> Enum.sort() |> Enum.filter(&(&1 > mean - func_std_dev)) |> List.first()
+    for s <- 0..count//@step do
+      profiles = Repo.all(from(rp in RacerProfile, limit: @step, offset: ^s, order_by: rp.id)) |> Repo.preload(:races)
 
-        {:ok, _kart} =
-          Races.update_kart(
-            :system,
-            kart,
-            %{
-              average_fastest_lap_time: mean,
-              fastest_lap_time: fastest_time,
-              std_dev: std_dev,
-              number_of_races: length(times)
-            }
-          )
+      for profile <- profiles do
+        migrate_profile(location, profile)
+      end
+    end
+  end
+
+  def migrate_kart(location, %Kart{} = kart) do
+    stats = KartVids.Karts.compute_stats_for_kart(kart, location)
+
+    Races.update_kart(:system, kart, stats)
+  end
+
+  def migrate_profile(location, %RacerProfile{} = profile) do
+    all_karts = profile.races |> Enum.map(& &1.kart_num) |> Enum.uniq()
+    # Use fastest average and smallest standard deviation for all karts this user used to determine which races are quality data
+    std_dev =
+      from(k in Kart,
+        where: k.location_id == ^location.id and k.kart_num in ^all_karts and not is_nil(k.average_fastest_lap_time) and not is_nil(k.std_dev),
+        select: fragment("MAX(?)", k.std_dev)
+      )
+      |> Repo.one()
+
+    fastest_race =
+      profile.races
+      |> Karts.quality_filter(location, std_dev, & &1.fastest_lap)
+      |> Enum.sort_by(& &1.fastest_lap, :asc)
+      |> List.first()
+
+    # May not have raced since a reset was done
+    if fastest_race do
+      update = %{nickname: profile.nickname, photo: profile.photo, fastest_lap_time: fastest_race.fastest_lap, fastest_lap_kart: fastest_race.kart_num, fastest_lap_race_id: fastest_race.race_id}
+
+      case Races.upsert_racer_profile(update, true) do
+        {:ok, _profile} ->
+          {:ok, profile.id}
+
+        {:error, changeset} ->
+          Logger.warn("Migration failure for profile #{profile.id}, Changeset failed: #{inspect(changeset)} for profile: #{inspect(profile)} and update data of #{inspect(update)}")
+          nil
       end
     end
   end

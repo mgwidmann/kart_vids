@@ -1,4 +1,5 @@
 defmodule KartVidsWeb.Router do
+  alias KartVidsWeb.Layouts
   use KartVidsWeb, :router
 
   import KartVidsWeb.UserAuth
@@ -102,8 +103,12 @@ defmodule KartVidsWeb.Router do
       on_mount: [{KartVidsWeb.UserAuth, :ensure_authenticated_admin}] do
       # Locations
       live("/locations/new", LocationLive.Index, :new)
-      live("/locations/:id/edit", LocationLive.Index, :edit)
-      live("/locations/:id/show/edit", LocationLive.Show, :edit)
+    end
+
+    live_session :require_authenticated_user_admin_racing, on_mount: [{KartVidsWeb.UserAuth, :ensure_authenticated_admin}, {KartVidsWeb.Content, :location_id}], layout: {Layouts, :racing} do
+      # Locations
+      live("/locations/:location_id/edit", LocationLive.Index, :edit)
+      live("/locations/:location_id/show/edit", LocationLive.Show, :edit)
 
       # Karts
       live("/locations/:location_id/karts/new", KartLive.Index, :new)
@@ -135,8 +140,12 @@ defmodule KartVidsWeb.Router do
 
       # Locations
       live("/locations", LocationLive.Index, :index)
-      live("/locations/:id/racing", LocationLive.Racing, :racing)
-      live("/locations/:id", LocationLive.Show, :show)
+    end
+
+    live_session :current_user_racing, on_mount: [{KartVidsWeb.UserAuth, :mount_current_user}, {KartVidsWeb.Content, :location_id}], layout: {Layouts, :racing} do
+      # Locaitons
+      live("/locations/:location_id/racing", LocationLive.Racing, :racing)
+      live("/locations/:location_id", LocationLive.Show, :show)
 
       # Karts
       live("/locations/:location_id/karts", KartLive.Index, :index)
@@ -151,6 +160,7 @@ defmodule KartVidsWeb.Router do
 
       # Racer
       live("/locations/:location_id/races/:race_id/racers", RacerLive.Index, :index)
+      live("/locations/:location_id/racers/by_external/:external_racer_id", RacerLive.ShowDup, :show)
       live("/locations/:location_id/racers/by_nickname/:nickname", RacerLive.ShowDup, :show)
       live("/locations/:location_id/racers/:racer_profile_id", RacerLive.Show, :show)
     end

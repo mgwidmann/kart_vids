@@ -9,12 +9,6 @@
     Information about this location.
   </:subtitle>
   <:actions>
-    <.link navigate={~p"/locations/#{@location}/racing"}>
-      <.button>Racing</.button>
-    </.link>
-    <.link navigate={~p"/locations/#{@location}/karts"}>
-      <.button>Karts</.button>
-    </.link>
     <.admin_link patch={~p"/admin/locations/#{@location}/show/edit"} phx-click={JS.push_focus()} current_user={@current_user}>
       <.button>Edit location</.button>
     </.admin_link>
@@ -33,9 +27,13 @@
   <:item title="Last Adult Kart Number"><%= @location.adult_kart_max %></:item>
   <:item title="First Junior Kart Number"><%= @location.junior_kart_min %></:item>
   <:item title="Last Junior Kart Number"><%= @location.junior_kart_max %></:item>
+  <:item title="Adult Kart data reset on"><%= @location.adult_kart_reset_on %></:item>
+  <:item title="Junior Kart data reset on"><%= @location.junior_kart_reset_on %></:item>
+  <:item title="Minimum Possible Lap Time"><%= @location.min_lap_time %></:item>
+  <:item title="Maximum Possible Lap Time"><%= @location.max_lap_time %></:item>
   <:item title="Websocket Connection URL"><%= @location.websocket_url %></:item>
 </.list>
 
 <.modal :if={@live_action == :edit} id="location-modal" show on_cancel={JS.patch(~p"/locations/#{@location}")}>
-  <.live_component module={KartVidsWeb.LocationLive.FormComponent} id={@location.id} title={@page_title} action={@live_action} location={@location} navigate={~p"/locations/#{@location}"} current_user={@current_user}/>
+  <.live_component module={KartVidsWeb.LocationLive.FormComponent} id={@location.id} title={@page_title} action={@live_action} location={@location} navigate={~p"/locations/#{@location}"} current_user={@current_user} />
 </.modal>

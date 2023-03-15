@@ -13,7 +13,7 @@ defmodule KartVidsWeb.RaceLive.Show do
 
   @impl true
   def handle_params(%{"location_id" => location_id, "id" => id}, _, socket) do
-    location = Content.get_location!(location_id)
+    location = socket.assigns[:location] || Content.get_location!(location_id)
 
     {:noreply,
      socket

@@ -18,11 +18,18 @@ defmodule KartVids.Races.Season.Analyzer do
 
   def init(season) do
     send(self(), :analyze_season)
+    %{last_race: last_race} = RaceListener.listener_state(season.location_id)
     RaceListener.subscribe(season.location_id)
-    {:ok, %State{season: season}}
+    {:ok, %State{season: season, last_race: last_race}}
   end
 
-  @analyze_season_timeout :timer.minutes(1)
+  @analyze_season_timeout :timer.seconds(30)
+
+  def handle_info(:analyze_season, state = %State{last_race: nil}) do
+    Process.send_after(self(), :analyze_season, :timer.seconds(5))
+
+    {:noreply, state}
+  end
 
   def handle_info(:analyze_season, state = %State{last_race: last_race, season: season, practice: practice, qualifiers: qualifiers, feature: feature}) do
     Process.send_after(self(), :analyze_season, @analyze_season_timeout)
@@ -60,14 +67,17 @@ defmodule KartVids.Races.Season.Analyzer do
   end
 
   # Ignore data while race is ongoing
-  def handle_info(%Phoenix.Socket.Broadcast{event: "race_data", payload: %RaceListener.State{config: %RaceListener.Config{location_id: location_id}}}, state = %State{season: %Season{location_id: location_id}, watching: true}) do
-    {:noreply, state}
+  def handle_info(
+        %Phoenix.Socket.Broadcast{event: "race_data", payload: %RaceListener.State{current_race: current_race, config: %RaceListener.Config{location_id: location_id}}},
+        state = %State{season: %Season{location_id: location_id}, watching: true}
+      ) do
+    {:noreply, %{state | last_race: current_race}}
   end
 
   @minimum_racers 3
   def handle_info(
-        %Phoenix.Socket.Broadcast{event: "race_completed", payload: %RaceListener.State{current_race: current_race, config: %RaceListener.Config{location_id: location_id}}},
-        state = %State{season: %Season{location_id: location_id, season_racers: racers, daily_qualifiers: daily_qualifiers}, practice: practice, qualifiers: qualifiers, feature: feature, watching: true}
+        %Phoenix.Socket.Broadcast{event: "race_completed", payload: %RaceListener.State{config: %RaceListener.Config{location_id: location_id}}},
+        state = %State{last_race: current_race, season: %Season{location_id: location_id, season_racers: racers, daily_qualifiers: daily_qualifiers}, practice: practice, qualifiers: qualifiers, feature: feature, watching: true}
       ) do
     profile_ids = racers |> Enum.map(& &1.id) |> MapSet.new()
     race = Races.get_race_by_external_id!(current_race) |> Races.race_with_racers()

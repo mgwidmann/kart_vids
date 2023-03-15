@@ -2,19 +2,29 @@
 
 <.header>
   Listing Races
-  <.simple_form :let={f} for={%{}} as={:find_user} phx-change="search" class="w-64" autocomplete="off" onkeydown="return event.key != 'Enter';">
-    <.input field={{f, :nickname}} label="Find by Nickname" type="text" autocomplete="off" phx-keydown="select" />
-    <div class="absolute top-100 mt-1 z-10 border bg-white shadow-xl rounded">
-      <div
-        :for={{nickname, id, photo} <- @racer_autocomplete}
-        class={["p-3 hover:bg-gradient-to-b hover:from-sky-800 hover:to-sky-400 hover:text-white hover:cursor-pointer", if(id == @selected, do: "bg-gradient-to-b from-sky-800 to-sky-400 text-white")]}
-      >
-        <div class="divide-y" phx-click={JS.navigate(~p"/locations/#{@location_id}/racers/#{id}")}>
-          <.racer_photo photo={photo} size={:small} class="object-cover rounded-lg inline mr-2" /><%= nickname %>
+  <:subheader>
+    <.simple_form :let={f} for={%{"date" => @races_date}} as={:find_user} class="mt-1" phx-change="search" autocomplete="off" onkeydown="return event.key != 'Enter';">
+      <div class="flex flex-col sm:justify-start gap-3">
+        <div class="w-5/6 sm:w-1/2">
+          <.input field={{f, :nickname}} label="Find by Nickname" type="text" autocomplete="off" phx-keydown="select" />
+          <div class="absolute top-100 mt-1 z-10 border bg-white shadow-xl rounded">
+            <div
+              :for={{nickname, id, photo} <- @racer_autocomplete}
+              class={["p-3 hover:bg-gradient-to-b hover:from-sky-800 hover:to-sky-400 hover:text-white hover:cursor-pointer", if(id == @selected, do: "bg-gradient-to-b from-sky-800 to-sky-400 text-white")]}
+            >
+              <div class="divide-y" phx-click={JS.navigate(~p"/locations/#{@location_id}/racers/#{id}")}>
+                <.racer_photo photo={photo} size={:small} class="object-cover rounded-lg inline mr-2" /><%= nickname %>
+              </div>
+            </div>
+          </div>
+        </div>
+        <span class="flex items-center">or</span>
+        <div class="w-5/6 sm:w-1/2">
+          <.input field={{f, :date}} label="Date of Race" type="date" phx-change="date-change" autocomplete="off" />
         </div>
       </div>
-    </div>
-  </.simple_form>
+    </.simple_form>
+  </:subheader>
   <:actions>
     <.admin_link patch={~p"/admin/locations/#{@location_id}/races/new"} current_user={@current_user}>
       <.button>New Race</.button>

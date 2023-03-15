@@ -1,5 +1,6 @@
 defmodule KartVidsWeb.RaceLive.Index do
   use KartVidsWeb, :live_view
+  import KartVidsWeb.Components.Racing
 
   alias KartVids.Content
   alias KartVids.Races
@@ -16,10 +17,13 @@ defmodule KartVidsWeb.RaceLive.Index do
   def handle_params(%{"location_id" => location_id} = params, _url, socket) do
     location = Content.get_location!(location_id)
 
+    date = Map.get(params, "date", DateTime.utc_now() |> DateTime.shift_zone!(location.timezone) |> DateTime.to_date())
+
     {
       :noreply,
       socket
-      |> assign(:races, list_races(location_id))
+      |> assign(:races, list_races(location_id, date))
+      |> assign(:races_date, date)
       |> assign(:location_id, location_id)
       |> assign(:location, location)
       |> assign(:racer_autocomplete, [])
@@ -56,7 +60,7 @@ defmodule KartVidsWeb.RaceLive.Index do
       race = Races.get_race!(id)
       {:ok, _} = Races.delete_race(socket.assigns.current_user, race)
 
-      {:noreply, assign(socket, :races, list_races(socket.assigns.location_id))}
+      {:noreply, assign(socket, :races, list_races(socket.assigns.location_id, socket.assigns.races_date))}
     else
       {:noreply, socket}
     end
@@ -82,28 +86,38 @@ defmodule KartVidsWeb.RaceLive.Index do
   end
 
   def handle_event("select", %{"key" => "ArrowDown"}, socket) do
-    {:noreply,
-     assign(
-       socket,
-       :selected,
-       select_racer(:down, socket.assigns.racer_autocomplete, socket.assigns.selected)
-     )}
+    {
+      :noreply,
+      assign(socket, :selected, select_racer(:down, socket.assigns.racer_autocomplete, socket.assigns.selected))
+    }
   end
 
   def handle_event("select", %{"key" => "Enter"}, socket = %Phoenix.Socket{assigns: %{selected: selected}}) when not is_nil(selected) do
-    {:noreply,
-     socket
-     |> push_navigate(to: ~p"/locations/#{socket.assigns.location_id}/racers/#{selected}")}
+    {
+      :noreply,
+      socket
+      |> push_navigate(to: ~p"/locations/#{socket.assigns.location_id}/racers/#{selected}")
+    }
   end
 
   def handle_event("select", %{"key" => "Enter", "value" => search}, socket) do
-    {:noreply,
-     socket
-     |> push_navigate(to: ~p"/locations/#{socket.assigns.location_id}/racers/by_nickname/#{search}?search=true")}
+    {
+      :noreply,
+      socket
+      |> push_navigate(to: ~p"/locations/#{socket.assigns.location_id}/racers/by_nickname/#{search}?search=true")
+    }
   end
 
   def handle_event("select", _, socket) do
     {:noreply, socket}
+  end
+
+  def handle_event("date-change", %{"find_user" => %{"date" => date}}, socket) do
+    {
+      :noreply,
+      socket
+      |> assign(:races, list_races(socket.assigns.location_id, Date.from_iso8601!(date)))
+    }
   end
 
   def select_racer(:up, racers, nil), do: List.last(racers) |> elem(1)
@@ -140,7 +154,8 @@ defmodule KartVidsWeb.RaceLive.Index do
     end
   end
 
-  defp list_races(location_id) do
-    Races.list_races(location_id)
+  defp list_races(location_id, date) do
+    location_id
+    |> Races.list_races(date)
   end
 end

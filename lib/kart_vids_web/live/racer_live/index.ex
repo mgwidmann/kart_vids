@@ -14,7 +14,7 @@ defmodule KartVidsWeb.RacerLive.Index do
 
   @impl true
   def handle_params(%{"location_id" => location_id, "race_id" => race_id} = params, _url, socket) do
-    location = Content.get_location!(location_id)
+    location = socket.assigns[:location] || Content.get_location!(location_id)
 
     {
       :noreply,
