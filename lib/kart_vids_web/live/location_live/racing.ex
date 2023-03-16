@@ -219,7 +219,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
 
   def gap(%Racer{laps: [_, _ | _] = laps}, [%Racer{laps: [_, _ | _] = leader_laps} | _], :position) do
     [%{"amb_time" => last_leader_lap} | _] = Enum.reverse(leader_laps)
-    [%{"amb_time" => last_lap}] = Enum.reverse(laps)
+    [%{"amb_time" => last_lap} | _] = Enum.reverse(laps)
 
     if last_leader_lap > last_lap do
       # Show ... because we don't have data on this yet
