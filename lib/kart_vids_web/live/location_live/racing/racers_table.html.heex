@@ -17,7 +17,7 @@
     </div>
   </:col>
   <:col :let={racer} label="" row_class="w-[80px] md:w-[160px]" inner_div_class="py-0 px-0 sm:px-0">
-    <.link navigate={~p"/locations/#{@location}/racers/by_nickname/#{racer.nickname}"}>
+    <.link navigate={if(racer.external_racer_id, do: ~p"/locations/#{@location}/racers/by_external/#{racer.external_racer_id}", else: ~p"/locations/#{@location}/racers/by_nickname/#{racer.nickname}")}>
       <.racer_photo photo={racer.photo} />
     </.link>
   </:col>
