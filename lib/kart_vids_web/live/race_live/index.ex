@@ -22,7 +22,7 @@ defmodule KartVidsWeb.RaceLive.Index do
     {
       :noreply,
       socket
-      |> assign(:races, list_races(location_id, date))
+      |> assign(:races, list_races(location, date))
       |> assign(:races_date, date)
       |> assign(:location_id, location_id)
       |> assign(:location, location)
@@ -60,7 +60,7 @@ defmodule KartVidsWeb.RaceLive.Index do
       race = Races.get_race!(id)
       {:ok, _} = Races.delete_race(socket.assigns.current_user, race)
 
-      {:noreply, assign(socket, :races, list_races(socket.assigns.location_id, socket.assigns.races_date))}
+      {:noreply, assign(socket, :races, list_races(socket.assigns.location, socket.assigns.races_date))}
     else
       {:noreply, socket}
     end
@@ -116,7 +116,7 @@ defmodule KartVidsWeb.RaceLive.Index do
     {
       :noreply,
       socket
-      |> assign(:races, list_races(socket.assigns.location_id, Date.from_iso8601!(date)))
+      |> assign(:races, list_races(socket.assigns.location, Date.from_iso8601!(date)))
     }
   end
 
@@ -154,8 +154,8 @@ defmodule KartVidsWeb.RaceLive.Index do
     end
   end
 
-  defp list_races(location_id, date) do
-    location_id
+  defp list_races(location, date) do
+    location
     |> Races.list_races(date)
   end
 end

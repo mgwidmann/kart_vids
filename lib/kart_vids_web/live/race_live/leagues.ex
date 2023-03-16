@@ -15,7 +15,6 @@ defmodule KartVidsWeb.RaceLive.Leagues do
     {
       :noreply,
       socket
-      # |> assign(:races, list_races(location_id))
       |> assign(:location_id, location_id)
       |> assign(:leagues, leagues)
       |> apply_action(socket.assigns.live_action, params)

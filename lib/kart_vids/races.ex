@@ -184,9 +184,9 @@ defmodule KartVids.Races do
       [%Race{}, ...]
 
   """
-  def list_races(location_id, by_date) do
+  def list_races(%Location{id: id, timezone: timezone}, by_date) do
     from(r in Race,
-      where: r.location_id == ^location_id and fragment("?::date", r.started_at) == fragment("?::date", ^by_date),
+      where: r.location_id == ^id and fragment("(? at time zone 'UTC' at time zone ?)::date", r.started_at, ^timezone) == fragment("?::date", ^by_date),
       order_by: {:desc, r.started_at}
     )
     |> Repo.all()
