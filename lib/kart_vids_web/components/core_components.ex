@@ -747,8 +747,6 @@ defmodule KartVidsWeb.CoreComponents do
     )
     |> show("##{id}-container", 500)
     |> JS.focus_first(to: "##{id}-content")
-
-    JS.remove_class()
   end
 
   def hide_modal(js \\ %JS{}, id) do
