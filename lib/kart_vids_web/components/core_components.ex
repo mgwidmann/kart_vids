@@ -498,6 +498,7 @@ defmodule KartVidsWeb.CoreComponents do
   attr(:rows, :list, required: true)
   attr(:row_add, :any, default: nil)
   attr(:row_remove, :any, default: nil)
+  attr(:y_padding, :string, default: "py-2")
 
   slot :col, required: true do
     attr(:class, :string)
@@ -525,7 +526,7 @@ defmodule KartVidsWeb.CoreComponents do
         <tbody class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
           <tr :for={row <- @rows} id={"#{@id}-#{Phoenix.Param.to_param(row)}"} class="group hover:bg-zinc-50" phx-mounted={is_function(@row_add, 1) && @row_add.(row)} phx-remove={is_function(@row_remove, 1) && @row_remove.(row)}>
             <td :for={{col, i} <- Enum.with_index(@col)} phx-click={@row_click && @row_click.(row)} class={["relative p-0", @row_click && "hover:cursor-pointer", col[:row_class]]}>
-              <div class={["block py-4 sm:px-3 overflow-auto h-full", col[:inner_div_class]]}>
+              <div class={["block #{@y_padding} sm:px-3 overflow-auto h-full", col[:inner_div_class]]}>
                 <span class="absolute right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
                 <div class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
                   <%= render_slot(col, row) %>
@@ -557,12 +558,12 @@ defmodule KartVidsWeb.CoreComponents do
     case size do
       :large ->
         ~H"""
-        <img src={@photo} class={["h-[50px] w-[80px] md:h-[100px] md:w-[160px] object-cover", @class]} />
+        <img src={@photo} class={["h-full w-[80px] md:h-[100px] md:w-[160px] object-cover", @class]} />
         """
 
       :small ->
         ~H"""
-        <img src={@photo} class={["h-[50px] w-[80px] object-cover", @class]} />
+        <img src={@photo} class={["h-full w-[80px] object-cover", @class]} />
         """
     end
   end
@@ -746,6 +747,8 @@ defmodule KartVidsWeb.CoreComponents do
     )
     |> show("##{id}-container", 500)
     |> JS.focus_first(to: "##{id}-content")
+
+    JS.remove_class()
   end
 
   def hide_modal(js \\ %JS{}, id) do

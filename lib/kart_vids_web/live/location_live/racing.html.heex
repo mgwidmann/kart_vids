@@ -13,7 +13,7 @@
   <:actions>
     <div class="flex justify-between items-center gap-1 shrink-0">
       <.simple_form :let={f} for={%{}} as={:race_type} phx-change="change_race_type" class="mr-2 min-w-[7rem]">
-        <.input field={{f, :race_type}} type="select" options={["Best Lap": :best_lap, Position: :position]} value={@race_type} />
+        <.input field={{f, :race_type}} type="select" options={["Best Lap": :laptime, Position: :position]} value={@race_type} />
       </.simple_form>
     </div>
   </:actions>
@@ -34,11 +34,11 @@
           <%= podium(%{location: @location, scoreboard: @scoreboard, racers: @racers}) %>
         </div>
         <div class="col-span-2">
-          <%= racers_table(%{location: @location, racers: @racers, racer_change: @racer_change, first_amb: @first_amb}) %>
+          <%= racers_table(%{location: @location, racers: @racers, racer_change: @racer_change, race_type: @race_type}) %>
         </div>
       </div>
     <% else %>
-      <%= racers_table(%{location: @location, racers: @racers, racer_change: @racer_change, first_amb: @first_amb}) %>
+      <%= racers_table(%{location: @location, racers: @racers, racer_change: @racer_change, race_type: @race_type}) %>
     <% end %>
   <% else %>
     <div class="flex justify-center items-center h-96">

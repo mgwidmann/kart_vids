@@ -3,7 +3,6 @@ defmodule KartVidsWeb.LocationLive.Racing do
   require Logger
 
   alias KartVids.Content
-  alias KartVids.Races.Race
   alias KartVids.Races.Listener
   alias KartVids.Races.ListenerSupervisor
   alias KartVids.Races.ListenerSupervisor.Status, as: ListenerStatus
@@ -51,7 +50,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
 
   @impl true
   @spec handle_event(String.t(), map(), Phoenix.LiveView.Socket.t()) :: {:noreply, Phoenix.LiveView.Socket.t()}
-  def handle_event("change_race_type", %{"race_type" => %{"race_type" => race_type_string}}, socket) when race_type_string in ["best_lap", "position"] do
+  def handle_event("change_race_type", %{"race_type" => %{"race_type" => race_type_string}}, socket) when race_type_string in ["laptime", "position"] do
     {
       :noreply,
       socket
@@ -65,29 +64,12 @@ defmodule KartVidsWeb.LocationLive.Racing do
         %Phoenix.Socket.Broadcast{event: event, payload: %KartVids.Races.Listener.State{racers: racers, fastest_speed_level: fastest_speed_level, speed_level: speed_level, race_name: race_name, scoreboard: scoreboard, win_by: win_by}},
         socket
       )
-      when event in ["race_data", "race_completed"] do
+      when event in ["race_data", "race_completed"] and win_by in ["laptime", "position"] do
     race_state = String.to_existing_atom(event)
+    win_by = String.to_existing_atom(win_by)
 
-    sorted_racers = racers |> Map.values() |> sort_racers(socket.assigns.race_type, race_name)
-    race_type = race_type(socket.assigns.race_type, race_name, socket.assigns.race_state, String.to_existing_atom(event))
-
-    first_amb =
-      if socket.assigns.first_amb == 0.0 do
-        first_lap =
-          sorted_racers
-          |> Enum.min_by(fn
-            %Racer{laps: []} -> @large_number
-            %Racer{laps: [lap | _]} -> Map.get(lap, @amb_time)
-          end)
-          |> Map.get(:laps)
-
-        case first_lap do
-          [] -> 0.0
-          [lap | _] -> Map.get(lap, @amb_time)
-        end
-      else
-        socket.assigns.first_amb
-      end
+    race_type = race_type(socket.assigns.race_type, win_by, socket.assigns.race_state, String.to_existing_atom(event))
+    sorted_racers = racers |> Map.values() |> sort_racers(race_type)
 
     position_change =
       if socket.assigns.race_type == race_type do
@@ -108,7 +90,6 @@ defmodule KartVidsWeb.LocationLive.Racing do
       |> assign(:racers, sorted_racers)
       |> assign(:race_type, race_type)
       |> assign(:win_by, win_by)
-      |> assign(:first_amb, first_amb)
       |> assign(:racer_change, position_change)
     }
   end
@@ -128,25 +109,19 @@ defmodule KartVidsWeb.LocationLive.Racing do
     {:noreply, socket}
   end
 
-  @typep race_type() :: :best_lap | :position
+  @typep race_type() :: :laptime | :position
 
-  @spec race_type(nil | race_type(), String.t(), :race_completed | :race_data, :race_completed | :race_data) :: :position | :best_lap
-  def race_type(race_type, race_name, :race_completed, :race_data) when not is_nil(race_type), do: race_type(nil, race_name, :race_completed, :race_data)
+  @spec race_type(nil | race_type(), race_type(), :race_completed | :race_data, :race_completed | :race_data) :: race_type()
+  # With race_type setting and race is restarting
+  def race_type(race_type, win_by, :race_completed, :race_data) when not is_nil(race_type), do: race_type(nil, win_by, :race_completed, :race_data)
 
-  def race_type(nil, race_name, :race_completed, :race_data) do
-    if Race.is_feature_race?(race_name) do
-      :position
-    else
-      :best_lap
-    end
+  # Without race_type setting use default as the broadcasted type
+  def race_type(nil, win_by, _, _) do
+    win_by
   end
 
+  # Otherwise just use what was already selected
   def race_type(race_type, _race_name, _old_race_state, _new_race_state), do: race_type
-
-  @spec race_type_by_name(String.t()) :: :best_lap | :position
-  def race_type_by_name(race_name) do
-    race_type(nil, race_name, :race_completed, :race_data)
-  end
 
   @spec compute_position_change(list(Racer.t()), list(Racer.t()), %{pos_integer() => integer()}) :: %{pos_integer() => integer()}
   def compute_position_change(new_racers, previous_racers, last_position_change) when is_list(new_racers) and is_list(previous_racers) and is_map(last_position_change) do
@@ -165,17 +140,13 @@ defmodule KartVidsWeb.LocationLive.Racing do
     |> Enum.into(%{})
   end
 
-  @spec sort_racers(list(Racer.t()), nil | race_type(), String.t()) :: list(Racer.t())
-  def sort_racers(racers, nil, race_name) do
-    sort_racers(racers, race_type_by_name(race_name), race_name)
+  @spec sort_racers(list(Racer.t()), race_type()) :: list(Racer.t())
+  def sort_racers(racers, :position) do
+    sort_racers_by_position(racers)
   end
 
-  def sort_racers(racers, race_type, _race_name) when race_type in [:best_lap, :position] do
-    if race_type == :position do
-      sort_racers_by_position(racers)
-    else
-      sort_racers_by_best_lap(racers)
-    end
+  def sort_racers(racers, :laptime) do
+    sort_racers_by_best_lap(racers)
   end
 
   defp sort_racers_by_position(racers) do
@@ -221,61 +192,6 @@ defmodule KartVidsWeb.LocationLive.Racing do
   defp race_state(:race_completed), do: "Race Completed!"
   defp race_state(nil), do: nil
 
-  @no_data "..."
-
-  def amb_time([], _first_amb), do: @no_data
-
-  def amb_time([_ | _] = laps, first_amb) do
-    laps
-    |> List.last()
-    |> Map.get("amb_time", 999.99)
-    |> Kernel./(1)
-    |> Decimal.from_float()
-    |> Decimal.sub(Decimal.from_float(first_amb))
-    |> Decimal.round(3)
-    |> Decimal.to_float()
-    |> amb_time_human()
-  end
-
-  def amb_time_human(seconds, str \\ "")
-
-  def amb_time_human(seconds, str) when seconds > 3600.0 do
-    frac = fraction(seconds)
-    new_seconds_int = seconds |> round() |> div(3600)
-    new_seconds = new_seconds_int |> Kernel./(1) |> Kernel.+(frac)
-    amb_time_human(new_seconds, str <> (Integer.to_string(new_seconds_int) |> String.pad_leading(2, "0")) <> ":")
-  end
-
-  def amb_time_human(seconds, str) when seconds > 60.0 do
-    frac = fraction(seconds)
-    new_seconds_int = seconds |> round() |> div(60)
-    new_seconds = new_seconds_int |> Kernel./(1) |> Kernel.+(frac)
-    amb_time_human(new_seconds, str <> (Integer.to_string(new_seconds_int) |> String.pad_leading(2, "0")) <> ":")
-  end
-
-  def amb_time_human(seconds, str) when seconds <= 60.0 do
-    seconds_int = round(seconds)
-    frac = fraction(seconds)
-
-    frac_string =
-      case frac |> Decimal.from_float() |> Decimal.round(3) |> Decimal.to_string() do
-        <<"0", frac_string::binary>> -> frac_string
-        <<"-0", frac_string::binary>> -> frac_string
-      end
-
-    str <> (Integer.to_string(seconds_int) |> String.pad_leading(2, "0")) <> frac_string
-  end
-
-  defp fraction(seconds) do
-    seconds_trunc = trunc(seconds)
-
-    Decimal.sub(
-      Decimal.from_float(seconds),
-      Decimal.new(seconds_trunc)
-    )
-    |> Decimal.to_float()
-  end
-
   def lap_count(%Racer{laps: []}), do: 0
 
   def lap_count(%Racer{laps: laps}) do
@@ -287,7 +203,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
   end
 
   def racer_row_add_remove(racer) do
-    JS.transition("scaleInOut", to: "#scoreboard-#{racer.nickname}")
+    JS.transition("scaleInOut", to: "#scoreboard-#{racer.external_racer_id}")
   end
 
   def scoreboard_result(scoreboard, position) do
@@ -301,8 +217,18 @@ defmodule KartVidsWeb.LocationLive.Racing do
     Enum.find(racers, &(&1.kart_num == kart_num))
   end
 
-  def sanitize_nickname(name) do
-    name
-    |> String.replace(~r/[^a-zA-Z0-9]/, "_")
+  def gap(%Racer{laps: [_, _ | _] = laps}, [%Racer{laps: [_, _ | _] = leader_laps} | _], :position) do
+    last_leader_lap = List.last(leader_laps) |> Map.get("amb_time")
+    last_lap = List.last(laps) |> Map.get("amb_time")
+    format_lap(abs(last_leader_lap - last_lap), true)
+  end
+
+  def gap(%Racer{fastest_lap: fastest_lap}, [%Racer{fastest_lap: leader_fastest_lap} | _], :laptime) when not is_nil(fastest_lap) and not is_nil(leader_fastest_lap) do
+    format_lap(fastest_lap - leader_fastest_lap, true)
+  end
+
+  def gap(_, _, _) do
+    # Output ...
+    format_lap(0.0)
   end
 end

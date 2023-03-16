@@ -525,7 +525,7 @@ defmodule KartVids.Races.Listener do
       {kart_num, ""} = Integer.parse(kart_num)
       kart = Races.find_kart_by_location_and_number(location_id, kart_num)
 
-      stats = KartVids.Karts.compute_stats_for_kart(location, kart)
+      stats = KartVids.Karts.compute_stats_for_kart(kart, location)
 
       cond do
         kart ->

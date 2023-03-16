@@ -1,18 +1,18 @@
-<.table id="scoreboard" rows={@racers}>
+<.table id="scoreboard" y_padding="py-0" rows={@racers}>
   <:col :let={racer} label="Position" label_mobile="Pos." row_class="bg-sky-400 sm:max-w-[75px] text-center">
-    <h1 class="text-md md:text-xl xl:text-2xl"><%= racer.position %></h1>
+    <h1 class="text-xs md:text-xl"><%= racer.position %></h1>
     <%= cond do %>
       <% @racer_change[racer.kart_num] && @racer_change[racer.kart_num] > 0 -> %>
-        <span class="text-green-800">
+        <span class="text-xs md:text-xl text-green-800">
           <Heroicons.arrow_up mini class="w-4 inline" /> <%= @racer_change[racer.kart_num] %>
         </span>
       <% @racer_change[racer.kart_num] && @racer_change[racer.kart_num] < 0 -> %>
-        <span class="text-red-500">
+        <span class="text-xs md:text-xl text-red-500">
           <Heroicons.arrow_down mini class="w-4 inline" /> <%= abs(@racer_change[racer.kart_num]) %>
         </span>
       <% true -> %>
     <% end %>
-    <div>
+    <div class="text-xs">
       Lap <%= lap_count(racer) %>
     </div>
   </:col>
@@ -23,34 +23,34 @@
   </:col>
   <:col :let={racer} label="Kart">
     <.link navigate={~p"/locations/#{@location}/karts/by_number/#{racer.kart_num}"}>
-      <span class="text-md text-center md:text-xl xl:text-2xl">
+      <span class="mx-4 my-2 text-center text-md text-center md:text-xl">
         <%= racer.kart_num %>
       </span>
     </.link>
   </:col>
   <:col :let={racer} label="Name" row_class="max-w-[200px]">
     <.link navigate={~p"/locations/#{@location}/racers/by_nickname/#{racer.nickname}"}>
-      <span class="text-md md:text-xl xl:text-2xl break-words"><%= racer.nickname %></span>
+      <span class="text-md md:text-xl break-words"><%= racer.nickname %></span>
     </.link>
   </:col>
   <:col :let={racer} class="text-center" label="Best Lap" label_mobile="Best" row_class="px-1 text-center">
-    <span id={"fastest_lap-#{racer.nickname |> sanitize_nickname()}"} class="text-md md:text-xl xl:text-2xl" phx-hook="HighlightHook">
+    <span id={"fastest_lap-#{racer.external_racer_id}"} class="text-md md:text-xl" phx-hook="HighlightHook">
       <%= format_lap(racer.fastest_lap) %>
     </span>
   </:col>
+  <:col :let={racer} label="Gap" class="sm:table-cell text-center" row_class="sm:table-cell text-center">
+    <span id={"gap-#{racer.external_racer_id}"} class="text-md md:text-xl">
+      <%= gap(racer, @racers, @race_type) %>
+    </span>
+  </:col>
   <:col :let={racer} class="text-center" label="Average Lap" label_mobile="Avg" row_class="px-1 text-center">
-    <span id={"average_lap-#{racer.nickname |> sanitize_nickname()}"} class="text-md md:text-xl xl:text-2xl">
+    <span id={"average_lap-#{racer.external_racer_id}"} class="text-md md:text-xl">
       <%= format_lap(racer.average_lap) %>
     </span>
   </:col>
   <:col :let={racer} class="text-center" label="Last Lap" label_mobile="Last" row_class="px-1 text-center">
-    <span id={"last_lap-#{racer.nickname |> sanitize_nickname()}"} class="text-md md:text-xl xl:text-2xl" phx-hook="HighlightHook">
+    <span id={"last_lap-#{racer.external_racer_id}"} class="text-md md:text-xl" phx-hook="HighlightHook">
       <%= format_lap(racer.last_lap) %>
-    </span>
-  </:col>
-  <:col :let={racer} label="AMB" class="hidden sm:table-cell text-center" row_class="hidden sm:table-cell text-center">
-    <span id={"amb-#{racer.nickname |> sanitize_nickname()}"} class="text-md md:text-xl xl:text-2xl">
-      <%= amb_time(racer.laps, @first_amb) %>
     </span>
   </:col>
 </.table>

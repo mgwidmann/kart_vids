@@ -2,7 +2,9 @@
   <:col :let={racer} label="Position" label_mobile="Pos." row_class="bg-sky-400 sm:max-w-[75px] text-center">
     <h1 class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.position %></h1>
   </:col>
-  <:col :let={racer} label="" row_class="w-[80px] md:w-[160px] px-1"><img src={racer.photo} class="h-[50px] w-[80px] md:h-[100px] md:w-[160px] object-cover" /></:col>
+  <:col :let={racer} label="" row_class="w-[80px] md:w-[160px]" inner_div_class="sm:py-0 sm:px-0">
+    <.racer_photo photo={racer.photo} />
+  </:col>
   <:col :let={racer} label="Kart"><span class="text-md text-center md:text-xl lg:text-2xl xl:text-4xl"><%= racer.kart_num %></span></:col>
   <:col :let={racer} label="Name">
     <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.nickname %></span>

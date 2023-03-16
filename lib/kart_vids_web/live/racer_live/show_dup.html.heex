@@ -1,7 +1,7 @@
 <h1 class="font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl">
   More than one racer exists with that name, please choose the correct one:
 </h1>
-<.table id="racers" rows={@racers} row_click={&JS.navigate(~p"/locations/#{@location_id}/racers/#{&1}")}>
+<.table id="racers" y_padding="py-0" rows={@racers} row_click={&JS.navigate(~p"/locations/#{@location_id}/racers/#{&1}")}>
   <:col :let={racer} label="" row_class="w-[80px] md:w-[160px] px-1"><img src={racer.photo} class="h-[50px] w-[80px] md:h-[100px] md:w-[160px] object-cover" /></:col>
   <:col :let={racer} label="Name">
     <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.nickname %></span>

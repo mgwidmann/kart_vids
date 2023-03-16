@@ -17,7 +17,7 @@ defmodule KartVids.Karts do
     records = get_fastest_races(kart, location)
 
     if length(records) < @min_karts_to_compute do
-      Logger.info("Refusing to compute data when less than #{@min_karts_to_compute}, data: #{inspect(records)}")
+      Logger.info("Refusing to compute data when less than #{@min_karts_to_compute}, data: #{inspect(Enum.map(records, & &1.fastest_lap))}")
 
       %{
         average_fastest_lap_time: nil,
