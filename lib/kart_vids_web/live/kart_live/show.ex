@@ -19,8 +19,9 @@ defmodule KartVidsWeb.KartLive.Show do
 
     {[_top | top_records], top_excluded} = Karts.fastest_races(kart, location)
 
+    top_records = top_records |> Stream.uniq_by(&(&1.external_racer_id || {&1.nickname, &1.photo})) |> Stream.with_index() |> Enum.map(fn {r, i} -> Map.put(r, :position, i + 2) end)
     # No need to show these
-    top_excluded = Enum.reject(top_excluded, &(&1.fastest_lap > location.max_lap_time))
+    top_excluded = top_excluded |> Stream.map(&Map.put(&1, :position, nil)) |> Enum.reject(&(&1.fastest_lap > location.max_lap_time))
 
     {
       :noreply,

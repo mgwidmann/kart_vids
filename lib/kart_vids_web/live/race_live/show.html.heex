@@ -31,5 +31,5 @@
 <%= racer_table(%{racers: @racers, location_id: @location_id, race_id: @race_id, timezone: @location.timezone, current_user: @current_user}) %>
 
 <.modal :if={@live_action == :edit} id="race-modal" show on_cancel={JS.patch(~p"/locations/#{@location}/races/#{@race}")}>
-  <.live_component module={KartVidsWeb.RaceLive.FormComponent} id={@race.id} title={@page_title} action={@live_action} race={@race} navigate={~p"/locations/#{@location}/races/#{@race}"} current_user={@current_user}/>
+  <.live_component module={KartVidsWeb.RaceLive.FormComponent} id={@race.id} title={@page_title} action={@live_action} race={@race} navigate={~p"/locations/#{@location}/races/#{@race}"} current_user={@current_user} />
 </.modal>
