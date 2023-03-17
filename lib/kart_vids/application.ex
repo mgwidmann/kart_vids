@@ -4,12 +4,15 @@ defmodule KartVids.Application do
   @moduledoc false
 
   use Application
+  require Logger
 
   @impl true
   def start(_type, _args) do
     # Don't start the system without these available at runtime
-    _ = System.fetch_env!("AWS_ACCESS_KEY_ID")
-    _ = System.fetch_env!("AWS_SECRET_ACCESS_KEY")
+    _ = Application.fetch_env!(:kart_vids, :aws_access_key_id)
+    _ = Application.fetch_env!(:kart_vids, :aws_secret_access_key)
+
+    Logger.info("Starting KartVids Application...")
 
     children = [
       {Registry, keys: :unique, name: KartVids.Registry},

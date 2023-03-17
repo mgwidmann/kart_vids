@@ -1,4 +1,8 @@
 defmodule KartVids.RacesFixtures do
+  alias KartVids.Races.Season
+  alias KartVids.ContentFixtures
+  alias KartVids.Repo
+
   @moduledoc """
   This module defines test helpers for creating
   entities via the `KartVids.Races` context.
@@ -56,5 +60,29 @@ defmodule KartVids.RacesFixtures do
       |> KartVids.Races.create_racer()
 
     racer
+  end
+
+  @doc """
+  Generate a season.
+  """
+  def season_fixture(attrs \\ %{}) do
+    {:ok, season} =
+      attrs
+      |> Enum.into(%{
+        ended: false,
+        season: :winter,
+        start_at: Date.utc_today() |> Date.add(-30),
+        weekly_start_at: DateTime.utc_now() |> DateTime.to_time() |> Time.add(-1, :hour),
+        weekly_start_day: Date.utc_today() |> Date.day_of_week() |> Season.weekly_start_day(),
+        number_of_meetups: 8,
+        daily_qualifiers: 2,
+        daily_practice: true,
+        driver_type: :junior,
+        location_id: ContentFixtures.location_fixture().id
+      })
+      |> KartVids.Races.create_season()
+
+    season
+    |> Repo.preload(:location)
   end
 end

@@ -26,11 +26,23 @@ config :kart_vids, KartVidsWeb.Endpoint,
 # In test we don't send emails.
 config :kart_vids, KartVids.Mailer, adapter: Swoosh.Adapters.Test
 
+config :kart_vids,
+  aws_access_key_id: "access-key-id",
+  aws_secret_access_key: "secret-access-key"
+
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
 
 # Print only warnings and errors during test
-config :logger, level: :warning
+config :logger,
+  level: :warning,
+  truncate: :infinity,
+  backends: [:console]
+
+# Configures Elixir's Logger
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:request_id]
 
 # Configure video storage location
 config :kart_vids,

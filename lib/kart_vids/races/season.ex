@@ -16,6 +16,7 @@ defmodule KartVids.Races.Season do
     field :daily_qualifiers, :integer
     field :daily_practice, :boolean
     field :driver_type, Ecto.Enum, values: [junior: 100, adult: 200]
+    field :position_qualifier, :boolean, default: false
 
     belongs_to :location, Location
     many_to_many :season_racers, RacerProfile, join_through: SeasonRacer
@@ -26,7 +27,7 @@ defmodule KartVids.Races.Season do
   @doc false
   def changeset(season, attrs) do
     season
-    |> cast(attrs, [:season, :weekly_start_at, :weekly_start_day, :ended, :start_at, :number_of_meetups, :daily_qualifiers, :daily_practice, :location_id])
+    |> cast(attrs, [:season, :weekly_start_at, :weekly_start_day, :ended, :start_at, :number_of_meetups, :daily_qualifiers, :daily_practice, :driver_type, :position_qualifier, :location_id])
     |> validate_required([:season, :weekly_start_at, :weekly_start_day, :ended, :start_at, :number_of_meetups, :daily_qualifiers, :daily_practice, :location_id])
   end
 

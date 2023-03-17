@@ -29,6 +29,10 @@ config :kart_vids, KartVidsWeb.Endpoint,
 # at the `config/runtime.exs`.
 config :kart_vids, KartVids.Mailer, adapter: Swoosh.Adapters.Local
 
+config :kart_vids,
+  aws_access_key_id: System.get_env("AWS_ACCESS_KEY_ID"),
+  aws_secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY")
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.14.41",

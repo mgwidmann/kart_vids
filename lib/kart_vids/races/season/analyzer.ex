@@ -9,10 +9,18 @@ defmodule KartVids.Races.Season.Analyzer do
   alias KartVids.Races.Listener, as: RaceListener
 
   def start_link(season) do
-    GenServer.start_link(__MODULE__, season, [])
+    GenServer.start_link(__MODULE__, season, name: via_tuple(season.id))
   end
 
   defmodule State do
+    @type t :: %State{
+            season: Season.t(),
+            watching: boolean(),
+            last_race: String.t(),
+            practice: %{pos_integer() => pos_integer()},
+            qualifiers: %{pos_integer() => list(pos_integer())},
+            feature: %{pos_integer() => pos_integer()}
+          }
     defstruct season: nil, watching: false, last_race: nil, practice: %{}, qualifiers: %{}, feature: %{}
   end
 
@@ -21,6 +29,20 @@ defmodule KartVids.Races.Season.Analyzer do
     %{last_race: last_race} = RaceListener.listener_state(season.location_id)
     RaceListener.subscribe(season.location_id)
     {:ok, %State{season: season, last_race: last_race}}
+  end
+
+  defp via_tuple(season_id) do
+    {:via, Registry, {KartVids.Registry, {__MODULE__, season_id}}}
+  end
+
+  def analyzer_state(%Season{id: id}), do: analyzer_state(id)
+
+  def analyzer_state(id) do
+    GenServer.call(via_tuple(id), :state)
+  end
+
+  def handle_call(:state, _from, state) do
+    {:reply, state, state}
   end
 
   @analyze_season_timeout :timer.seconds(30)
@@ -76,17 +98,17 @@ defmodule KartVids.Races.Season.Analyzer do
 
   @minimum_racers 3
   def handle_info(
-        %Phoenix.Socket.Broadcast{event: "race_completed", payload: %RaceListener.State{config: %RaceListener.Config{location_id: location_id}}},
+        %Phoenix.Socket.Broadcast{event: "race_completed", payload: %RaceListener.State{config: %RaceListener.Config{location_id: location_id}, win_by: win_by}},
         state = %State{last_race: current_race, season: %Season{location_id: location_id, season_racers: racers, daily_qualifiers: daily_qualifiers}, practice: practice, qualifiers: qualifiers, feature: feature, watching: true}
       ) do
     profile_ids = racers |> Enum.map(& &1.id) |> MapSet.new()
     race = Races.get_race_by_external_id!(current_race) |> Races.race_with_racers()
 
     state =
-      if Enum.count(race.racers, &MapSet.member?(profile_ids, &1.racer_profile_id)) >= @minimum_racers do
+      if Enum.count(race.racers, &MapSet.member?(profile_ids, &1.racer_profile_id)) >= @minimum_racers || win_by == "position" do
         cond do
           # Any racer did not get their practice race
-          !Enum.any?(race.racers, &Map.get(practice, &1.id)) ->
+          !Enum.any?(race.racers, &Map.get(practice, &1.id)) && win_by == "position" ->
             Enum.reduce(race.racers, state, fn racer, state ->
               put_in(state, [:practice, racer.racer_profile_id], race.id)
             end)
@@ -108,6 +130,9 @@ defmodule KartVids.Races.Season.Analyzer do
           true ->
             state
         end
+
+        # Process now
+        send(self(), :analyze_season)
       else
         state
       end
