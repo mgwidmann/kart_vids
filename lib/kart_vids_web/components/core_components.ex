@@ -116,8 +116,8 @@ defmodule KartVidsWeb.CoreComponents do
     <div
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
-      phx-mounted={@autoshow && show("##{@id}")}
-      phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("#flash")}
+      phx-mounted={@autoshow && show_expand("##{@id}")}
+      phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide_contract("#flash")}
       role="alert"
       class={[
         "fixed hidden top-2 right-2 w-80 sm:w-96 z-50 rounded-lg p-3 shadow-md shadow-zinc-900/5 ring-1",
@@ -596,41 +596,45 @@ defmodule KartVidsWeb.CoreComponents do
   end
 
   slot :tab, required: true do
-    slot :body, required: true do
-    end
+    attr :name, :string, required: true
+    attr :title, :string, required: true
   end
 
   # <th :for={col <- @col}
 
   def tabs(assigns) do
     ~H"""
-    <ul class="mb-5 flex list-none flex-col flex-wrap border-b-0 pl-0 md:flex-row" role="tablist">
-      <li role="presentation">
+    <ul class="mb-5 flex list-none flex-col flex-wrap border-b-1 border-grey-400 pl-0 md:flex-row" role="tablist">
+      <li :for={{tab, i} <- Enum.with_index(@tab)} role="presentation">
         <a
-          phx-click={JS.toggle("#top-records, #top-excluded")}
-          class="my-2 block border-x-0 border-t-0 border-b-2 border-transparent px-7 pt-4 pb-3.5 text-xs font-medium uppercase leading-tight text-neutral-500 hover:isolate hover:border-transparent hover:bg-neutral-100 focus:isolate focus:border-transparent data-[te-nav-active]:border-primary data-[te-nav-active]:text-primary dark:text-neutral-400 dark:hover:bg-transparent dark:data-[te-nav-active]:border-primary-400 dark:data-[te-nav-active]:text-primary-400"
+          id={tab.name}
+          phx-click={tabs_show_hide(tab, @tab)}
+          class={[
+            "cursor-pointer my-2 block border-x-0 border-t-0 border-b-2 px-7 pt-4 pb-3.5 text-xs font-medium uppercase leading-tight text-neutral-500 hover:isolate hover:bg-neutral-100 focus:isolate text-primary",
+            if(i == 0, do: "border-sky-400", else: "")
+          ]}
         >
-          Top Records
-        </a>
-      </li>
-      <li role="presentation">
-        <a
-          phx-click={JS.toggle("#top-records, #top-excluded")}
-          class="focus:border-transparen my-2 block border-x-0 border-t-0 border-b-2 border-transparent px-7 pt-4 pb-3.5 text-xs font-medium uppercase leading-tight text-neutral-500 hover:isolate hover:border-transparent hover:bg-neutral-100 focus:isolate data-[te-nav-active]:border-primary data-[te-nav-active]:text-primary dark:text-neutral-400 dark:hover:bg-transparent dark:data-[te-nav-active]:border-primary-400 dark:data-[te-nav-active]:text-primary-400"
-        >
-          Top Excluded
+          <%= tab.title %>
         </a>
       </li>
     </ul>
     <div class="mb-6">
-      <div class="opacity-0 opacity-100 transition-opacity duration-150 ease-linear" id="top-records" role="tabpanel" aria-labelledby="tabs-home-tab">
-        Tab 1 content
-      </div>
-      <div class="hidden opacity-0 transition-opacity duration-150 ease-linear" id="top-excluded" role="tabpanel" aria-labelledby="tabs-profile-tab">
-        Tab 2 content
+      <div :for={{tab, i} <- Enum.with_index(@tab)} class={["opacity-0 opacity-100 transition-opacity", if(i > 0, do: "hidden", else: "")]} id={"#{tab.name}-tab"} role="tabpanel">
+        <%= render_slot(tab) %>
       </div>
     </div>
     """
+  end
+
+  defp tabs_show_hide(tab, tabs) do
+    commands =
+      for t <- tabs, t.name != tab.name, reduce: JS.show(to: "##{tab.name}-tab") do
+        js -> JS.hide(js, to: "##{t.name}-tab")
+      end
+
+    for t <- tabs, t.name != tab.name, reduce: JS.add_class(commands, "border-sky-400", to: "##{tab.name}") do
+      js -> JS.remove_class(js, "border-sky-400", to: "##{t.name}")
+    end
   end
 
   @doc """
@@ -726,11 +730,27 @@ defmodule KartVidsWeb.CoreComponents do
     JS.show(js,
       to: selector,
       time: time,
-      transition: {"transition-all transform ease-out duration-300", "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95", "opacity-100 translate-y-0 sm:scale-100"}
+      transition: {"transition-opacity transform ease-out duration-1000", "opacity-0", "opacity-100"}
     )
   end
 
   def hide(js \\ %JS{}, selector, time \\ 200) do
+    JS.hide(js,
+      to: selector,
+      time: time,
+      transition: {"transition-opacity transform ease-in duration-1000", "opacity-100", "opacity-0"}
+    )
+  end
+
+  def show_expand(js \\ %JS{}, selector, time \\ 200) do
+    JS.show(js,
+      to: selector,
+      time: time,
+      transition: {"transition-all transform ease-out duration-300", "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95", "opacity-100 translate-y-0 sm:scale-100"}
+    )
+  end
+
+  def hide_contract(js \\ %JS{}, selector, time \\ 200) do
     JS.hide(js,
       to: selector,
       time: time,
@@ -745,7 +765,7 @@ defmodule KartVidsWeb.CoreComponents do
       to: "##{id}-bg",
       transition: {"transition-all transform ease-out duration-300", "opacity-0", "opacity-100"}
     )
-    |> show("##{id}-container", 500)
+    |> show_expand("##{id}-container", 500)
     |> JS.focus_first(to: "##{id}-content")
   end
 
@@ -755,7 +775,7 @@ defmodule KartVidsWeb.CoreComponents do
       to: "##{id}-bg",
       transition: {"transition-all transform ease-in duration-200", "opacity-100", "opacity-0"}
     )
-    |> hide("##{id}-container", 500)
+    |> hide_contract("##{id}-container", 500)
     |> JS.hide(to: "##{id}", transition: {"block", "block", "hidden"})
     |> JS.pop_focus()
   end

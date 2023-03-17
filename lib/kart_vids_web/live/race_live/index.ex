@@ -92,14 +92,6 @@ defmodule KartVidsWeb.RaceLive.Index do
     }
   end
 
-  def handle_event("select", %{"key" => "Enter"}, socket = %Phoenix.Socket{assigns: %{selected: selected}}) when not is_nil(selected) do
-    {
-      :noreply,
-      socket
-      |> push_navigate(to: ~p"/locations/#{socket.assigns.location_id}/racers/#{selected}")
-    }
-  end
-
   def handle_event("select", %{"key" => "Enter", "value" => search}, socket) do
     {
       :noreply,

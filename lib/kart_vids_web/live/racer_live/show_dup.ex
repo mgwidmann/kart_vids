@@ -10,10 +10,10 @@ defmodule KartVidsWeb.RacerLive.ShowDup do
   end
 
   @impl true
-  def handle_params(%{"location_id" => location_id, "nickname" => nickname, "search" => true} = params, _url, socket) do
+  def handle_params(%{"location_id" => location_id, "nickname" => nickname, "search" => "true"} = params, _url, socket) do
     query_params = Map.drop(params, ["location_id", "nickname", "search"])
 
-    case Races.autocomplete_racer_nickname(nickname) do
+    case Races.autocomplete_racer_nickname(nickname, 100) do
       # At least two matches
       [{_nickname, id, _photo}, another | others] ->
         racers = Races.get_racer_profiles!([id | Enum.map([another | others], &elem(&1, 1))])
@@ -23,7 +23,7 @@ defmodule KartVidsWeb.RacerLive.ShowDup do
         navigate_directly(socket, id, location_id, query_params)
 
       [] ->
-        cannot_be_found(socket, nickname, location_id)
+        cannot_be_found_friendly(socket, nickname, location_id)
     end
   end
 
@@ -49,7 +49,7 @@ defmodule KartVidsWeb.RacerLive.ShowDup do
         end
 
       [] ->
-        cannot_be_found(socket, nickname, location_id)
+        cannot_be_found_friendly(socket, nickname, location_id)
     end
   end
 
@@ -63,6 +63,7 @@ defmodule KartVidsWeb.RacerLive.ShowDup do
       |> assign(:location, location)
       |> assign(:racers, racers)
       |> assign(:query_params, query_params)
+      |> assign(:search, nil)
     }
   end
 
@@ -71,6 +72,20 @@ defmodule KartVidsWeb.RacerLive.ShowDup do
       :noreply,
       socket
       |> push_navigate(to: ~p"/locations/#{location_id}/racers/#{id}?#{query_params}")
+    }
+  end
+
+  defp cannot_be_found_friendly(socket, identifier, location_id) do
+    location = socket.assigns[:location] || Content.get_location!(location_id)
+
+    {
+      :noreply,
+      socket
+      |> assign(:location_id, location_id)
+      |> assign(:location, location)
+      |> assign(:racers, [])
+      |> assign(:query_params, nil)
+      |> assign(:search, identifier)
     }
   end
 

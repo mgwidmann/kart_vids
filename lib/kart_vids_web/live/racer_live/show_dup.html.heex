@@ -1,15 +1,23 @@
-<h1 class="font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl">
-  More than one racer exists with that name, please choose the correct one:
-</h1>
-<.table id="racers" rows={@racers} row_click={&JS.navigate(~p"/locations/#{@location_id}/racers/#{&1}?#{@query_params}")}>
-  <:col :let={racer} label="" row_class="w-[80px] md:w-[160px] px-1"><img src={racer.photo} class="h-[50px] w-[80px] md:h-[100px] md:w-[160px] object-cover" /></:col>
-  <:col :let={racer} label="Name">
-    <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.nickname %></span>
-  </:col>
-  <:col :let={racer} label="Kart">
-    <span class="text-md text-center md:text-xl lg:text-2xl xl:text-4xl"><%= racer.fastest_lap_kart %></span>
-  </:col>
-  <:col :let={racer} label="Best Lap" label_mobile="Best">
-    <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= format_lap(racer.fastest_lap_time) %></span>
-  </:col>
-</.table>
+<%= if Enum.empty?(@racers) do %>
+  <div class="text-center bg-gray-200 rounded-2xl text-gray-800 py-24 px-6">
+    <h1 class="text-5xl md:text-6xl xl:text-7xl font-bold tracking-tight mb-12">
+      <img src={~p"/images/KartVids-640.png"} class="m-auto" /> No racer found by the name "<%= @search %>"
+    </h1>
+  </div>
+<% else %>
+  <h1 class="font-light text-gray-500 lg:mb-8 md:text-lg lg:text-xl">
+    More than one racer exists with that name, please choose the correct one:
+  </h1>
+  <.table id="racers" rows={@racers} row_click={&JS.navigate(~p"/locations/#{@location_id}/racers/#{&1}?#{@query_params}")}>
+    <:col :let={racer} label="" row_class="w-[80px] md:w-[160px] px-1"><img src={racer.photo} class="h-[50px] w-[80px] md:h-[100px] md:w-[160px] object-cover" /></:col>
+    <:col :let={racer} label="Name">
+      <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.nickname %></span>
+    </:col>
+    <:col :let={racer} label="Kart">
+      <span class="text-md text-center md:text-xl lg:text-2xl xl:text-4xl"><%= racer.fastest_lap_kart %></span>
+    </:col>
+    <:col :let={racer} label="Best Lap" label_mobile="Best">
+      <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= format_lap(racer.fastest_lap_time) %></span>
+    </:col>
+  </.table>
+<% end %>

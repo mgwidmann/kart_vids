@@ -441,12 +441,12 @@ defmodule KartVids.Races do
     |> Repo.preload(:race)
   end
 
-  def autocomplete_racer_nickname(search) do
+  def autocomplete_racer_nickname(search, limit \\ 5) do
     from(r in RacerProfile,
       where: fragment("nickname_vector @@ to_tsquery(quote_literal(?) || ':*')", ^search),
       select: {r.nickname, r.id, r.photo},
       distinct: true,
-      limit: 5
+      limit: ^limit
     )
     |> Repo.all()
   end
