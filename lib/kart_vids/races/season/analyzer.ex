@@ -5,11 +5,22 @@ defmodule KartVids.Races.Season.Analyzer do
   # alias KartVids.Races.League
   alias KartVids.Races
   alias KartVids.Content.Location
-  alias KartVids.Races.{Season, Race}
+  alias KartVids.Races.{Season, Race, RacerProfile}
   alias KartVids.Races.Listener, as: RaceListener
 
-  def start_link(season) do
-    GenServer.start_link(__MODULE__, season, name: via_tuple(season.id))
+  def start_link(season, timeout \\ :timer.seconds(30))
+
+  # Check that the location and season_racers relation is loaded, either no racers or one struct which is a %SeasonRacer{}
+  def start_link(%Season{location: %Location{}, season_racers: []} = season, timeout) do
+    do_start_link(season, timeout)
+  end
+
+  def start_link(%Season{location: %Location{}, season_racers: [%RacerProfile{} | _]} = season, timeout) do
+    do_start_link(season, timeout)
+  end
+
+  defp do_start_link(season, timeout) do
+    GenServer.start_link(__MODULE__, {season, timeout}, name: via_tuple(season.id))
   end
 
   defmodule State do
@@ -19,42 +30,36 @@ defmodule KartVids.Races.Season.Analyzer do
             last_race: String.t(),
             practice: %{pos_integer() => pos_integer()},
             qualifiers: %{pos_integer() => list(pos_integer())},
-            feature: %{pos_integer() => pos_integer()}
+            feature: %{pos_integer() => pos_integer()},
+            timeout: pos_integer()
           }
-    defstruct season: nil, watching: false, last_race: nil, practice: %{}, qualifiers: %{}, feature: %{}
+    defstruct season: nil, watching: false, last_race: nil, practice: %{}, qualifiers: %{}, feature: %{}, timeout: :timer.seconds(5)
   end
 
-  def init(season) do
+  def init({season, timeout}) do
     send(self(), :analyze_season)
     %{last_race: last_race} = RaceListener.listener_state(season.location_id)
     RaceListener.subscribe(season.location_id)
-    {:ok, %State{season: season, last_race: last_race}}
+    {:ok, %State{season: season, last_race: last_race, timeout: timeout, watching: season_watch?(season)}}
   end
 
   defp via_tuple(season_id) do
     {:via, Registry, {KartVids.Registry, {__MODULE__, season_id}}}
   end
 
-  def analyzer_state(%Season{id: id}), do: analyzer_state(id)
+  def analyzer_state(id) when is_number(id), do: analyzer_state(via_tuple(id))
+  def analyzer_state(%Season{id: id}), do: analyzer_state(via_tuple(id))
 
-  def analyzer_state(id) do
-    GenServer.call(via_tuple(id), :state)
+  def analyzer_state(pid_or_via_tuple) do
+    GenServer.call(pid_or_via_tuple, :state)
   end
 
   def handle_call(:state, _from, state) do
     {:reply, state, state}
   end
 
-  @analyze_season_timeout :timer.seconds(30)
-
-  def handle_info(:analyze_season, state = %State{last_race: nil}) do
-    Process.send_after(self(), :analyze_season, :timer.seconds(5))
-
-    {:noreply, state}
-  end
-
-  def handle_info(:analyze_season, state = %State{last_race: last_race, season: season, practice: practice, qualifiers: qualifiers, feature: feature}) do
-    Process.send_after(self(), :analyze_season, @analyze_season_timeout)
+  def handle_info(:analyze_season, state = %State{last_race: last_race, season: season, practice: practice, qualifiers: qualifiers, feature: feature, timeout: timeout}) do
+    Process.send_after(self(), :analyze_season, timeout)
 
     if season_watch?(season) do
       Logger.info("Analyzing season: #{inspect(season)}")
@@ -98,8 +103,8 @@ defmodule KartVids.Races.Season.Analyzer do
 
   @minimum_racers 3
   def handle_info(
-        %Phoenix.Socket.Broadcast{event: "race_completed", payload: %RaceListener.State{config: %RaceListener.Config{location_id: location_id}, win_by: win_by}},
-        state = %State{last_race: current_race, season: %Season{location_id: location_id, season_racers: racers, daily_qualifiers: daily_qualifiers}, practice: practice, qualifiers: qualifiers, feature: feature, watching: true}
+        %Phoenix.Socket.Broadcast{event: "race_completed", payload: %RaceListener.State{current_race: current_race, config: %RaceListener.Config{location_id: location_id}, win_by: win_by}},
+        state = %State{season: %Season{location_id: location_id, season_racers: racers, daily_qualifiers: daily_qualifiers}, practice: practice, qualifiers: qualifiers, feature: feature, watching: true}
       ) do
     profile_ids = racers |> Enum.map(& &1.id) |> MapSet.new()
     race = Races.get_race_by_external_id!(current_race) |> Races.race_with_racers()
@@ -141,7 +146,7 @@ defmodule KartVids.Races.Season.Analyzer do
   end
 
   def handle_info(msg, state) do
-    Logger.warn("Season #{state.season.id}: Unknown message received, ignoring: #{inspect(msg)}")
+    Logger.warn("Season #{state.season.id}: Unknown message received, ignoring: #{inspect(msg)}\nWith state: #{inspect(state)}")
 
     {:noreply, state}
   end
@@ -165,7 +170,7 @@ defmodule KartVids.Races.Season.Analyzer do
   @watch_window 6
 
   def season_watch?(%Season{start_at: start_at, ended: ended, weekly_start_day: weekly_start_day, weekly_start_at: weekly_start_at, location: %Location{timezone: timezone}}) do
-    now = DateTime.utc_now()
+    now = DateTime.utc_now() |> DateTime.shift_zone!(timezone)
     today = DateTime.to_date(now)
     yesterday = DateTime.add(now, -1, :day) |> DateTime.to_date()
 

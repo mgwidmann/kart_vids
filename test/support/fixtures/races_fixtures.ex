@@ -1,5 +1,5 @@
 defmodule KartVids.RacesFixtures do
-  alias KartVids.Races.Season
+  alias KartVids.Races.{Season, Racer}
   alias KartVids.ContentFixtures
   alias KartVids.Repo
 
@@ -9,19 +9,30 @@ defmodule KartVids.RacesFixtures do
   """
 
   @doc """
+  Generate a lap time
+  """
+  def generate_lap_time(), do: 20 + :rand.uniform() * 10
+
+  @doc """
+  Generate a racer nickname
+  """
+  def generate_nickname(), do: Enum.random(["Some Body", "Speedy", "Racentric", "Wowza", "Max Verstappen", "Redbull Racer", "F1", "Passed You", "Slick"])
+
+  @doc """
   Generate a kart.
   """
   def kart_fixture(attrs \\ %{}) do
     {:ok, kart} =
-      attrs
-      |> Enum.into(%{
-        average_fastest_lap_time: 120.5,
-        average_rpms: 42,
-        fastest_lap_time: 120.5,
-        kart_num: "some kart_num",
-        number_of_races: 42
-      })
-      |> KartVids.Races.create_kart()
+      KartVids.Races.create_kart(
+        :system,
+        Enum.into(attrs, %{
+          average_fastest_lap_time: 120.5,
+          average_rpms: 42,
+          fastest_lap_time: 120.5,
+          kart_num: "some kart_num",
+          number_of_races: 42
+        })
+      )
 
     kart
   end
@@ -30,15 +41,21 @@ defmodule KartVids.RacesFixtures do
   Generate a race.
   """
   def race_fixture(attrs \\ %{}) do
+    location = attrs[:location] || ContentFixtures.location_fixture()
+
+    started_at = attrs[:started_at] || DateTime.utc_now() |> DateTime.add(-Enum.random(0..10), :hour)
+
     {:ok, race} =
-      attrs
-      |> Enum.into(%{
-        ended_at: ~U[2022-11-13 03:06:00Z],
-        external_race_id: "some external_race_id",
-        name: "some name",
-        started_at: ~U[2022-11-13 03:06:00Z]
-      })
-      |> KartVids.Races.create_race()
+      KartVids.Races.create_race(
+        :system,
+        Enum.into(attrs, %{
+          name: Enum.random(["10 Lap Race", "12 Lap Race", "5 min Junior Heat", "8 Group Race", "Qualifying Race", "AEKC Race"]),
+          started_at: started_at,
+          ended_at: DateTime.add(started_at, Enum.random(3..12), :minute) |> DateTime.add(Enum.random(0..60), :minute),
+          external_race_id: (:rand.uniform() * 1_000_000_000) |> trunc() |> to_string(),
+          location_id: location.id
+        })
+      )
 
     race
   end
@@ -47,42 +64,111 @@ defmodule KartVids.RacesFixtures do
   Generate a racer.
   """
   def racer_fixture(attrs \\ %{}) do
+    location = attrs[:location] || ContentFixtures.location_fixture()
+    race = attrs[:race] || race_fixture(%{location: location})
+    racer_profile = attrs[:racer_profile] || racer_profile_fixture(%{fastest_lap_race_id: race.id})
+
+    fastest_lap = generate_lap_time()
+
     {:ok, racer} =
-      attrs
-      |> Enum.into(%{
-        average_lap: 120.5,
-        fastest_lap: 120.5,
-        kart_num: 42,
-        nickname: "some nickname",
-        photo: "some photo",
-        position: 42
-      })
-      |> KartVids.Races.create_racer()
+      KartVids.Races.create_racer(
+        :system,
+        Enum.into(attrs, %{
+          average_lap: fastest_lap + :rand.uniform() * :rand.uniform() * 10,
+          fastest_lap: fastest_lap,
+          kart_num: Enum.random(1..60),
+          nickname: generate_nickname(),
+          photo: "https://userphotos.com/photos/SomeonesPhoto.jpg",
+          position: Enum.random(1..8),
+          race_id: race.id,
+          racer_profile_id: racer_profile.id,
+          race_by: :laps,
+          win_by: :laptime
+        })
+      )
 
     racer
   end
 
   @doc """
+  Generate a racer profile
+  """
+  def racer_profile_fixture(attrs \\ %{}) do
+    {:ok, racer_profile} =
+      attrs
+      |> Enum.into(%{
+        fastest_lap_time: generate_lap_time(),
+        fastest_lap_kart: Enum.random(1..60),
+        nickname: generate_nickname(),
+        photo: "https://userphotos.com/photos/SomeonesPhoto.jpg",
+        external_racer_id: (:rand.uniform() * 1_000_000_000) |> trunc() |> to_string(),
+        fastest_lap_race_id: attrs[:fastest_lap_race_id]
+      })
+      |> KartVids.Races.create_racer_profile()
+
+    racer_profile
+  end
+
+  def generate_start_day_and_time() do
+    now = DateTime.utc_now() |> DateTime.shift_zone!("America/New_York")
+    start_at = now |> DateTime.add(-3, :hour)
+    {start_at |> DateTime.to_date() |> Date.day_of_week() |> Season.weekly_start_day(), start_at |> DateTime.to_time()}
+    # # if tests are running 12:00 - 05:00 use yesterday's date
+    # if now.hour > 5 do
+    #   {now |> DateTime.to_date() |> Date.day_of_week() |> Season.weekly_start_day(), now |> DateTime.add(-1, :hour) |> DateTime.to_time()}
+    # else
+    #   {now |> DateTime.add(-24, :hour) |> DateTime.to_date() |> Date.day_of_week() |> Season.weekly_start_day()}
+    # end
+  end
+
+  @spec season_fixture(nil | maybe_improper_list | map) :: nil | [%{optional(atom) => any}] | %{optional(atom) => any}
+  @doc """
   Generate a season.
   """
   def season_fixture(attrs \\ %{}) do
+    location = attrs[:location] || ContentFixtures.location_fixture()
+
+    {weekly_start_day, weekly_start_at} = generate_start_day_and_time()
+
     {:ok, season} =
       attrs
       |> Enum.into(%{
         ended: false,
-        season: :winter,
+        season: Enum.random(~w(winter spring summer autumn)a),
         start_at: Date.utc_today() |> Date.add(-30),
-        weekly_start_at: DateTime.utc_now() |> DateTime.to_time() |> Time.add(-1, :hour),
-        weekly_start_day: Date.utc_today() |> Date.day_of_week() |> Season.weekly_start_day(),
+        weekly_start_at: weekly_start_at,
+        weekly_start_day: weekly_start_day,
         number_of_meetups: 8,
         daily_qualifiers: 2,
         daily_practice: true,
         driver_type: :junior,
-        location_id: ContentFixtures.location_fixture().id
+        location_id: location.id
       })
       |> KartVids.Races.create_season()
 
+    racers =
+      for racer <- attrs[:racers] || 0..(attrs[:number_of_racers] || 20) do
+        if match?(%Racer{}, racer) do
+          racer
+        else
+          racer_fixture(%{location: location})
+        end
+      end
+
+    for racer <- racers do
+      season_racer_fixture(season, racer.racer_profile_id)
+    end
+
     season
-    |> Repo.preload(:location)
+    |> Repo.preload([:location, :season_racers])
+  end
+
+  @doc """
+  Generate a season racer
+  """
+  def season_racer_fixture(%Season{} = season, racer_profile_id) do
+    {:ok, season_racer} = KartVids.Races.create_season_racer(season |> Repo.preload(:season_racers), racer_profile_id)
+
+    season_racer
   end
 end

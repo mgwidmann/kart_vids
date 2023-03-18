@@ -634,13 +634,6 @@ defmodule KartVids.Races do
   def get_racer_profile_id(attrs) do
     from(r in query_racer_profile_by_attrs(attrs), select: r.id, limit: 1)
     |> Repo.one()
-    |> tap(fn
-      nil ->
-        Logger.warning("Failed to lookup racer profile by attrs: #{inspect(attrs)}")
-
-      v ->
-        v
-    end)
   end
 
   defp query_racer_profile_by_attrs(query \\ RacerProfile, attrs)
