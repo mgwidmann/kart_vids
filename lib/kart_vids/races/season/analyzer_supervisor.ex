@@ -1,6 +1,7 @@
 defmodule KartVids.Races.Season.AnalyzerSupervisor do
   use DynamicSupervisor
 
+  require Logger
   alias KartVids.Races
   alias KartVids.Races.Season.Analyzer
 
@@ -14,12 +15,15 @@ defmodule KartVids.Races.Season.AnalyzerSupervisor do
   end
 
   def start_season(season) do
-    spec = %{id: Analyzer, start: {Analyzer, :start_link, [season]}, restart: :transient}
+    spec = %{id: Analyzer, start: {Analyzer, :start_link, [season]}, restart: :permanent}
     DynamicSupervisor.start_child(__MODULE__, spec)
   end
 
   def start_seasons() do
+    Logger.info("Starting season analyzers which are active...")
+
     for season <- Races.list_active_seasons() do
+      Logger.info("Starting season #{season.id}")
       start_season(season)
     end
   end

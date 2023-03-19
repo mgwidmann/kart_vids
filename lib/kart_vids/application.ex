@@ -26,10 +26,10 @@ defmodule KartVids.Application do
       KartVids.Races.RacerProfile.Cache,
       # Start the Endpoint (http/https)
       KartVidsWeb.Endpoint,
-      KartVids.Races.Season.AnalyzerSupervisor,
       # Start a worker by calling: KartVids.Worker.start_link(arg)
       # {KartVids.Worker, arg}
-      {KartVids.Races.ListenerSupervisor, []}
+      {KartVids.Races.ListenerSupervisor, []},
+      KartVids.Races.Season.AnalyzerSupervisor
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

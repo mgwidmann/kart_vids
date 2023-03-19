@@ -577,46 +577,48 @@ defmodule KartVids.Races.Listener do
     end
 
     for {racer_kart_num, racer} <- racers, racer_kart_num != nil, racer.nickname != nil, racer.photo != nil, into: %{} do
-      racer_laps = Enum.filter(laps, fn %{"kart_number" => kart_num} -> kart_num == racer_kart_num end)
+      racer_laps = Stream.filter(laps, fn %{"kart_number" => kart_num} -> kart_num == racer_kart_num end) |> Enum.reject(fn %{"lap_time" => lap_time} -> lap_time < KartVids.Karts.minimum_lap_time() end)
 
-      try do
-        case Races.upsert_racer_profile(%{
-               nickname: racer.nickname,
-               photo: racer.photo,
-               fastest_lap_time: racer.fastest_lap,
-               fastest_lap_kart: racer.kart_num,
-               fastest_lap_race_id: race.id,
-               external_racer_id: racer.external_racer_id
-             }) do
-          {:ok, profile} ->
-            Races.create_racer(:system, %{
-              average_lap: racer.average_lap,
-              fastest_lap: racer.fastest_lap,
-              kart_num: racer.kart_num,
-              nickname: racer.nickname,
-              photo: racer.photo,
-              position: racer.position,
-              race_id: race.id,
-              laps: racer_laps,
-              racer_profile_id: profile.id,
-              race_by: race_by,
-              win_by: win_by,
-              external_racer_id: racer.external_racer_id,
-              location_id: location_id
-            })
+      unless Enum.empty?(racer_laps) do
+        try do
+          case Races.upsert_racer_profile(%{
+                 nickname: racer.nickname,
+                 photo: racer.photo,
+                 fastest_lap_time: racer.fastest_lap,
+                 fastest_lap_kart: racer.kart_num,
+                 fastest_lap_race_id: race.id,
+                 external_racer_id: racer.external_racer_id
+               }) do
+            {:ok, profile} ->
+              Races.create_racer(:system, %{
+                average_lap: racer.average_lap,
+                fastest_lap: racer.fastest_lap,
+                kart_num: racer.kart_num,
+                nickname: racer.nickname,
+                photo: racer.photo,
+                position: racer.position,
+                race_id: race.id,
+                laps: racer_laps,
+                racer_profile_id: profile.id,
+                race_by: race_by,
+                win_by: win_by,
+                external_racer_id: racer.external_racer_id,
+                location_id: location_id
+              })
 
-            {racer.kart_num, profile.id}
+              {racer.kart_num, profile.id}
 
-          {:error, changeset} ->
-            Logger.warn("Unable to upsert profile due to validation failure for #{racer.nickname} #{racer.photo} - Lap: #{racer.fastest_lap} Kart: #{racer.kart_num} - #{inspect(changeset)}\n\nLaps:\n#{inspect(racer_laps)}")
+            {:error, changeset} ->
+              Logger.warn("Unable to upsert profile due to validation failure for #{racer.nickname} #{racer.photo} - Lap: #{racer.fastest_lap} Kart: #{racer.kart_num} - #{inspect(changeset)}\n\nLaps:\n#{inspect(racer_laps)}")
+
+              {racer.kart_num, nil}
+          end
+        rescue
+          err ->
+            Logger.error("Failure to upsert profile: #{racer.nickname} #{racer.photo} #{racer.fastest_lap} #{racer.kart_num} -- #{Exception.format(:error, err, __STACKTRACE__)}")
 
             {racer.kart_num, nil}
         end
-      rescue
-        err ->
-          Logger.error("Failure to upsert profile: #{racer.nickname} #{racer.photo} #{racer.fastest_lap} #{racer.kart_num} -- #{Exception.format(:error, err, __STACKTRACE__)}")
-
-          {racer.kart_num, nil}
       end
     end
   end
@@ -688,10 +690,8 @@ defmodule KartVids.Races.Listener do
     |> extract_racer_data(racers)
   end
 
-  # Sometime kart number is nil, not really sure what to do about that so just don't crash
-  defp add_racer(by_kart, external_racer_id, nil, nickname, photo, fastest_lap, average_lap, last_lap, laps) do
-    Logger.warn("Unable to add racer with null kart number: #{inspect(%{external_racer_id: external_racer_id, nickname: nickname, photo: photo, fastest_lap: fastest_lap, average_lap: average_lap, last_lap: last_lap, laps: laps})}")
-
+  # Sometimes races are reset before they even begin, which results in nothing in these fields, so just skip it
+  defp add_racer(by_kart, _external_racer_id, nil, _nickname, _photo, nil, nil, nil, []) do
     by_kart
   end
 

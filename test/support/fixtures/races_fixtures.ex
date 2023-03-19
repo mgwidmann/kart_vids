@@ -43,7 +43,7 @@ defmodule KartVids.RacesFixtures do
   def race_fixture(attrs \\ %{}) do
     location = attrs[:location] || ContentFixtures.location_fixture()
 
-    started_at = attrs[:started_at] || DateTime.utc_now() |> DateTime.add(-Enum.random(0..10), :hour)
+    started_at = attrs[:started_at] || DateTime.utc_now() |> DateTime.shift_zone!("America/New_York") |> DateTime.add(-Enum.random(0..10), :minute)
 
     {:ok, race} =
       KartVids.Races.create_race(
@@ -51,7 +51,7 @@ defmodule KartVids.RacesFixtures do
         Enum.into(attrs, %{
           name: Enum.random(["10 Lap Race", "12 Lap Race", "5 min Junior Heat", "8 Group Race", "Qualifying Race", "AEKC Race"]),
           started_at: started_at,
-          ended_at: DateTime.add(started_at, Enum.random(3..12), :minute) |> DateTime.add(Enum.random(0..60), :minute),
+          ended_at: DateTime.add(started_at, Enum.random(3..12), :minute),
           external_race_id: (:rand.uniform() * 1_000_000_000) |> trunc() |> to_string(),
           location_id: location.id
         })
@@ -170,5 +170,26 @@ defmodule KartVids.RacesFixtures do
     {:ok, season_racer} = KartVids.Races.create_season_racer(season |> Repo.preload(:season_racers), racer_profile_id)
 
     season_racer
+  end
+
+  def create_season_race(name, race_by, win_by, season_racers) when is_binary(name) and race_by in [:laps, :minutes] and win_by in [:laptime, :position] do
+    race = race_fixture(%{name: name})
+
+    profile_ids =
+      for {racer, i} <- season_racers |> Enum.with_index() do
+        racer_fixture(%{
+          nickname: racer.nickname,
+          photo: racer.photo,
+          position: i + 1,
+          race_id: race.id,
+          racer_profile_id: racer.id,
+          race_by: race_by,
+          win_by: win_by
+        })
+
+        racer.id
+      end
+
+    {race, profile_ids}
   end
 end
