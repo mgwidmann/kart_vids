@@ -80,19 +80,22 @@ defmodule KartVids.Races.Season.Analyzer do
     Process.send_after(self(), :analyze_season, timeout)
 
     if season_watch?(season) do
-      race = Races.get_race_by_external_id!(last_race) |> Races.race_with_racers()
-      # These are racers which need to be added if they don't already exist
-      if Enum.any?(race.racers, &(&1.win_by == :position)) do
-        Logger.info("Racer profiles must be added to the season!")
+      race = Races.get_race_by_external_id(last_race) |> Races.race_with_racers()
 
-        for racer <- race.racers do
-          Races.create_season_racer(season, racer.racer_profile_id)
+      if race do
+        # These are racers which need to be added if they don't already exist
+        if Enum.any?(race.racers, &(&1.win_by == :position)) do
+          Logger.info("Racer profiles must be added to the season!")
+
+          for racer <- race.racers do
+            Races.create_season_racer(season, racer.racer_profile_id)
+          end
         end
-      end
 
-      update_race(race, practice, Race.league_type_practice())
-      update_race(race, qualifiers, Race.league_type_qualifier())
-      update_race(race, feature, Race.league_type_feature())
+        update_race(race, practice, Race.league_type_practice())
+        update_race(race, qualifiers, Race.league_type_qualifier())
+        update_race(race, feature, Race.league_type_feature())
+      end
 
       {:noreply, %State{state | watching: true}}
     else

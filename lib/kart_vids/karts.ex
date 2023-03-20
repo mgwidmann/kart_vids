@@ -8,8 +8,6 @@ defmodule KartVids.Karts do
 
   @large_std_dev 0.75
   @top_std_dev 25
-  # @num_std_dev_mean 3
-  # @num_std_dev 3
   @min_time 15.0
   @min_karts_to_compute 10
 
@@ -118,24 +116,13 @@ defmodule KartVids.Karts do
     i = mapper.(item)
     n = mapper.(next)
 
-    # IO.puts("drop_larger? i: #{inspect(i)} n: #{inspect(n)} > #{std_dev} * (#{acc_len} * 5 / 100 + 1)")
-
     # If difference too large for lower times, don't add to acc. Don't drop higher end times
     if acc_len < 15 && n - i > std_dev * (acc_len * 5 / 100 + 1) do
-      IO.puts("Drop at i = #{inspect(i)}")
       drop_larger_than_std_dev([next | rest], std_dev, mapper, 0, [])
     else
       drop_larger_than_std_dev([next | rest], std_dev, mapper, acc_len + 1, [item | acc])
     end
   end
-
-  # defp get_func_std_dev(std_dev) when std_dev >= @large_std_dev do
-  #   @large_std_dev
-  # end
-
-  # defp get_func_std_dev(std_dev) do
-  #   std_dev * @num_std_dev
-  # end
 
   def std_dev_cap(), do: @large_std_dev
 

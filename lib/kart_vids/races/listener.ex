@@ -579,7 +579,9 @@ defmodule KartVids.Races.Listener do
     for {racer_kart_num, racer} <- racers, racer_kart_num != nil, racer.nickname != nil, racer.photo != nil, into: %{} do
       racer_laps = Stream.filter(laps, fn %{"kart_number" => kart_num} -> kart_num == racer_kart_num end) |> Enum.reject(fn %{"lap_time" => lap_time} -> lap_time < KartVids.Karts.minimum_lap_time() end)
 
-      unless Enum.empty?(racer_laps) do
+      if Enum.empty?(racer_laps) do
+        {"-1", false}
+      else
         try do
           case Races.upsert_racer_profile(%{
                  nickname: racer.nickname,
@@ -621,6 +623,7 @@ defmodule KartVids.Races.Listener do
         end
       end
     end
+    |> Enum.filter(fn {_key, v} -> v end)
   end
 
   def extract_scoreboard_data(results) when is_list(results) do

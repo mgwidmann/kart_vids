@@ -223,6 +223,9 @@ defmodule KartVids.Races do
 
   """
   def get_race_by_external_id!(id), do: Repo.get_by!(Race, external_race_id: id)
+  def get_race_by_external_id(id), do: Repo.get_by(Race, external_race_id: id)
+
+  def race_with_racers(nil), do: nil
 
   def race_with_racers(race) do
     race
