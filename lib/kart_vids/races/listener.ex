@@ -771,7 +771,7 @@ defmodule KartVids.Races.Listener do
     # Update racer data with racer_profile_id info
     racer_data
     |> Stream.map(fn {kart_num, racer} ->
-      profile_id = profile_id_by_kart[kart_num]
+      profile_id = Map.get(profile_id_by_kart, kart_num)
       racer = %{racer | racer_profile_id: profile_id}
       {kart_num, racer}
     end)
