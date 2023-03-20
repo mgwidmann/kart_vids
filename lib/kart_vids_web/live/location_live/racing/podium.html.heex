@@ -4,7 +4,7 @@
       <% racer = scoreboard_result(@scoreboard, 2) |> scoreboard_racer(@racers) %>
       <%= if racer do %>
         <div class="flex justify-center items-center">
-          <.racer_photo photo={racer.photo} />
+          <.racer_photo photo={racer.photo} rounded={:full} square={true} />
         </div>
         <h1 class="text-md md:text-xl lg:text-2xl xl:text-4xl break-words"><%= racer.nickname %></h1>
       <% end %>
@@ -19,7 +19,7 @@
       <%= if racer do %>
         <div class="flex justify-center items-center">
           <.link navigate={~p"/locations/#{@location}/racers/by_nickname/#{racer.nickname}"}>
-            <.racer_photo photo={racer.photo} />
+            <.racer_photo photo={racer.photo} rounded={:full} square={true} />
           </.link>
         </div>
         <.link navigate={~p"/locations/#{@location}/racers/by_nickname/#{racer.nickname}"}>
@@ -36,7 +36,7 @@
       <% racer = scoreboard_result(@scoreboard, 3) |> scoreboard_racer(@racers) %>
       <%= if racer do %>
         <div class="flex justify-center items-center">
-          <.racer_photo photo={racer.photo} />
+          <.racer_photo photo={racer.photo} rounded={:full} square={true} />
         </div>
         <h1 class="text-md md:text-xl lg:text-2xl xl:text-4xl break-words"><%= racer.nickname %></h1>
       <% end %>

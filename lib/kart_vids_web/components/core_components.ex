@@ -550,20 +550,24 @@ defmodule KartVidsWeb.CoreComponents do
 
   attr(:size, :atom, default: :large, values: ~w(small large)a)
   attr(:photo, :string)
+  attr(:rounded, :atom, default: :none, values: ~w(none lg full)a)
+  attr(:square, :boolean, default: false)
   attr(:class, :string, default: nil)
 
   def racer_photo(assigns) do
     size = Map.get(assigns, :size, :large)
+    shape_class = if(assigns[:square], do: "h-full w-[80px] md:h-[100px] md:w-[100px]", else: "h-full w-[80px] md:h-[100px] md:w-[160px]")
+    assigns = assign(assigns, shape_class: shape_class)
 
     case size do
       :large ->
         ~H"""
-        <img src={@photo} class={["h-full w-[80px] md:h-[100px] md:w-[160px] object-cover", @class]} />
+        <img src={@photo} class={["object-cover", @shape_class, "rounded-#{@rounded}", @class]} />
         """
 
       :small ->
         ~H"""
-        <img src={@photo} class={["h-full w-[80px] object-cover", @class]} />
+        <img src={@photo} class={["h-full w-[80px] object-cover", "rounded-#{@rounded}", @class]} />
         """
     end
   end
