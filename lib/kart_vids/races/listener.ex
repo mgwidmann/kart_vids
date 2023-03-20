@@ -623,7 +623,8 @@ defmodule KartVids.Races.Listener do
         end
       end
     end
-    |> Enum.filter(fn {_key, v} -> v end)
+    |> Stream.filter(fn {_key, v} -> v end)
+    |> Enum.into(%{})
   end
 
   def extract_scoreboard_data(results) when is_list(results) do
