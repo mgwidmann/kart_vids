@@ -29,7 +29,8 @@ defmodule KartVids.Application do
       # Start a worker by calling: KartVids.Worker.start_link(arg)
       # {KartVids.Worker, arg}
       {KartVids.Races.ListenerSupervisor, []},
-      KartVids.Races.Season.AnalyzerSupervisor
+      KartVids.Races.Season.AnalyzerSupervisor,
+      {KartVids.Memory, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

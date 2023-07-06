@@ -5,13 +5,12 @@ defmodule KartVids.Races do
   use Nebulex.Caching
   import Ecto.Query, warn: false
   import KartVids.Helpers
-  alias KartVids.Races.SeasonRacer
   alias KartVids.Repo
   require Logger
 
   alias KartVids.Karts
   alias KartVids.Content.{Location}
-  alias KartVids.Races.{Racer, RacerProfile, Kart, Season}
+  alias KartVids.Races.{Racer, RacerProfile, Kart, Season, SeasonRacer}
   alias KartVids.Races.RacerProfile.Cache, as: RacerProfileCache
 
   @doc """
@@ -716,6 +715,8 @@ defmodule KartVids.Races do
     RacerProfile.changeset(racer_profile, attrs)
   end
 
+  @max_season_racers_limit 1000
+
   @doc """
   Returns the list of active seasons.
 
@@ -726,10 +727,10 @@ defmodule KartVids.Races do
 
   """
   def list_active_seasons() do
-    from(s in Season, where: s.ended == false)
+    season_racers = from(s in SeasonRacer, limit: @max_season_racers_limit)
+
+    from(s in Season, where: s.ended == false, preload: [:locations, season_racers: ^season_racers])
     |> Repo.all()
-    |> Repo.preload(:location)
-    |> Repo.preload(:season_racers)
   end
 
   @doc """
