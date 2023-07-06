@@ -171,7 +171,7 @@ defmodule KartVids.Races.Season.Analyzer do
   end
 
   def handle_info(msg, state) do
-    Logger.warn("Season #{state.season.id}: Unknown message received, ignoring: #{inspect(msg)}\nWith state: #{inspect(state)}")
+    Logger.warning("Season #{state.season.id}: Unknown message received, ignoring: #{inspect(msg)}\nWith state: #{inspect(state)}")
 
     {:noreply, state}
   end

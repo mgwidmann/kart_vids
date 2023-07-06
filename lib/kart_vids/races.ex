@@ -729,7 +729,7 @@ defmodule KartVids.Races do
   def list_active_seasons() do
     season_racers = from(s in SeasonRacer, limit: @max_season_racers_limit)
 
-    from(s in Season, where: s.ended == false, preload: [:locations, season_racers: ^season_racers])
+    from(s in Season, where: s.ended == false, preload: [:location, season_racers: ^season_racers])
     |> Repo.all()
   end
 

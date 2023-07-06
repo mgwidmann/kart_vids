@@ -136,21 +136,21 @@ defmodule KartVids.Races.ListenerSupervisor do
           nil
 
         other ->
-          Logger.warn("Start child did not succeed, will try again in #{@retry_minutes} minute(s), cause: #{inspect(other)}")
+          Logger.warning("Start child did not succeed, will try again in #{@retry_minutes} minute(s), cause: #{inspect(other)}")
           Process.send_after(self(), {:start_location, location}, @retry_minutes_in_ms)
       end
 
       status = get_location_status(location)
 
       if status != Status.Online do
-        Logger.warn("Location #{location.name} (#{location.id}) started successfully but then refused to respond to pings, got status: #{status}")
+        Logger.warning("Location #{location.name} (#{location.id}) started successfully but then refused to respond to pings, got status: #{status}")
       end
 
       true
     rescue
       e ->
         Logger.info("Trouble with starting location #{location.name} (#{location.id}) (will try again in #{@delay_minutes} minute(s))")
-        Logger.warn("Rescued Failure starting location: #{inspect(e)} (#{inspect(self())})")
+        Logger.warning("Rescued Failure starting location: #{inspect(e)} (#{inspect(self())})")
         Process.send_after(self(), {:start_location, location}, @delay)
 
         false

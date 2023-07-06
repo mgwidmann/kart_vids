@@ -190,7 +190,7 @@ defmodule KartVids.Races.Listener do
 
   def handle_disconnect(connection_status, %State{} = state) do
     if state.config.reconnect_attempt > 10 do
-      Logger.warn("Exiting due to repeated disconnect from location #{state.config.location_id}! #{inspect(connection_status)}")
+      Logger.warning("Exiting due to repeated disconnect from location #{state.config.location_id}! #{inspect(connection_status)}")
       Agent.stop(agent_via_tuple(state.config.location_id))
 
       {:"$EXIT", "#{inspect(__MODULE__)}: Too many reconnect attempts!"}
@@ -248,7 +248,7 @@ defmodule KartVids.Races.Listener do
   end
 
   def handle_frame(other, state) do
-    Logger.warn("Received other frame: #{inspect(other)}")
+    Logger.warning("Received other frame: #{inspect(other)}")
     {:ok, state}
   end
 
@@ -269,7 +269,7 @@ defmodule KartVids.Races.Listener do
         difference = MapSet.difference(map_keys, set_keys)
 
         unless Enum.empty?(difference) do
-          Logger.warn(
+          Logger.warning(
             "Unexpected keys received from broadcast for the #{inspect(name)} field. Extra keys were: #{inspect(difference)}\nMap Keys: #{inspect(map_keys)}\nExpected: #{inspect(set_keys)}\nThe value of these keys were: #{inspect(Map.take(map, MapSet.to_list(difference)))}"
           )
         end
@@ -476,7 +476,7 @@ defmodule KartVids.Races.Listener do
   # JSON was parsable but we didn't match anything above
   def handle_race_data({:ok, message}, %State{} = state) do
     log_unexpected_keys(message, "message", @expected_message_keys)
-    Logger.warn("Unknown Message Received: #{inspect(message)}")
+    Logger.warning("Unknown Message Received: #{inspect(message)}")
 
     state
   end
@@ -569,11 +569,11 @@ defmodule KartVids.Races.Listener do
       })
 
     if race_by != "laps" && race_by != "minutes" do
-      Logger.warn("Unexpected race by: #{race_by}")
+      Logger.warning("Unexpected race by: #{race_by}")
     end
 
     if win_by != "laptime" && win_by != "position" do
-      Logger.warn("Unexpected win by: #{win_by}")
+      Logger.warning("Unexpected win by: #{win_by}")
     end
 
     for {racer_kart_num, racer} <- racers, racer_kart_num != nil, racer.nickname != nil, racer.photo != nil, into: %{} do
@@ -611,7 +611,7 @@ defmodule KartVids.Races.Listener do
               {racer.kart_num, profile.id}
 
             {:error, changeset} ->
-              Logger.warn("Unable to upsert profile due to validation failure for #{racer.nickname} #{racer.photo} - Lap: #{racer.fastest_lap} Kart: #{racer.kart_num} - #{inspect(changeset)}\n\nLaps:\n#{inspect(racer_laps)}")
+              Logger.warning("Unable to upsert profile due to validation failure for #{racer.nickname} #{racer.photo} - Lap: #{racer.fastest_lap} Kart: #{racer.kart_num} - #{inspect(changeset)}\n\nLaps:\n#{inspect(racer_laps)}")
 
               {racer.kart_num, nil}
           end
@@ -644,7 +644,7 @@ defmodule KartVids.Races.Listener do
           Map.put(karts, kart_num, %{lap_time: lap_time, rpm: rpm, position: position, external_racer_id: external_racer_id})
         else
           err ->
-            Logger.warn("Extract scoreboard parsing issue for #{lap_time}| #{kart_num} | #{rpm} | #{position} : #{inspect(err)}")
+            Logger.warning("Extract scoreboard parsing issue for #{lap_time}| #{kart_num} | #{rpm} | #{position} : #{inspect(err)}")
             karts
         end
 

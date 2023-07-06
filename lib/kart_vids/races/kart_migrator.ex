@@ -64,7 +64,7 @@ defmodule KartVids.Races.KartMigrator do
           {:ok, profile.id}
 
         {:error, changeset} ->
-          Logger.warn("Migration failure for profile #{profile.id}, Changeset failed: #{inspect(changeset)} for profile: #{inspect(profile)} and update data of #{inspect(update)}")
+          Logger.warning("Migration failure for profile #{profile.id}, Changeset failed: #{inspect(changeset)} for profile: #{inspect(profile)} and update data of #{inspect(update)}")
           nil
       end
     end
