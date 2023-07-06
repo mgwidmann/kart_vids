@@ -2,7 +2,7 @@
 
 app = "kart-vids"
 kill_signal = "SIGTERM"
-kill_timeout = 5
+kill_timeout = 120
 processes = []
 
 [deploy]
