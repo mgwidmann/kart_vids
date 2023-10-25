@@ -3,7 +3,7 @@ defmodule KartVidsWeb.Live.Helpers do
   Static function helpers for rendering live pages
   """
 
-  @no_data "..."
+  @no_data "···"
 
   def format_lap(lap, small_allowed \\ false)
 
@@ -15,5 +15,15 @@ defmodule KartVidsWeb.Live.Helpers do
     |> Kernel./(1)
     |> Decimal.from_float()
     |> Decimal.round(3)
+  end
+
+  def date_format(date) do
+    date
+    |> Calendar.strftime("%B %d, %Y")
+  end
+
+  def time_format(time) do
+    time
+    |> Calendar.strftime("%I:%M %p")
   end
 end

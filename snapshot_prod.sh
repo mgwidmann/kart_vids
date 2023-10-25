@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# To run, use fly to proxy to database
+#    fly proxy 5433 -a kart-vids-db
+
 export pg_user=postgres
 export pg_database=kart_vids
 export pg_host=localhost

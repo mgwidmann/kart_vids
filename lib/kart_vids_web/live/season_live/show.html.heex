@@ -1,0 +1,23 @@
+<.back position={:top} navigate={~p"/admin/locations/#{@location_id}/seasons"}>Back to seasons</.back>
+<.header>
+  <%= @season.start_at.year %> <%= @season.season |> Phoenix.Naming.humanize() %> <%= @season.driver_type |> Phoenix.Naming.humanize() %> Season
+  <:subtitle>
+    Started <%= @season.start_at |> date_format() %>, every <%= @season.weekly_start_day |> Phoenix.Naming.humanize() %> at <%= @season.weekly_start_at |> time_format() %>
+    <br />
+    <%= @season.number_of_meetups %> Meetups, <%= @season.daily_qualifiers %> Qualifiers<%= if(@season.position_qualifier, do: " (with a position based qualifier)", else: "") %>, <%= if(@season.daily_practice,
+      do: "Including 1 Practice",
+      else: "No Practice"
+    ) %>
+  </:subtitle>
+  <:actions>
+    <.link patch={~p"/admin/locations/#{@location_id}/seasons/#{@season}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit season</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<%= inspect(@season.season_racers) %>
+
+<.modal :if={@live_action == :edit} id="season-modal" show on_cancel={JS.patch(~p"/admin/locations/#{@location_id}/seasons/#{@season}")}>
+  <.live_component module={KartVidsWeb.SeasonLive.FormComponent} id={@season.id} title={@page_title} action={@live_action} season={@season} patch={~p"/admin/locations/#{@location_id}/seasons/#{@season}"} />
+</.modal>

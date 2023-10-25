@@ -722,14 +722,16 @@ defmodule KartVids.Races do
 
   ## Examples
 
-      iex> list_active_seasons()
+      iex> list_seasons()
       [%Kart{}, ...]
 
   """
-  def list_active_seasons() do
+  def list_seasons(active \\ true) do
     season_racers = from(s in SeasonRacer, limit: @max_season_racers_limit)
 
-    from(s in Season, where: s.ended == false, preload: [:location, season_racers: ^season_racers])
+    ended = !active
+
+    from(s in Season, where: s.ended == ^ended, preload: [:location, season_racers: ^season_racers])
     |> Repo.all()
   end
 
@@ -747,7 +749,7 @@ defmodule KartVids.Races do
       ** (Ecto.NoResultsError)
 
   """
-  def get_season!(id), do: Repo.get!(Season, id)
+  def get_season!(id), do: Repo.get!(Season, id) |> Repo.preload(:season_racers)
 
   @doc """
   Creates a Season.
@@ -765,6 +767,14 @@ defmodule KartVids.Races do
     %Season{}
     |> Season.changeset(attrs)
     |> Repo.insert()
+    |> case do
+      {:ok, season} ->
+        KartVids.Races.Season.AnalyzerSupervisor.start_season(season)
+        {:ok, season}
+
+      other ->
+        other
+    end
   end
 
   def create_season_racer(%Season{id: season_id, season_racers: racers}, racer_profile_id) do

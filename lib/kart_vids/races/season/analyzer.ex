@@ -84,13 +84,13 @@ defmodule KartVids.Races.Season.Analyzer do
 
       if race do
         # These are racers which need to be added if they don't already exist
-        if Enum.any?(race.racers, &(&1.win_by == :position)) do
-          Logger.info("Racer profiles must be added to the season!")
+        # if Enum.any?(race.racers, &(&1.win_by == :position)) do
+        #   Logger.info("Racer profiles must be added to the season!")
 
-          for racer <- race.racers do
-            Races.create_season_racer(season, racer.racer_profile_id)
-          end
-        end
+        #   for racer <- race.racers do
+        #     Races.create_season_racer(season, racer.racer_profile_id)
+        #   end
+        # end
 
         update_race(race, practice, Race.league_type_practice())
         update_race(race, qualifiers, Race.league_type_qualifier())
@@ -176,7 +176,8 @@ defmodule KartVids.Races.Season.Analyzer do
     {:noreply, state}
   end
 
-  defp update_race(race = %Race{id: id}, tracking, type) do
+  # Only update if the league type is set to none
+  defp update_race(race = %Race{id: id, league_type: :none}, tracking, type) do
     tracking
     # Use find for early exit since no need to keep iterating
     |> Enum.find(fn
@@ -193,7 +194,9 @@ defmodule KartVids.Races.Season.Analyzer do
     end)
   end
 
-  @watch_window 6
+  defp update_race(_race, _tracking, _type), do: nil
+
+  @watch_window 8
 
   def season_watch?(%Season{start_at: start_at, ended: ended, weekly_start_day: weekly_start_day, weekly_start_at: weekly_start_at, location: %Location{timezone: timezone}}) do
     now = DateTime.utc_now() |> DateTime.shift_zone!(timezone)

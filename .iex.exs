@@ -8,3 +8,4 @@ alias KartVids.Content.{Location, Video}
 alias KartVids.Races.Listener
 alias KartVids.Races.ListenerSupervisor
 alias KartVids.Races.KartMigrator
+import Ecto.Query

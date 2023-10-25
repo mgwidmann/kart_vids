@@ -22,7 +22,7 @@ defmodule KartVids.Races.Season.AnalyzerSupervisor do
   def start_seasons() do
     Logger.info("Starting season analyzers which are active...")
 
-    for season <- Races.list_active_seasons() do
+    for season <- Races.list_seasons(true) do
       Logger.info("Starting season #{season.id}")
       start_season(season)
     end

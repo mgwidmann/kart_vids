@@ -40,23 +40,17 @@ defmodule KartVids.Races.Race do
   @spec league_type_feature :: :feature
   def league_type_feature(), do: :feature
 
-  @feature_race ["aekc race"]
+  @feature_race ["aekc race", "position"]
   @qualifying_race ["qualifying", "qualifier", "pro"]
   @league_race @feature_race ++ @qualifying_race
 
-  def is_feature_race?(%__MODULE__{name: name}), do: is_feature_race?(name)
+  def is_feature_race?(%__MODULE__{league?: true, league_type: :feature}), do: true
+  def is_feature_race?(_), do: false
 
-  def is_feature_race?(name) when is_binary(name) do
-    name |> String.downcase() |> String.contains?(@feature_race)
-  end
+  def is_qualifying_race?(%__MODULE__{league?: true, league_type: :qualifier}), do: true
+  def is_qualifying_race?(_), do: false
 
-  def is_qualifying_race?(%__MODULE__{name: name}), do: is_qualifying_race?(name)
-
-  def is_qualifying_race?(name) when is_binary(name) do
-    name |> String.downcase() |> String.contains?(@qualifying_race)
-  end
-
-  def is_league_race?(%__MODULE__{name: name}), do: is_league_race?(name)
+  def is_league_race?(%__MODULE__{league?: is_league}), do: is_league
 
   def is_league_race?(name) when is_binary(name) do
     name |> String.downcase() |> String.contains?(@league_race)
