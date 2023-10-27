@@ -5,6 +5,7 @@ defmodule KartVidsWeb.RaceLive.League do
   alias KartVids.Content
   alias KartVids.Races
   alias KartVids.Races.{Race, Racer}
+  import KartVids.SeasonLive.Helper
 
   embed_templates "races/*"
   embed_templates "../racer_live/racer/*"
@@ -36,6 +37,19 @@ defmodule KartVidsWeb.RaceLive.League do
     |> assign(:page_title, "League Races for #{socket.assigns.date}")
     |> assign(:races, races)
     |> assign(:qualifying, calculate_qualifying(races))
+  end
+
+  defp apply_action(socket, :season, %{"race_id" => race_id}) do
+    admin_redirect(socket) do
+      races = Races.league_races_on_date(socket.assigns.date)
+
+      socket
+      |> assign(:page_title, "Select Season Race")
+      |> assign(:races, Races.league_races_on_date(socket.assigns.date))
+      |> assign(:seasons, Races.list_seasons())
+      |> assign(:race, Races.get_race!(race_id))
+      |> assign(:qualifying, calculate_qualifying(races))
+    end
   end
 
   def calculate_qualifying(races, standing \\ %{})

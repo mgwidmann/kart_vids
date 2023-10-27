@@ -189,6 +189,11 @@ defmodule KartVids.Races do
       order_by: {:desc, r.started_at}
     )
     |> Repo.all()
+    |> Repo.preload(:season)
+  end
+
+  def list_races(%Season{} = season) do
+    Repo.preload(season, [:races])
   end
 
   @doc """
@@ -372,6 +377,37 @@ defmodule KartVids.Races do
     )
     |> Repo.all()
     |> Repo.preload(:racers)
+    |> Repo.preload(:season)
+  end
+
+  def league_races_for_season(%Season{season_races: season_races} = season) when is_list(season_races) do
+    season_races
+    |> Enum.group_by(fn race ->
+      meetup_date(season, race.started_at)
+    end)
+    |> Enum.map(fn {date, races} ->
+      %League{
+        date: date,
+        races: length(races),
+        racer_names: races |> Enum.flat_map(& &1.racers) |> Enum.map(& &1.nickname) |> Enum.uniq()
+      }
+    end)
+    |> Enum.sort_by(& &1.date, {:desc, Date})
+  end
+
+  @time_window 8
+  def meetup_date(%Season{start_at: start_at, weekly_start_at: weekly_start_at, number_of_meetups: number_of_meetups, location: %Location{timezone: timezone}}, datetime) do
+    0..number_of_meetups
+    |> Enum.find_value(fn meetup_number ->
+      meet_date = NaiveDateTime.new!(start_at, weekly_start_at) |> DateTime.from_naive!(timezone) |> DateTime.add(meetup_number * 7, :day)
+      meet_day = DateTime.to_date(meet_date)
+
+      meet_day_start_at = NaiveDateTime.new!(meet_day, weekly_start_at) |> DateTime.from_naive!(timezone)
+
+      if Timex.between?(datetime, meet_day_start_at, Timex.add(meet_day_start_at, Timex.Duration.from_hours(@time_window))) do
+        meet_day
+      end
+    end)
   end
 
   @doc """
@@ -731,7 +767,7 @@ defmodule KartVids.Races do
 
     ended = !active
 
-    from(s in Season, where: s.ended == ^ended, preload: [:location, season_racers: ^season_racers])
+    from(s in Season, where: s.ended == ^ended, preload: [:location, :season_races, season_racers: ^season_racers])
     |> Repo.all()
   end
 
@@ -749,7 +785,7 @@ defmodule KartVids.Races do
       ** (Ecto.NoResultsError)
 
   """
-  def get_season!(id), do: Repo.get!(Season, id) |> Repo.preload(:season_racers)
+  def get_season!(id), do: Repo.get!(Season, id) |> Repo.preload([:location, :season_racers, :season_races])
 
   @doc """
   Creates a Season.

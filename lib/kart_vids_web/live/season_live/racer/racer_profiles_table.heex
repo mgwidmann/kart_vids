@@ -1,0 +1,11 @@
+<.table id="racers" rows={@racers} row_click={&JS.navigate(if(&1.external_racer_id, do: ~p"/locations/#{@location_id}/racers/by_external/#{&1.external_racer_id}", else: ~p"/locations/#{@location_id}/racers/by_nickname/#{&1.nickname}"))}>
+  <:col :let={racer} label="" row_class="w-[80px] md:w-[160px]" inner_div_class="sm:py-0 sm:px-0">
+    <.racer_photo photo={racer.photo} />
+  </:col>
+  <:col :let={racer} label="Name">
+    <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.nickname %></span>
+  </:col>
+  <:col :let={racer} label="Season Best Lap" label_mobile="Season Best">
+    <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= format_lap(racer.fastest_lap_time) %></span>
+  </:col>
+</.table>

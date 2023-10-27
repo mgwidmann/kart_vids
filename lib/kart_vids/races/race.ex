@@ -3,7 +3,7 @@ defmodule KartVids.Races.Race do
   use Ecto.Schema
   import Ecto.Changeset
   alias KartVids.Content.Location
-  alias KartVids.Races.Racer
+  alias KartVids.Races.{Racer, Season}
 
   schema "races" do
     field :name, :string
@@ -14,6 +14,7 @@ defmodule KartVids.Races.Race do
     field :league_type, Ecto.Enum, values: [none: 0, practice: 100, qualifier: 200, feature: 300], default: :none
 
     belongs_to :location, Location
+    belongs_to :season, Season
 
     has_many :racers, Racer
 
@@ -23,7 +24,7 @@ defmodule KartVids.Races.Race do
   @doc false
   def changeset(race, attrs) do
     race
-    |> cast(attrs, [:external_race_id, :name, :started_at, :ended_at, :location_id, :league?, :league_type])
+    |> cast(attrs, [:external_race_id, :name, :started_at, :ended_at, :location_id, :league?, :league_type, :season_id])
     |> validate_required([:external_race_id, :name, :started_at, :ended_at, :location_id])
   end
 

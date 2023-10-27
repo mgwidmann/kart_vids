@@ -4,10 +4,23 @@
   League Races on <%= @date %>
 </.header>
 
-<%= race_table(%{location_id: @location_id, races: @races, timezone: @location.timezone, current_user: @current_user}) %>
+<%= race_table(%{location_id: @location_id, races: @races, timezone: @location.timezone, current_user: @current_user, assign_season: %KartVids.Races.League{date: @date}, races_date: Date.to_iso8601(@date)}) %>
 
 <.header>
   Qualifying Standing
 </.header>
 
 <%= racer_table(%{racers: @qualifying, location_id: @location_id, race_id: nil, current_user: @current_user}) %>
+
+<.modal :if={@live_action in [:season]} id="season-modal" show on_cancel={JS.navigate(~p"/locations/#{@location_id}/leagues/#{%KartVids.Races.League{date: @date}}")}>
+  <.live_component
+    module={KartVidsWeb.SeasonLive.RaceFormComponent}
+    id={@race.id}
+    seasons={@seasons}
+    title={@page_title}
+    action={@live_action}
+    race={@race}
+    navigate={~p"/locations/#{@location_id}/leagues/#{%KartVids.Races.League{date: @date}}"}
+    current_user={@current_user}
+  />
+</.modal>

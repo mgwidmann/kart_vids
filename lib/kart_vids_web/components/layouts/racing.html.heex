@@ -31,6 +31,9 @@
             <.link navigate={~p"/locations/#{@location}/leagues"} class="bg-gray-400 hover:bg-gray-600 text-white block rounded-md px-3 py-2 text-base font-medium">
               League Races
             </.link>
+            <.admin_link navigate={~p"/admin/locations/#{@location}/seasons"} current_user={@current_user} class="bg-gray-400 hover:bg-gray-600 text-white block rounded-md px-3 py-2 text-base font-medium">
+              Seasons
+            </.admin_link>
             <.link navigate={~p"/locations/#{@location}/karts"} class="bg-gray-400 hover:bg-gray-600 text-white block rounded-md px-3 py-2 text-base font-medium">
               Karts
             </.link>

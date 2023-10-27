@@ -5,6 +5,7 @@ defmodule KartVidsWeb.RaceLive.Index do
   alias KartVids.Content
   alias KartVids.Races
   alias KartVids.Races.Race
+  import KartVids.SeasonLive.Helper
 
   embed_templates("races/*")
 
@@ -17,7 +18,7 @@ defmodule KartVidsWeb.RaceLive.Index do
   def handle_params(%{"location_id" => location_id} = params, _url, socket) do
     location = Content.get_location!(location_id)
 
-    date = Map.get(params, "date", DateTime.utc_now() |> DateTime.shift_zone!(location.timezone) |> DateTime.to_date())
+    date = Date.from_iso8601!(Map.get(params, "date", DateTime.utc_now() |> DateTime.shift_zone!(location.timezone) |> DateTime.to_date() |> Date.to_iso8601()))
 
     {
       :noreply,
@@ -109,6 +110,7 @@ defmodule KartVidsWeb.RaceLive.Index do
       :noreply,
       socket
       |> assign(:races, list_races(socket.assigns.location, Date.from_iso8601!(date)))
+      |> push_navigate(to: ~p"/locations/#{socket.assigns.location_id}/races?date=#{date}")
     }
   end
 

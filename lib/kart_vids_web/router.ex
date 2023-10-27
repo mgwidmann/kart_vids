@@ -119,6 +119,7 @@ defmodule KartVidsWeb.Router do
       live("/locations/:location_id/races/new", RaceLive.Index, :new)
       live("/locations/:location_id/races/:id/edit", RaceLive.Index, :edit)
       live("/locations/:location_id/races/:id/show/edit", RaceLive.Show, :edit)
+      live("/locations/:location_id/leagues/:date/race/:race_id/season", RaceLive.League, :season)
 
       # Racer
       live("/locations/:location_id/races/:race_id/racers/new", RacerLive.Index, :new)

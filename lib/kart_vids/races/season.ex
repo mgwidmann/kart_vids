@@ -4,7 +4,7 @@ defmodule KartVids.Races.Season do
   import Ecto.Changeset
 
   alias KartVids.Content.Location
-  alias KartVids.Races.{RacerProfile, SeasonRacer}
+  alias KartVids.Races.{RacerProfile, Race, SeasonRacer}
 
   schema "seasons" do
     field :ended, :boolean, default: false
@@ -20,6 +20,7 @@ defmodule KartVids.Races.Season do
 
     belongs_to :location, Location
     many_to_many :season_racers, RacerProfile, join_through: SeasonRacer
+    has_many :season_races, Race, foreign_key: :season_id
 
     timestamps()
   end

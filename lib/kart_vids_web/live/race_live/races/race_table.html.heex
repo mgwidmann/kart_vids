@@ -4,6 +4,9 @@
   </:col>
   <:col :let={race} label="League?">
     <.league_string league?={race.league?} league_type={race.league_type} />
+    <%= if race.season_id do %>
+      <%= season_name(race.season) %> Season
+    <% end %>
   </:col>
   <:col :let={race} label="Started at">
     <.display_timestamp timestamp={race.started_at} timezone={@timezone} />
@@ -17,8 +20,11 @@
     <div class="sr-only">
       <.link navigate={~p"/locations/#{@location_id}/races/#{race}"}>Show</.link>
     </div>
-    <.admin_link patch={~p"/admin/locations/#{@location_id}/races/#{race}/edit"} current_user={@current_user}>Edit</.admin_link>
+    <.admin_link patch={~p"/admin/locations/#{@location_id}/races/#{race}/edit?date=#{@races_date}"} current_user={@current_user}>Edit</.admin_link>
     <br />
+    <%= if assigns[:assign_season] do %>
+      <.admin_link patch={~p"/admin/locations/#{@location_id}/leagues/#{@assign_season}/race/#{race}/season"} current_user={@current_user}>Season</.admin_link>
+    <% end %>
     <br />
     <.admin_link phx-click={JS.push("delete", value: %{id: race.id})} data-confirm="Are you sure?" current_user={@current_user}>
       Delete

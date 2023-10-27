@@ -1,6 +1,6 @@
 <.back position={:top} navigate={~p"/admin/locations/#{@location_id}/seasons"}>Back to seasons</.back>
 <.header>
-  <%= @season.start_at.year %> <%= @season.season |> Phoenix.Naming.humanize() %> <%= @season.driver_type |> Phoenix.Naming.humanize() %> Season
+  <%= season_name(@season) %> Season
   <:subtitle>
     Started <%= @season.start_at |> date_format() %>, every <%= @season.weekly_start_day |> Phoenix.Naming.humanize() %> at <%= @season.weekly_start_at |> time_format() %>
     <br />
@@ -10,13 +10,29 @@
     ) %>
   </:subtitle>
   <:actions>
-    <.link patch={~p"/admin/locations/#{@location_id}/seasons/#{@season}/show/edit"} phx-click={JS.push_focus()}>
+    <.admin_link patch={~p"/admin/locations/#{@location_id}/seasons/#{@season}/show/edit"} current_user={@current_user} phx-click={JS.push_focus()}>
       <.button>Edit season</.button>
-    </.link>
+    </.admin_link>
   </:actions>
 </.header>
 
-<%= inspect(@season.season_racers) %>
+<.table id="races" rows={@leagues} row_click={&JS.navigate(~p"/locations/#{@location_id}/leagues/#{&1}")}>
+  <:col :let={league} label="Date">
+    <%= Phoenix.Param.to_param(league) %>
+  </:col>
+  <:col :let={league} label="Races">
+    <%= league.races %>
+  </:col>
+  <:col :let={league} label="Racers" row_class="max-w-[30vw] text-ellipsis">
+    <%= if length(league.racer_names) > 30 do %>
+      <%= league.racer_names |> Enum.take(30) |> Enum.join(", ") |> Kernel.<>(" ... ") %>
+    <% else %>
+      <%= league.racer_names |> Enum.join(", ") %>
+    <% end %>
+  </:col>
+</.table>
+
+<%= racer_profiles_table(%{racers: @season.season_racers, location_id: @location_id, timezone: @location.timezone, current_user: @current_user}) %>
 
 <.modal :if={@live_action == :edit} id="season-modal" show on_cancel={JS.patch(~p"/admin/locations/#{@location_id}/seasons/#{@season}")}>
   <.live_component module={KartVidsWeb.SeasonLive.FormComponent} id={@season.id} title={@page_title} action={@live_action} season={@season} patch={~p"/admin/locations/#{@location_id}/seasons/#{@season}"} />
