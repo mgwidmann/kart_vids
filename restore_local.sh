@@ -18,5 +18,5 @@ psql -U postgres -W -h localhost -p 5432 -d kart_vids_dev -f $file
 
 echo "Run the following commands to update the local user's password since the salts are different:"
 echo "    import Ecto.Query"
-echo "    password = Bcrypt.hash_pwd_salt("password")"
-echo "    from(u in User, where: u.id == 1) |> Repo.update_all(set: [hashed_password: password])
+echo "    password = Bcrypt.hash_pwd_salt(\"password\")"
+echo "    from(u in User, where: u.id == 1) |> Repo.update_all(set: [email: "admin@kart-vids.com", hashed_password: password])"

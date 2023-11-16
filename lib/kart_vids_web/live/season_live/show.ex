@@ -47,7 +47,7 @@ defmodule KartVidsWeb.SeasonLive.Show do
         {season_racer.id, racer.fastest_lap}
       end
       |> Enum.group_by(fn {racer_profile_id, _fastest_lap} -> racer_profile_id end, fn {_racer_profile_id, fastest_lap} -> fastest_lap end)
-      |> Enum.map(fn {racer_profile_id, lap_times} -> {racer_profile_id, Enum.min(lap_times)} end)
+      |> Enum.map(fn {racer_profile_id, lap_times} -> {racer_profile_id, lap_times |> KartVids.Karts.quality_filter(season.location, 1.0, & &1) |> Enum.min(&<=/2, fn -> Enum.min(lap_times) end)} end)
       |> Enum.into(%{})
 
     %Season{season | season_racers: Enum.map(season.season_racers, fn season_racer -> %RacerProfile{season_racer | fastest_lap_time: fastest_racer_times[season_racer.id]} end)}
