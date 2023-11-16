@@ -16,6 +16,28 @@
     }
 }
 
+.highlight {
+    background: rgb(0, 0, 0, 0);
+    animation: highlight 5s infinite;
+}
+
+@keyframes highlight {
+    0% {
+        /* bg-amber-300 */
+        background: rgb(0, 0, 0, 0);
+    }
+
+    50% {
+        /* bg-amber-300 */
+        background: rgb(252 211 77);
+    }
+
+    100% {
+        /* bg-amber-300 */
+        background: rgb(0, 0, 0, 0);
+    }
+}
+
 .scaleInOut {
     animation: scaleInOut 1.75s cubic-bezier(0.165, 0.840, 0.440, 1.000) forwards;
 }

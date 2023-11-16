@@ -31,6 +31,16 @@ defmodule KartVids.Races.Season.AnalyzerTest do
       %{analyzer: pid}
     end
 
+    test "starts watching", %{analyzer: analyzer, season: season, location: location} do
+      # A new race just finished
+      race = RacesFixtures.race_fixture()
+      send(analyzer, %Phoenix.Socket.Broadcast{event: "race_completed", payload: %Listener.State{current_race: race.external_race_id, config: %Listener.Config{location_id: location.id}, win_by: "laptime"}})
+
+      # Assert that the newly finished race is the one that it recognizes
+      recent_race_id = race.external_race_id
+      assert %Analyzer.State{last_race: ^recent_race_id} = Analyzer.analyzer_state(season)
+    end
+
     test "watching keeps track of the current race", %{analyzer: analyzer, season: season, location: location} do
       # A new race just finished
       race = RacesFixtures.race_fixture()

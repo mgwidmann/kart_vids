@@ -1,9 +1,12 @@
 defmodule KartVidsWeb.RaceLive.League do
   use KartVidsWeb, :live_view
+  require Logger
   import KartVidsWeb.Components.Racing
 
   alias KartVids.Content
   alias KartVids.Races
+  alias KartVids.Races.Listener
+  alias KartVids.Races.Season.Analyzer
   alias KartVids.Races.{Race, Racer}
   import KartVids.SeasonLive.Helper
 
@@ -30,12 +33,85 @@ defmodule KartVidsWeb.RaceLive.League do
     }
   end
 
+  @impl true
+  @spec handle_info(Phoenix.Socket.Broadcast.t(), Phoenix.LiveView.Socket.t()) :: {:noreply, Phoenix.LiveView.Socket.t()}
+  def handle_info(
+        %Phoenix.Socket.Broadcast{event: event, payload: %KartVids.Races.Listener.State{racers: racers}},
+        socket
+      )
+      when event in ["race_data", "race_completed"] do
+    first_race = Races.league_races_on_date(Date.utc_today()) |> List.first()
+
+    qualifying =
+      if first_race && first_race.season && Analyzer.season_watch?(first_race.season) do
+        racers
+        |> Map.values()
+        |> Enum.reduce(socket.assigns.qualifying, fn racer, q ->
+          q
+          |> Enum.map(fn qracer ->
+            if qracer.nickname == racer.nickname do
+              %Racer{qracer | fastest_lap: Enum.min([qracer.fastest_lap, racer.fastest_lap])}
+            else
+              qracer
+            end
+          end)
+        end)
+        |> Enum.concat(
+          racers
+          |> Map.values()
+          |> Enum.filter(fn r ->
+            !Enum.find(socket.assigns.qualifying, &(&1.nickname == r.nickname))
+          end)
+          |> Enum.map(fn r ->
+            %Racer{
+              id: "external-#{r.external_racer_id}",
+              nickname: r.nickname,
+              photo: r.photo,
+              average_lap: r.average_lap,
+              fastest_lap: r.fastest_lap,
+              kart_num: r.kart_num,
+              position: r.position,
+              external_racer_id: r.external_racer_id,
+              laps: r.laps,
+              racer_profile_id: r.racer_profile_id
+            }
+          end)
+        )
+        |> Enum.sort_by(& &1.fastest_lap)
+        |> Enum.with_index()
+        |> Enum.map(fn {racer, index} -> %Racer{racer | position: index + 1} end)
+      else
+        socket.assigns.qualifying
+      end
+
+    currently_racing =
+      racers
+      |> Map.values()
+      |> Enum.map(& &1.nickname)
+      |> MapSet.new()
+
+    {
+      :noreply,
+      socket
+      |> assign(:currently_racing, currently_racing)
+      |> assign(:qualifying, qualifying)
+    }
+  end
+
+  def handle_info(msg, socket) do
+    Logger.debug("Undefined handle_info for messge: #{inspect(msg, pretty: true)}")
+    {:noreply, socket}
+  end
+
   defp apply_action(socket, :show, _) do
     races = Races.league_races_on_date(socket.assigns.date)
+
+    Listener.subscribe(socket.assigns.location)
 
     socket
     |> assign(:page_title, "League Races for #{socket.assigns.date}")
     |> assign(:races, races)
+    |> assign(:currently_racing, MapSet.new())
     |> assign(:qualifying, calculate_qualifying(races))
   end
 

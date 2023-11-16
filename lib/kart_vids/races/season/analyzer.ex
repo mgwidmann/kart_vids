@@ -28,13 +28,14 @@ defmodule KartVids.Races.Season.Analyzer do
     @type t :: %State{
             season: Season.t(),
             watching: boolean(),
+            watch_until: DateTime.t(),
             last_race: String.t(),
             practice: %{pos_integer() => pos_integer()},
             qualifiers: %{pos_integer() => list(pos_integer())},
             feature: %{pos_integer() => pos_integer()},
             timeout: pos_integer()
           }
-    defstruct season: nil, watching: false, last_race: nil, practice: %{}, qualifiers: %{}, feature: %{}, timeout: :timer.seconds(5)
+    defstruct season: nil, watching: false, watch_until: nil, last_race: nil, practice: %{}, qualifiers: %{}, feature: %{}, timeout: :timer.seconds(5)
   end
 
   def init({season, timeout}) do
@@ -56,8 +57,20 @@ defmodule KartVids.Races.Season.Analyzer do
     GenServer.call(pid_or_via_tuple, :state)
   end
 
+  def start_watching(id) when is_number(id), do: start_watching(via_tuple(id))
+  def start_watching(%Season{id: id}), do: start_watching(via_tuple(id))
+
+  def start_watching(pid_or_via_tuple) do
+    GenServer.call(pid_or_via_tuple, :start_watching)
+  end
+
   def handle_call(:state, _from, state) do
     {:reply, state, state}
+  end
+
+  @watch_length 8
+  def handle_call(:start_watching, _from, state) do
+    {:reply, true, %State{state | watching: true, watch_until: Timex.add(DateTime.utc_now(), Timex.Duration.from_hours(@watch_length))}}
   end
 
   def handle_info(:subscribe_listener, state) do
@@ -76,10 +89,10 @@ defmodule KartVids.Races.Season.Analyzer do
     end
   end
 
-  def handle_info(:analyze_season, state = %State{last_race: last_race, season: season, practice: practice, qualifiers: qualifiers, feature: feature, timeout: timeout}) do
+  def handle_info(:analyze_season, state = %State{last_race: last_race, season: season, watch_until: watch_until, practice: practice, qualifiers: qualifiers, feature: feature, timeout: timeout}) do
     Process.send_after(self(), :analyze_season, timeout)
 
-    if season_watch?(season) do
+    if season_watch?(season) || (watch_until && Timex.before?(DateTime.utc_now(), watch_until)) do
       race = Races.get_race_by_external_id(last_race) |> Races.race_with_racers()
 
       if race do
@@ -99,7 +112,7 @@ defmodule KartVids.Races.Season.Analyzer do
 
       {:noreply, %State{state | watching: true}}
     else
-      {:noreply, %State{state | watching: false, practice: %{}, qualifiers: %{}, feature: %{}}}
+      {:noreply, %State{state | watching: false, watch_until: nil, practice: %{}, qualifiers: %{}, feature: %{}}}
     end
   end
 
@@ -123,41 +136,14 @@ defmodule KartVids.Races.Season.Analyzer do
   @minimum_racers 3
   def handle_info(
         %Phoenix.Socket.Broadcast{event: "race_completed", payload: %RaceListener.State{current_race: current_race, config: %RaceListener.Config{location_id: location_id}, win_by: win_by}},
-        state = %State{season: %Season{location_id: location_id, season_racers: racers, daily_qualifiers: daily_qualifiers}, practice: practice, qualifiers: qualifiers, feature: feature, watching: true}
+        state = %State{season: %Season{location_id: location_id, season_racers: racers}, watching: true}
       ) do
     profile_ids = racers |> Enum.map(& &1.id) |> MapSet.new()
     race = Races.get_race_by_external_id!(current_race) |> Races.race_with_racers()
 
     state =
       if Enum.count(race.racers, &MapSet.member?(profile_ids, &1.racer_profile_id)) >= @minimum_racers || win_by == "position" do
-        state =
-          cond do
-            # Any racer did not get their practice race
-            !Enum.any?(race.racers, &Map.get(practice, &1.racer_profile_id)) ->
-              Enum.reduce(race.racers, state, fn racer, state ->
-                put_in(state, [Access.key!(:practice), racer.racer_profile_id], race.id)
-              end)
-
-            # Any racer did not get all their qualifiers
-            Enum.any?(race.racers, &(Map.get(qualifiers, &1.racer_profile_id, MapSet.new()) |> MapSet.size() < daily_qualifiers)) ->
-              Enum.reduce(race.racers, state, fn racer, state ->
-                {_, new_state} =
-                  get_and_update_in(state, [Access.key!(:qualifiers), racer.racer_profile_id], fn v ->
-                    {v, MapSet.put(v || MapSet.new(), race.id)}
-                  end)
-
-                new_state
-              end)
-
-            # Any racer did not get their feature race
-            !Enum.any?(race.racers, &Map.get(feature, &1.racer_profile_id)) && win_by == "position" ->
-              Enum.reduce(race.racers, state, fn racer, state ->
-                put_in(state, [Access.key!(:feature), racer.racer_profile_id], race.id)
-              end)
-
-            true ->
-              state
-          end
+        state = update_state_for_race(state, race)
 
         # Process now
         send(self(), :analyze_season)
@@ -196,21 +182,38 @@ defmodule KartVids.Races.Season.Analyzer do
 
   defp update_race(_race, _tracking, _type), do: nil
 
-  @watch_window 8
+  def season_watch?(season = %Season{}) do
+    KartVids.Races.meetup_date(season, DateTime.utc_now()) != nil
+  end
 
-  def season_watch?(%Season{start_at: start_at, ended: ended, weekly_start_day: weekly_start_day, weekly_start_at: weekly_start_at, location: %Location{timezone: timezone}}) do
-    now = DateTime.utc_now() |> DateTime.shift_zone!(timezone)
-    today = DateTime.to_date(now)
-    yesterday = DateTime.add(now, -1, :day) |> DateTime.to_date()
+  def update_state_for_race(state, race) do
+    cond do
+      # Any racer did not get their practice race
+      !Enum.any?(race.racers, &Map.get(state.practice, &1.racer_profile_id)) ->
+        Enum.reduce(race.racers, state, fn racer, state ->
+          put_in(state, [Access.key!(:practice), racer.racer_profile_id], race.id)
+        end)
 
-    today_dow = Date.day_of_week(today) |> Season.weekly_start_day()
-    yesterday_dow = Date.day_of_week(yesterday) |> Season.weekly_start_day()
+      # Any racer did not get all their qualifiers
+      Enum.any?(race.racers, &(Map.get(state.qualifiers, &1.racer_profile_id, MapSet.new()) |> MapSet.size() < state.season.daily_qualifiers)) ->
+        Enum.reduce(race.racers, state, fn racer, state ->
+          {_, new_state} =
+            get_and_update_in(state, [Access.key!(:qualifiers), racer.racer_profile_id], fn v ->
+              {v, MapSet.put(v || MapSet.new(), race.id)}
+            end)
 
-    today_start_at = NaiveDateTime.new!(today, weekly_start_at) |> DateTime.from_naive!(timezone)
-    yesterday_start_at = NaiveDateTime.new!(yesterday, weekly_start_at) |> DateTime.from_naive!(timezone)
+          new_state
+        end)
 
-    Date.diff(today, start_at) > 0 && !ended &&
-      ((weekly_start_day == today_dow && Timex.between?(now, today_start_at, Timex.add(today_start_at, Timex.Duration.from_hours(@watch_window)))) ||
-         (weekly_start_day == yesterday_dow && Timex.between?(now, yesterday_start_at, Timex.add(yesterday_start_at, Timex.Duration.from_hours(@watch_window)))))
+      # Any racer did not get their feature race
+      !Enum.any?(race.racers, &Map.get(state.feature, &1.racer_profile_id)) && race.racers |> Enum.all?(&(&1.win_by == :position)) ->
+        Enum.reduce(race.racers, state, fn racer, state ->
+          put_in(state, [Access.key!(:feature), racer.racer_profile_id], race.id)
+        end)
+
+      true ->
+        IO.puts("Unable to update state for race #{race.id}: #{inspect(race.racers |> Enum.map(& &1.win_by))}")
+        state
+    end
   end
 end

@@ -388,7 +388,7 @@ defmodule KartVids.Races do
     |> Enum.map(fn {date, races} ->
       %League{
         date: date,
-        races: length(races),
+        races: races,
         racer_names: races |> Enum.flat_map(& &1.racers) |> Enum.map(& &1.nickname) |> Enum.uniq()
       }
     end)
@@ -404,7 +404,7 @@ defmodule KartVids.Races do
 
       meet_day_start_at = NaiveDateTime.new!(meet_day, weekly_start_at) |> DateTime.from_naive!(timezone)
 
-      if Timex.between?(datetime, meet_day_start_at, Timex.add(meet_day_start_at, Timex.Duration.from_hours(@time_window))) do
+      if Timex.between?(datetime, meet_day_start_at, Timex.add(meet_day_start_at, Timex.Duration.from_hours(@time_window)), inclusive: true) do
         meet_day
       end
     end)

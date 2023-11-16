@@ -1,4 +1,5 @@
 defmodule KartVidsWeb.SeasonLive.Show do
+  alias KartVids.Races.Season.Analyzer
   alias KartVids.Races.RacerProfile
   alias KartVids.Races.Season
   use KartVidsWeb, :live_view
@@ -8,15 +9,24 @@ defmodule KartVidsWeb.SeasonLive.Show do
 
   embed_templates("racer/*")
 
+  @update_analyzer_state :timer.seconds(10)
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok, socket}
   end
 
   @impl true
-  def handle_params(%{"location_id" => location_id, "id" => id}, _, socket) do
+  def handle_params(%{"location_id" => location_id, "id" => id} = params, _, socket) do
     season = Races.get_season!(id) |> with_racers() |> augment_season_racers() |> sort_season_racers()
     leagues = Races.league_races_for_season(season)
+
+    if socket.assigns.current_user.admin? && params["watch"] == "true" do
+      Analyzer.start_watching(season)
+    end
+
+    analyzer_state = load_analyzer_state(season, leagues)
+    Process.send_after(self(), :update_analyzer_state, @update_analyzer_state)
 
     {
       :noreply,
@@ -24,7 +34,25 @@ defmodule KartVidsWeb.SeasonLive.Show do
       |> assign(:location_id, location_id)
       |> assign(:page_title, page_title(socket.assigns.live_action))
       |> assign(:leagues, leagues)
+      |> assign(:analyzer_state, analyzer_state)
       |> assign(:season, season)
+    }
+  end
+
+  @impl true
+  def handle_info(:update_analyzer_state, socket) do
+    season = Races.get_season!(socket.assigns.season.id) |> with_racers() |> augment_season_racers() |> sort_season_racers()
+    leagues = Races.league_races_for_season(season)
+
+    analyzer_state = load_analyzer_state(season, leagues)
+    Process.send_after(self(), :update_analyzer_state, @update_analyzer_state)
+
+    {
+      :noreply,
+      socket
+      |> assign(:season, season)
+      |> assign(:leagues, leagues)
+      |> assign(:analyzer_state, analyzer_state)
     }
   end
 
@@ -55,4 +83,21 @@ defmodule KartVidsWeb.SeasonLive.Show do
 
   defp page_title(:show), do: "Show Season"
   defp page_title(:edit), do: "Edit Season"
+
+  defp load_analyzer_state(season, leagues) do
+    analyzer_state = Analyzer.analyzer_state(season)
+
+    analyzer_state =
+      if Analyzer.season_watch?(season) do
+        analyzer_state
+      else
+        leagues
+        |> List.first()
+        |> Map.get(:races)
+        |> Enum.sort_by(& &1.started_at, {:asc, DateTime})
+        |> Enum.reduce(analyzer_state, fn race, state -> Analyzer.update_state_for_race(state, race) end)
+      end
+
+    analyzer_state
+  end
 end

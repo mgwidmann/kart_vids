@@ -1,12 +1,12 @@
 <.back position={:top} navigate={~p"/locations/#{@location_id}/leagues"}>Back to leagues</.back>
 
 <.header>
-  League Races on <%= @date %>
+  League Races on <.display_timestamp timestamp={@date} timezone={@location.timezone} date />
 </.header>
 
 <.tabs>
   <:tab name="qualifying-standing" title="Qualifying Standing">
-    <%= racer_table(%{racers: @qualifying, location_id: @location_id, race_id: nil, current_user: @current_user}) %>
+    <%= racer_table(%{racers: @qualifying, location_id: @location_id, race_id: nil, highlight: @currently_racing, current_user: @current_user}) %>
   </:tab>
   <:tab name="races" title="Races">
     <%= race_table(%{location_id: @location_id, races: @races, timezone: @location.timezone, current_user: @current_user, assign_season: %KartVids.Races.League{date: @date}, races_date: Date.to_iso8601(@date)}) %>

@@ -8,4 +8,16 @@
   <:col :let={racer} label="Season Best Lap" label_mobile="Season Best">
     <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= format_lap(racer.fastest_lap_time) %></span>
   </:col>
+  <:col :let={racer} label="Last Meetup" label_mobile="Last Meetup">
+    <%= if @analyzer_state do %>
+      Practice: <%= if(@analyzer_state.practice[racer.id], do: "✔️", else: "❌") %>
+      <br /> Qualifiers: <%= 0..(@season.daily_qualifiers - 1) |> Enum.map(&if(Enum.at(@analyzer_state.qualifiers[racer.id] || [], &1), do: "✔️", else: "❌")) %>
+      <br />
+      Feature <%= if(
+        @analyzer_state.feature[racer.id],
+        do: "✔️",
+        else: "❌"
+      ) %>
+    <% end %>
+  </:col>
 </.table>

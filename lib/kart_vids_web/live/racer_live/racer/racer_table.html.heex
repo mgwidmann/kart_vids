@@ -1,7 +1,14 @@
 <.table
   id="racers"
   rows={@racers}
-  row_click={&JS.navigate(if(&1.external_racer_id, do: ~p"/locations/#{@location_id}/racers/by_external/#{&1.external_racer_id}?selected=#{&1.race_id}", else: ~p"/locations/#{@location_id}/racers/by_nickname/#{&1.nickname}?selected=#{&1.race_id}"))}
+  row_click={
+    &JS.navigate(
+      if(&1.external_racer_id,
+        do: ~p"/locations/#{@location_id}/racers/by_external/#{&1.external_racer_id}?selected=#{&1.race_id || "0"}",
+        else: ~p"/locations/#{@location_id}/racers/by_nickname/#{&1.nickname}?selected=#{&1.race_id || "0"}"
+      )
+    )
+  }
 >
   <:col :let={racer} label="Position" label_mobile="Pos." row_class="bg-sky-400 sm:max-w-[75px] text-center">
     <h1 class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.position %></h1>
@@ -9,23 +16,23 @@
   <:col :let={racer} label="" row_class="w-[80px] md:w-[160px]" inner_div_class="sm:py-0 sm:px-0">
     <.racer_photo photo={racer.photo} />
   </:col>
-  <:col :let={racer} label="Kart"><span class="text-md text-center md:text-xl lg:text-2xl xl:text-4xl"><%= racer.kart_num %></span></:col>
-  <:col :let={racer} label="Name">
+  <:col :let={racer} label="Kart" row_class={&if(match?("external-" <> _, &1.id), do: "highlight")}><span class="text-md text-center md:text-xl lg:text-2xl xl:text-4xl"><%= racer.kart_num %></span></:col>
+  <:col :let={racer} label="Name" row_class={&if(match?("external-" <> _, &1.id), do: "highlight")}>
     <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= racer.nickname %></span>
   </:col>
-  <:col :let={racer} label="Best Lap" label_mobile="Best">
+  <:col :let={racer} label="Best Lap" label_mobile="Best" row_class={&if(match?("external-" <> _, &1.id), do: "highlight")}>
     <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= format_lap(racer.fastest_lap) %></span>
   </:col>
-  <:col :let={racer} label="Average Lap" label_mobile="Avg">
+  <:col :let={racer} label="Average Lap" label_mobile="Avg" row_class={&if(match?("external-" <> _, &1.id), do: "highlight")}>
     <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= format_lap(racer.average_lap) %></span>
   </:col>
   <:action :let={racer}>
-    <%= if @race_id do %>
-      <.admin_link patch={~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers/#{racer}/edit"} current_user={@current_user}>Edit</.admin_link>
+    <%= if assigns[:race_id] do %>
+      <.admin_link patch={~p"/admin/locations/#{@location_id}/races/#{assigns[:race_id]}/racers/#{racer}/edit"} current_user={@current_user}>Edit</.admin_link>
     <% end %>
   </:action>
   <:action :let={racer}>
-    <%= if @race_id do %>
+    <%= if assigns[:race_id] do %>
       <.admin_link phx-click={JS.push("delete", value: %{id: racer.id})} data-confirm="Are you sure?" current_user={@current_user}>
         Delete
       </.admin_link>
