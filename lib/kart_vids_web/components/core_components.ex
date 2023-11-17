@@ -601,6 +601,8 @@ defmodule KartVidsWeb.CoreComponents do
     """
   end
 
+  attr :default_active, :string
+
   slot :tab, required: true do
     attr :name, :string, required: true
     attr :title, :string, required: true
@@ -609,15 +611,17 @@ defmodule KartVidsWeb.CoreComponents do
   # <th :for={col <- @col}
 
   def tabs(assigns) do
+    assigns = assign(assigns, :default_active, assigns[:default_active] || List.first(assigns[:tab]).name)
+
     ~H"""
     <ul class="mb-5 flex list-none flex-col flex-wrap border-b-1 border-grey-400 pl-0 md:flex-row" role="tablist">
-      <li :for={{tab, i} <- Enum.with_index(@tab)} role="presentation">
+      <li :for={tab <- @tab} role="presentation">
         <a
           id={tab.name}
           phx-click={tabs_show_hide(tab, @tab)}
           class={[
             "cursor-pointer my-2 block border-x-0 border-t-0 border-b-2 px-7 pt-4 pb-3.5 text-xs font-medium uppercase leading-tight text-neutral-500 hover:isolate hover:bg-neutral-100 focus:isolate text-primary",
-            if(i == 0, do: "border-sky-400", else: "")
+            if(@default_active == tab.name, do: "border-sky-400", else: "")
           ]}
         >
           <%= tab.title %>
@@ -625,7 +629,7 @@ defmodule KartVidsWeb.CoreComponents do
       </li>
     </ul>
     <div class="mb-6">
-      <div :for={{tab, i} <- Enum.with_index(@tab)} class={["opacity-0 opacity-100 transition-opacity", if(i > 0, do: "hidden", else: "")]} id={"#{tab.name}-tab"} role="tabpanel">
+      <div :for={tab <- @tab} class={["opacity-0 opacity-100 transition-opacity", if(@default_active != tab.name, do: "hidden", else: "")]} id={"#{tab.name}-tab"} role="tabpanel">
         <%= render_slot(tab) %>
       </div>
     </div>
@@ -702,6 +706,32 @@ defmodule KartVidsWeb.CoreComponents do
 
     ~H"""
     <%= if @current_user && @current_user.admin? do %>
+      <.link {@rest}>
+        <%= render_slot(@inner_block) %>
+      </.link>
+    <% end %>
+    """
+  end
+
+  @doc """
+  Renders a user navigation link.
+
+  ## Examples
+
+      <.user_link navigate={~p"/admin/posts"}>Button Text</.link_link>
+  """
+  attr(:navigate, :any)
+  attr(:patch, :any)
+  attr(:current_user, :any, required: true)
+  slot(:inner_block, required: true)
+  attr(:rest, :global)
+
+  def user_link(assigns) do
+    rest = assigns_to_attributes(assigns, [:current_user, :inner_block])
+    assigns = assigns |> assign(:rest, rest)
+
+    ~H"""
+    <%= if @current_user do %>
       <.link {@rest}>
         <%= render_slot(@inner_block) %>
       </.link>
@@ -864,11 +894,13 @@ defmodule KartVidsWeb.CoreComponents do
                 <%= @current_user.email %>
               </li>
               <li>
+                <.link href={~p"/locations"}>Locations</.link>
+                &nbsp;|&nbsp;
                 <%= if @current_user.admin? do %>
-                  <.link href={~p"/locations"}>Locations</.link> &nbsp;|&nbsp;
+                  <.admin_link current_user={@current_user} navigate={~p"/admin/videos"}>Videos</.admin_link>
+                  &nbsp;|&nbsp;
                 <% end %>
-                <.link href={~p"/videos"}>Videos</.link>
-                &nbsp;|&nbsp; <.link href={~p"/users/settings"}>Settings</.link>
+                <.link href={~p"/users/settings"}>Settings</.link>
               </li>
               <li>
                 <.link href={~p"/users/log_out"} method="delete">Log out</.link>

@@ -4,7 +4,7 @@
   League Races on <.display_timestamp timestamp={@date} timezone={@location.timezone} date />
 </.header>
 
-<.tabs>
+<.tabs default_active={@tab}>
   <:tab name="qualifying-standing" title="Qualifying Standing">
     <%= racer_table(%{racers: @qualifying, location_id: @location_id, race_id: nil, highlight: @currently_racing, current_user: @current_user}) %>
   </:tab>
@@ -21,7 +21,7 @@
     title={@page_title}
     action={@live_action}
     race={@race}
-    navigate={~p"/locations/#{@location_id}/leagues/#{%KartVids.Races.League{date: @date}}"}
+    navigate={~p"/locations/#{@location_id}/leagues/#{%KartVids.Races.League{date: @date}}?tab=races"}
     current_user={@current_user}
   />
 </.modal>

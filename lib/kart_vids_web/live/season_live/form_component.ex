@@ -57,32 +57,40 @@ defmodule KartVidsWeb.SeasonLive.FormComponent do
   end
 
   defp save_season(socket, :edit, season_params) do
-    case Races.update_season(socket.assigns.season, season_params) do
-      {:ok, season} ->
-        notify_parent({:saved, season})
+    admin_redirect(socket) do
+      case Races.update_season(socket.assigns.season, season_params) do
+        {:ok, season} ->
+          notify_parent({:saved, season})
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Season updated successfully")
-         |> push_patch(to: socket.assigns.patch)}
+          {:noreply,
+           socket
+           |> put_flash(:info, "Season updated successfully")
+           |> push_patch(to: socket.assigns.patch)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :changeset, changeset)}
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, assign(socket, :changeset, changeset)}
+      end
+    else
+      {:noreply, socket}
     end
   end
 
   defp save_season(socket, :new, season_params) do
-    case Races.create_season(season_params) do
-      {:ok, season} ->
-        notify_parent({:saved, season})
+    admin_redirect(socket) do
+      case Races.create_season(season_params) do
+        {:ok, season} ->
+          notify_parent({:saved, season})
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Season created successfully")
-         |> push_patch(to: socket.assigns.patch)}
+          {:noreply,
+           socket
+           |> put_flash(:info, "Season created successfully")
+           |> push_patch(to: socket.assigns.patch)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :changeset, changeset)}
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, assign(socket, :changeset, changeset)}
+      end
+    else
+      {:noreply, socket}
     end
   end
 

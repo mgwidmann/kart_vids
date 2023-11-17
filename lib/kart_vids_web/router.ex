@@ -80,13 +80,6 @@ defmodule KartVidsWeb.Router do
       on_mount: [{KartVidsWeb.UserAuth, :ensure_authenticated}] do
       live("/users/settings", UserSettingsLive, :edit)
       live("/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email)
-
-      live("/videos", VideoLive.Index, :index)
-      live("/videos/new", VideoLive.Index, :new)
-      live("/videos/:id/edit", VideoLive.Index, :edit)
-
-      live("/videos/:id", VideoLive.Show, :show)
-      live("/videos/:id/show/edit", VideoLive.Show, :edit)
     end
   end
 
@@ -103,6 +96,14 @@ defmodule KartVidsWeb.Router do
       on_mount: [{KartVidsWeb.UserAuth, :ensure_authenticated_admin}] do
       # Locations
       live("/locations/new", LocationLive.Index, :new)
+
+      # Videos (Not ready yet)
+      live("/videos", VideoLive.Index, :index)
+      live("/videos/new", VideoLive.Index, :new)
+      live("/videos/:id/edit", VideoLive.Index, :edit)
+
+      live("/videos/:id", VideoLive.Show, :show)
+      live("/videos/:id/show/edit", VideoLive.Show, :edit)
     end
 
     live_session :require_authenticated_user_admin_racing, on_mount: [{KartVidsWeb.UserAuth, :ensure_authenticated_admin}, {KartVidsWeb.Content, :location_id}], layout: {Layouts, :racing} do
@@ -126,12 +127,9 @@ defmodule KartVidsWeb.Router do
       live("/locations/:location_id/races/:race_id/racers/:id/edit", RacerLive.Index, :edit)
 
       # Seasons
-      live "/locations/:location_id/seasons", SeasonLive.Index, :index
-      live "/locations/:location_id/seasons/new", SeasonLive.Index, :new
-      live "/locations/:location_id/seasons/:id/edit", SeasonLive.Index, :edit
-
-      live "/locations/:location_id/seasons/:id", SeasonLive.Show, :show
-      live "/locations/:location_id/seasons/:id/show/edit", SeasonLive.Show, :edit
+      live("/locations/:location_id/seasons/new", SeasonLive.Index, :new)
+      live("/locations/:location_id/seasons/:id/edit", SeasonLive.Index, :edit)
+      live("/locations/:location_id/seasons/:id/show/edit", SeasonLive.Show, :edit)
     end
   end
 
@@ -172,6 +170,10 @@ defmodule KartVidsWeb.Router do
       live("/locations/:location_id/racers/by_external/:external_racer_id", RacerLive.ShowDup, :show)
       live("/locations/:location_id/racers/by_nickname/:nickname", RacerLive.ShowDup, :show)
       live("/locations/:location_id/racers/:racer_profile_id", RacerLive.Show, :show)
+
+      # Seasons
+      live("/locations/:location_id/seasons", SeasonLive.Index, :index)
+      live("/locations/:location_id/seasons/:id", SeasonLive.Show, :show)
     end
   end
 

@@ -188,14 +188,14 @@ defmodule KartVids.Races.Season.Analyzer do
 
   def update_state_for_race(state, race) do
     cond do
-      # Any racer did not get their practice race
-      !Enum.any?(race.racers, &Map.get(state.practice, &1.racer_profile_id)) ->
+      # Less than minimum racers did not get their practice race and all racers are missing a qualifier
+      racers_in_map(race.racers, state.practice) < @minimum_racers && racers_in_mapset(race.racers, state.qualifiers, 1) == length(race.racers) ->
         Enum.reduce(race.racers, state, fn racer, state ->
           put_in(state, [Access.key!(:practice), racer.racer_profile_id], race.id)
         end)
 
       # Any racer did not get all their qualifiers
-      Enum.any?(race.racers, &(Map.get(state.qualifiers, &1.racer_profile_id, MapSet.new()) |> MapSet.size() < state.season.daily_qualifiers)) ->
+      racers_in_mapset(race.racers, state.qualifiers, state.season.daily_qualifiers) >= @minimum_racers ->
         Enum.reduce(race.racers, state, fn racer, state ->
           {_, new_state} =
             get_and_update_in(state, [Access.key!(:qualifiers), racer.racer_profile_id], fn v ->
@@ -205,8 +205,8 @@ defmodule KartVids.Races.Season.Analyzer do
           new_state
         end)
 
-      # Any racer did not get their feature race
-      !Enum.any?(race.racers, &Map.get(state.feature, &1.racer_profile_id)) && race.racers |> Enum.all?(&(&1.win_by == :position)) ->
+      # Less than minimum racers did not get their feature race and all are win by position
+      racers_in_map(race.racers, state.feature) < @minimum_racers && race.racers |> Enum.all?(&(&1.win_by == :position)) ->
         Enum.reduce(race.racers, state, fn racer, state ->
           put_in(state, [Access.key!(:feature), racer.racer_profile_id], race.id)
         end)
@@ -215,5 +215,13 @@ defmodule KartVids.Races.Season.Analyzer do
         IO.puts("Unable to update state for race #{race.id}: #{inspect(race.racers |> Enum.map(& &1.win_by))}")
         state
     end
+  end
+
+  def racers_in_map(racers, practice_feature_map) do
+    Enum.count(racers, &Map.get(practice_feature_map, &1.racer_profile_id))
+  end
+
+  def racers_in_mapset(racers, qualifying_map, qualifiers) do
+    Enum.count(racers, &(Map.get(qualifying_map, &1.racer_profile_id, MapSet.new()) |> MapSet.size() < qualifiers))
   end
 end

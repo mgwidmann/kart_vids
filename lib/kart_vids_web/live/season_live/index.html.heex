@@ -6,13 +6,13 @@
         <.input field={{f, :active}} type="select" options={[Active: :active, Inactive: :inactive]} value={if(@active, do: :active, else: :inactive)} />
       </.simple_form>
     </div>
-    <.link patch={~p"/admin/locations/#{@location_id}/seasons/new"}>
+    <.admin_link current_user={@current_user} patch={~p"/admin/locations/#{@location_id}/seasons/new"}>
       <.button>New Season</.button>
-    </.link>
+    </.admin_link>
   </:actions>
 </.header>
 
-<.table id="seasons" rows={@seasons} row_click={fn season -> JS.navigate(~p"/admin/locations/#{@location_id}/seasons/#{season}") end}>
+<.table id="seasons" rows={@seasons} row_click={fn season -> JS.navigate(~p"/locations/#{@location_id}/seasons/#{season}") end}>
   <:col :let={season} label="Season"><%= season.season |> Phoenix.Naming.humanize() %></:col>
   <:col :let={season} label="Start at"><%= season.start_at |> date_format() %></:col>
   <:col :let={season} label="Weekly start at"><%= season.weekly_start_at |> time_format() %></:col>
@@ -25,17 +25,17 @@
   <:col :let={season} label="Ended"><%= if(season.ended, do: "Yes", else: "No") %></:col>
   <:action :let={season}>
     <div class="sr-only">
-      <.link navigate={~p"/admin/locations/#{@location_id}/seasons/#{season}"}>Show</.link>
+      <.link navigate={~p"/locations/#{@location_id}/seasons/#{season}"}>Show</.link>
     </div>
-    <.link patch={~p"/admin/locations/#{@location_id}/seasons/#{season}/edit"}>Edit</.link>
+    <.admin_link current_user={@current_user} patch={~p"/admin/locations/#{@location_id}/seasons/#{season}/edit"}>Edit</.admin_link>
   </:action>
   <:action :let={season}>
-    <.link phx-click={JS.push("delete", value: %{id: season.id}) |> hide("##{season.id}")} data-confirm="Are you sure?">
+    <.admin_link current_user={@current_user} phx-click={JS.push("delete", value: %{id: season.id}) |> hide("##{season.id}")} data-confirm="Are you sure?">
       Delete
-    </.link>
+    </.admin_link>
   </:action>
 </.table>
 
-<.modal :if={@live_action in [:new, :edit]} id="season-modal" show on_cancel={JS.patch(~p"/admin/locations/#{@location_id}/seasons")}>
-  <.live_component module={KartVidsWeb.SeasonLive.FormComponent} id={@season.id || :new} title={@page_title} action={@live_action} season={@season} patch={~p"/admin/locations/#{@location_id}/seasons"} />
+<.modal :if={@live_action in [:new, :edit]} id="season-modal" show on_cancel={JS.patch(~p"/locations/#{@location_id}/seasons")}>
+  <.live_component module={KartVidsWeb.SeasonLive.FormComponent} id={@season.id || :new} title={@page_title} action={@live_action} current_user={@current_user} season={@season} patch={~p"/locations/#{@location_id}/seasons"} />
 </.modal>

@@ -103,8 +103,9 @@ defmodule KartVidsWeb.RaceLive.League do
     {:noreply, socket}
   end
 
-  defp apply_action(socket, :show, _) do
+  defp apply_action(socket, :show, params) do
     races = Races.league_races_on_date(socket.assigns.date)
+    tab = params["tab"]
 
     Listener.subscribe(socket.assigns.location)
 
@@ -112,6 +113,7 @@ defmodule KartVidsWeb.RaceLive.League do
     |> assign(:page_title, "League Races for #{socket.assigns.date}")
     |> assign(:races, races)
     |> assign(:currently_racing, MapSet.new())
+    |> assign(:tab, tab)
     |> assign(:qualifying, calculate_qualifying(races))
   end
 

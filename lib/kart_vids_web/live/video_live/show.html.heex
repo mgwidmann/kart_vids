@@ -1,12 +1,12 @@
-<.back position={:top} navigate={~p"/videos"}>Back to videos</.back>
+<.back position={:top} navigate={~p"/admin/videos"}>Back to videos</.back>
 
 <.header>
   Video <%= @video.id %>
   <:subtitle>This is a video record from your database.</:subtitle>
   <:actions>
-    <.link patch={~p"/videos/#{@video}/show/edit"} phx-click={JS.push_focus()}>
+    <.admin_link current_user={@current_user} patch={~p"/admin/videos/#{@video}/show/edit"} phx-click={JS.push_focus()}>
       <.button>Edit video</.button>
-    </.link>
+    </.admin_link>
   </:actions>
 </.header>
 
@@ -19,6 +19,6 @@
   <:item title="Recorded on"><%= @video.recorded_on %></:item>
 </.list>
 
-<.modal :if={@live_action == :edit} id="video-modal" show on_cancel={JS.patch(~p"/videos/#{@video}")}>
-  <.live_component module={KartVidsWeb.VideoLive.FormComponent} id={@video.id} title={@page_title} action={@live_action} video={@video} navigate={~p"/videos/#{@video}"} current_user={@current_user}/>
+<.modal :if={@live_action == :edit} id="video-modal" show on_cancel={JS.patch(~p"/admin/videos/#{@video}")}>
+  <.live_component module={KartVidsWeb.VideoLive.FormComponent} id={@video.id} title={@page_title} action={@live_action} video={@video} navigate={~p"/admin/videos/#{@video}"} current_user={@current_user} />
 </.modal>

@@ -67,7 +67,7 @@ defmodule KartVidsWeb.SeasonLive.Index do
       socket
       |> assign(:active, true)
       |> assign(:seasons, Races.list_seasons(true))
-      |> push_navigate(to: ~p"/admin/locations/#{socket.assigns.location_id}/seasons?active=true")
+      |> push_navigate(to: ~p"/locations/#{socket.assigns.location_id}/seasons?active=true")
     }
   end
 
@@ -77,7 +77,7 @@ defmodule KartVidsWeb.SeasonLive.Index do
       socket
       |> assign(:active, false)
       |> assign(:seasons, Races.list_seasons(false))
-      |> push_navigate(to: ~p"/admin/locations/#{socket.assigns.location_id}/seasons?active=false")
+      |> push_navigate(to: ~p"/locations/#{socket.assigns.location_id}/seasons?active=false")
     }
   end
 

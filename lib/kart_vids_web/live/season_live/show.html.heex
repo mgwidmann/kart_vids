@@ -1,4 +1,4 @@
-<.back position={:top} navigate={~p"/admin/locations/#{@location_id}/seasons"}>Back to seasons</.back>
+<.back position={:top} navigate={~p"/locations/#{@location_id}/seasons"}>Back to seasons</.back>
 <.header>
   <%= season_name(@season) %> Season
   <.pill class="uppercase" type={if(@analyzer_state != nil, do: :success, else: :danger)}>
@@ -6,7 +6,7 @@
   </.pill>
   <.pill class="uppercase" type={if(@analyzer_state != nil && @analyzer_state.watching, do: :success, else: :warning)}>
     <%= if @current_user.admin? do %>
-      <.admin_link navigate={~p"/admin/locations/#{@location}/seasons/#{@season}?watch=true"} current_user={@current_user}>
+      <.admin_link navigate={~p"/locations/#{@location}/seasons/#{@season}?watch=true"} current_user={@current_user}>
         <%= if(@analyzer_state != nil && @analyzer_state.watching, do: "WATCHING", else: "IDLE") %>
       </.admin_link>
     <% else %>
@@ -42,6 +42,6 @@
 
 <%= racer_profiles_table(%{racers: @season.season_racers, location_id: @location_id, timezone: @location.timezone, current_user: @current_user, season: @season, analyzer_state: @analyzer_state}) %>
 
-<.modal :if={@live_action == :edit} id="season-modal" show on_cancel={JS.patch(~p"/admin/locations/#{@location_id}/seasons/#{@season}")}>
-  <.live_component module={KartVidsWeb.SeasonLive.FormComponent} id={@season.id} title={@page_title} action={@live_action} season={@season} patch={~p"/admin/locations/#{@location_id}/seasons/#{@season}"} />
+<.modal :if={@live_action == :edit} id="season-modal" show on_cancel={JS.patch(~p"/locations/#{@location_id}/seasons/#{@season}")}>
+  <.live_component module={KartVidsWeb.SeasonLive.FormComponent} id={@season.id} title={@page_title} action={@live_action} season={@season} patch={~p"/locations/#{@location_id}/seasons/#{@season}"} />
 </.modal>

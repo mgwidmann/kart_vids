@@ -58,7 +58,7 @@ defmodule KartVidsWeb.VideoLive.Index do
     {
       :noreply,
       socket
-      |> push_patch(to: ~p"/videos/new")
+      |> push_patch(to: ~p"/admin/videos/new")
     }
   end
 
