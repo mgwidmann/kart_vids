@@ -94,6 +94,8 @@ defmodule KartVidsWeb do
 
       import KartVidsWeb.Live.Helpers
 
+      import Phoenix.UI.Components.{Tooltip}
+
       # Routes generation with the ~p sigil
       unquote(verified_routes())
     end

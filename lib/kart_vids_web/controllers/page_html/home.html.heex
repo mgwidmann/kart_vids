@@ -24,7 +24,7 @@
           <br />
           <%= if @current_user do %>
             <%= if @current_user.admin? do %>
-              <.admin_link class="text-white" href={~p"/admin/videos"}>Videos</.admin_link>
+              <.admin_link current_user={@current_user} class="text-white" navigate={~p"/admin/videos"}>Videos</.admin_link>
               <br />
             <% end %>
             <.link class="text-white" href={~p"/users/log_out"} method="delete">Log out</.link>

@@ -1,8 +1,15 @@
-<div class="grid grid-cols-4 md:grid-cols-8 gap-4">
+<div class="grid grid-cols-4 md:grid-cols-8 gap-4 pt-5">
   <div class="col-span-1 md:col-span-2">
     <div class="w-[80px] md:w-[160px] px-1">
       <.racer_photo photo={@racer_profile.photo} class="object-cover rounded-lg" />
-      <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= @racer_profile.nickname %></span>
+      <span class="text-md md:text-xl lg:text-2xl xl:text-4xl">
+        <%= @racer_profile.nickname %>
+        <%= if @racer_profile.nickname == "Lukas" && @racer_profile.id == 132 do %>
+          <.tooltip content="Son of site owner" variant="arrow" position="bottom">
+            😎
+          </.tooltip>
+        <% end %>
+      </span>
     </div>
   </div>
   <div class="col-span-3 md:col-span-6">
@@ -10,7 +17,9 @@
       <div class="mx-auto max-w-7xl px-6 lg:px-8">
         <dl class="grid grid-cols-1 gap-y-16 gap-x-8 text-center lg:grid-cols-3">
           <div class="mx-auto flex max-w-xs flex-col gap-y-4">
-            <dt class="text-base leading-7 text-gray-600">Best ever lap time</dt>
+            <dt class="text-base leading-7 text-gray-600">
+              Best ever lap time
+            </dt>
             <dd class="order-first text-3xl font-semibold tracking-tight text-gray-900 sm:text-5xl"><%= @racer_profile.fastest_lap_time %></dd>
           </div>
 
