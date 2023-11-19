@@ -390,14 +390,15 @@ defmodule KartVids.Races do
 
     from(r in Race,
       where:
-        r.league? == true and
-          (fragment("?::date", r.started_at) == ^date or
-             fragment("?::date", r.started_at) == ^tomorrow) and r.location_id == ^location_id,
+        ((r.league? == true and
+            fragment("?::date", r.started_at) == ^date) or
+           fragment("?::date", r.started_at) == ^tomorrow) and r.location_id == ^location_id,
       order_by: {:desc, r.started_at},
       limit: 1
     )
     |> Repo.one()
     |> Repo.preload(season: :location)
+    |> then(&if(&1, do: &1.season))
   end
 
   def league_races_for_season(%Season{season_races: season_races} = season) when is_list(season_races) do
