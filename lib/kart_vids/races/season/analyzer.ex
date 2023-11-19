@@ -182,7 +182,7 @@ defmodule KartVids.Races.Season.Analyzer do
 
   defp update_race(_race, _tracking, _type), do: nil
 
-  def season_watch?(season = %Season{}) do
+  def season_watch?(season = %Season{location: %Location{}}) do
     KartVids.Races.meetup_date(season, DateTime.utc_now()) != nil
   end
 

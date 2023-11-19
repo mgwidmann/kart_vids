@@ -40,10 +40,10 @@ defmodule KartVidsWeb.RaceLive.League do
         socket
       )
       when event in ["race_data", "race_completed"] do
-    first_race = Races.league_races_on_date(Date.utc_today()) |> List.first()
+    season = Races.season_for_date(Date.utc_today(), socket.assigns.location_id)
 
     qualifying =
-      if first_race && first_race.season && Analyzer.season_watch?(first_race.season) do
+      if season && Analyzer.season_watch?(season) do
         racers
         |> Map.values()
         |> Enum.reduce(socket.assigns.qualifying, fn racer, q ->
@@ -104,7 +104,7 @@ defmodule KartVidsWeb.RaceLive.League do
   end
 
   defp apply_action(socket, :show, params) do
-    races = Races.league_races_on_date(socket.assigns.date)
+    races = Races.league_races_on_date(socket.assigns.date, socket.assigns.location_id)
     tab = params["tab"]
 
     Listener.subscribe(socket.assigns.location)
@@ -119,11 +119,11 @@ defmodule KartVidsWeb.RaceLive.League do
 
   defp apply_action(socket, :season, %{"race_id" => race_id}) do
     admin_redirect(socket) do
-      races = Races.league_races_on_date(socket.assigns.date)
+      races = Races.league_races_on_date(socket.assigns.date, socket.assigns.location_id)
 
       socket
       |> assign(:page_title, "Select Season Race")
-      |> assign(:races, Races.league_races_on_date(socket.assigns.date))
+      |> assign(:races, Races.league_races_on_date(socket.assigns.date, socket.assigns.location_id))
       |> assign(:seasons, Races.list_seasons())
       |> assign(:race, Races.get_race!(race_id))
       |> assign(:qualifying, calculate_qualifying(races))

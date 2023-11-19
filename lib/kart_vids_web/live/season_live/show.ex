@@ -2,6 +2,7 @@ defmodule KartVidsWeb.SeasonLive.Show do
   alias KartVids.Races.Season.Analyzer
   alias KartVids.Races.RacerProfile
   alias KartVids.Races.Season
+  alias KartVids.Content.Location
   use KartVidsWeb, :live_view
 
   alias KartVids.Races
@@ -84,7 +85,7 @@ defmodule KartVidsWeb.SeasonLive.Show do
   defp page_title(:show), do: "Show Season"
   defp page_title(:edit), do: "Edit Season"
 
-  defp load_analyzer_state(season, leagues) do
+  defp load_analyzer_state(season = %Season{location: %Location{}}, leagues) do
     analyzer_state = Analyzer.analyzer_state(season)
 
     analyzer_state =

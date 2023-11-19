@@ -365,19 +365,39 @@ defmodule KartVids.Races do
     |> Repo.all()
   end
 
-  def league_races_on_date(%Date{} = date) do
+  def league_races_on_date(%Date{} = date, %Location{id: id}), do: league_races_on_date(date, id)
+
+  def league_races_on_date(%Date{} = date, location_id) do
     tomorrow = Date.add(date, 1)
 
     from(r in Race,
       where:
         r.league? == true and
           (fragment("?::date", r.started_at) == ^date or
-             fragment("?::date", r.started_at) == ^tomorrow),
+             fragment("?::date", r.started_at) == ^tomorrow) and
+          r.location_id == ^location_id,
       order_by: {:desc, r.started_at}
     )
     |> Repo.all()
     |> Repo.preload(:racers)
-    |> Repo.preload(:season)
+    |> Repo.preload(season: :location)
+  end
+
+  def season_for_date(date, %Location{id: id}), do: season_for_date(date, id)
+
+  def season_for_date(%Date{} = date, location_id) do
+    tomorrow = Date.add(date, 1)
+
+    from(r in Race,
+      where:
+        r.league? == true and
+          (fragment("?::date", r.started_at) == ^date or
+             fragment("?::date", r.started_at) == ^tomorrow) and r.location_id == ^location_id,
+      order_by: {:desc, r.started_at},
+      limit: 1
+    )
+    |> Repo.one()
+    |> Repo.preload(season: :location)
   end
 
   def league_races_for_season(%Season{season_races: season_races} = season) when is_list(season_races) do
