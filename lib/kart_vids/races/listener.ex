@@ -316,7 +316,7 @@ defmodule KartVids.Races.Listener do
     race_by = Map.get(race, "race_by")
     win_by = Map.get(race, "win_by")
     speed = parse_speed_level(speed_level)
-    racer_data = extract_racer_data(racers)
+    racer_data = extract_racer_data(racers, win_by)
     scoreboard_by_kart = extract_scoreboard_data(scoreboard)
 
     profile_id_by_kart =
@@ -406,7 +406,7 @@ defmodule KartVids.Races.Listener do
       fastest_speed_level: new_speed,
       speed_level: speed,
       race_name: name,
-      racers: extract_racer_data(racers),
+      racers: extract_racer_data(racers, win_by),
       scoreboard: nil,
       win_by: win_by
     })
@@ -436,7 +436,7 @@ defmodule KartVids.Races.Listener do
 
     Logger.info("Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers")
 
-    racer_data = extract_racer_data(racers)
+    racer_data = extract_racer_data(racers, win_by)
     profile_ids_by_kart = get_profile_ids_for_racer_data(racer_data)
     racer_data = augment_racer_data(racer_data, profile_ids_by_kart)
 
@@ -654,10 +654,10 @@ defmodule KartVids.Races.Listener do
   end
 
   @typep racer :: %{String.t() => String.t(), String.t() => list(lap()), String.t() => String.t()}
-  @spec extract_racer_data(%{String.t() => Racer.t()}, list(racer())) :: %{String.t() => racer()}
-  def extract_racer_data(by_kart \\ %{}, racers)
+  @spec extract_racer_data(%{String.t() => Racer.t()}, list(racer()), String.t()) :: %{String.t() => racer()}
+  def extract_racer_data(by_kart \\ %{}, racers, win_by)
 
-  def extract_racer_data(by_kart, []) do
+  def extract_racer_data(by_kart, [], "laptime") do
     by_kart
     |> Enum.to_list()
     |> Enum.sort_by(fn {_kart_num, %Racer{fastest_lap: fastest_lap}} ->
@@ -671,27 +671,50 @@ defmodule KartVids.Races.Listener do
     |> Enum.into(%{})
   end
 
-  def extract_racer_data(by_kart, [
-        racer = %{"id" => external_racer_id, "kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo}
-        | racers
-      ]) do
+  def extract_racer_data(by_kart, [], "position") do
+    by_kart
+    |> Enum.to_list()
+    |> Enum.sort_by(fn {_kart_num, %Racer{laps: laps}} ->
+      last_lap = List.last(laps)
+      last_lap["amb_time"]
+    end)
+    |> Stream.with_index()
+    |> Stream.map(fn {{kart_num, racer}, index} ->
+      racer = %{racer | position: index + 1}
+      {kart_num, racer}
+    end)
+    |> Enum.into(%{})
+  end
+
+  def extract_racer_data(
+        by_kart,
+        [
+          racer = %{"id" => external_racer_id, "kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo}
+          | racers
+        ],
+        win_by
+      ) do
     log_unexpected_keys(racer, "racers[*]", @expected_racer_keys)
     {fastest_lap, average_lap, last_lap} = analyze_laps(laps)
 
     by_kart
     |> add_racer(external_racer_id, kart_num, nickname, photo, fastest_lap, average_lap, last_lap, laps)
-    |> extract_racer_data(racers)
+    |> extract_racer_data(racers, win_by)
   end
 
   # No lap data, use nil for all lap related fields
-  def extract_racer_data(by_kart, [
-        racer = %{"id" => external_racer_id, "kart_number" => kart_num, "nickname" => nickname, "photo_url" => photo} | racers
-      ]) do
+  def extract_racer_data(
+        by_kart,
+        [
+          racer = %{"id" => external_racer_id, "kart_number" => kart_num, "nickname" => nickname, "photo_url" => photo} | racers
+        ],
+        win_by
+      ) do
     log_unexpected_keys(racer, "racers[*]", @expected_racer_keys)
 
     by_kart
     |> add_racer(external_racer_id, kart_num, nickname, photo, nil, nil, nil, [])
-    |> extract_racer_data(racers)
+    |> extract_racer_data(racers, win_by)
   end
 
   # Sometimes races are reset before they even begin, which results in nothing in these fields, so just skip it

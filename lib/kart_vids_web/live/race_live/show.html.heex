@@ -20,6 +20,9 @@
   <:item title="Is League Race?">
     <%= if(@race.league?, do: "Yes", else: "No") %>
   </:item>
+  <:item title="Win by?">
+    <%= @racers |> Enum.map(& &1.win_by) |> Enum.uniq() |> Enum.map(&Phoenix.Naming.humanize(&1)) |> Enum.join(", ") %>
+  </:item>
   <:item title="Started at">
     <.display_timestamp timestamp={@race.started_at} timezone={@location.timezone} />
   </:item>

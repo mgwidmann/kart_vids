@@ -392,16 +392,16 @@ defmodule KartVids.Races do
       where:
         ((r.league? == true and
             fragment("?::date", r.started_at) == ^date) or
-           fragment("?::date", r.started_at) == ^tomorrow) and r.location_id == ^location_id,
+           fragment("?::date", r.started_at) == ^tomorrow) and r.location_id == ^location_id and not is_nil(r.season_id),
       order_by: {:desc, r.started_at},
       limit: 1
     )
     |> Repo.one()
-    |> Repo.preload(season: :location)
+    |> Repo.preload(season: [:location, :season_racers, season_races: [:racers]])
     |> then(&if(&1, do: &1.season))
   end
 
-  def league_races_for_season(%Season{season_races: season_races} = season) when is_list(season_races) do
+  def league_races_for_season(season = %Season{season_races: season_races = [%Race{racers: [%Racer{} | _]} | _]}) when is_list(season_races) do
     season_races
     |> Enum.group_by(fn race ->
       meetup_date(season, race.started_at)

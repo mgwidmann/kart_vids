@@ -11,12 +11,12 @@ defmodule KartVids.Races.Season.Analyzer do
 
   def start_link(season, timeout \\ :timer.seconds(30))
 
-  # Check that the location and season_racers relation is loaded, either no racers or one struct which is a %SeasonRacer{}
-  def start_link(%Season{location: %Location{}, season_racers: []} = season, timeout) do
+  # Check that the location and season_racers relation is loaded, either no racers or one struct which is a %RacerProfile{}
+  def start_link(season = %Season{location: %Location{}, season_racers: []}, timeout) do
     do_start_link(season, timeout)
   end
 
-  def start_link(%Season{location: %Location{}, season_racers: [%RacerProfile{} | _]} = season, timeout) do
+  def start_link(season = %Season{location: %Location{}, season_racers: [%RacerProfile{} | _]}, timeout) do
     do_start_link(season, timeout)
   end
 
@@ -27,7 +27,7 @@ defmodule KartVids.Races.Season.Analyzer do
   defmodule State do
     @type t :: %State{
             season: Season.t(),
-            watching: boolean(),
+            watching: Date.t(),
             watch_until: DateTime.t(),
             last_race: String.t(),
             practice: %{pos_integer() => pos_integer()},
@@ -35,7 +35,7 @@ defmodule KartVids.Races.Season.Analyzer do
             feature: %{pos_integer() => pos_integer()},
             timeout: pos_integer()
           }
-    defstruct season: nil, watching: false, watch_until: nil, last_race: nil, practice: %{}, qualifiers: %{}, feature: %{}, timeout: :timer.seconds(5)
+    defstruct season: nil, watching: nil, watch_until: nil, last_race: nil, practice: %{}, qualifiers: %{}, feature: %{}, timeout: :timer.seconds(5)
   end
 
   def init({season, timeout}) do
@@ -70,7 +70,7 @@ defmodule KartVids.Races.Season.Analyzer do
 
   @watch_length 8
   def handle_call(:start_watching, _from, state) do
-    {:reply, true, %State{state | watching: true, watch_until: Timex.add(DateTime.utc_now(), Timex.Duration.from_hours(@watch_length))}}
+    {:reply, true, %State{state | watching: Date.utc_today(), watch_until: Timex.add(DateTime.utc_now(), Timex.Duration.from_hours(@watch_length))}}
   end
 
   def handle_info(:subscribe_listener, state) do
@@ -89,71 +89,54 @@ defmodule KartVids.Races.Season.Analyzer do
     end
   end
 
-  def handle_info(:analyze_season, state = %State{last_race: last_race, season: season, watch_until: watch_until, practice: practice, qualifiers: qualifiers, feature: feature, timeout: timeout}) do
+  def handle_info(:analyze_season, state = %State{watching: watch_date, watch_until: watch_until, timeout: timeout, season: %Season{location_id: location_id}}) do
     Process.send_after(self(), :analyze_season, timeout)
 
-    if season_watch?(season) || (watch_until && Timex.before?(DateTime.utc_now(), watch_until)) do
-      race = Races.get_race_by_external_id(last_race) |> Races.race_with_racers()
+    if watch_date && (is_nil(watch_until) || Timex.before?(DateTime.utc_now(), watch_until)) do
+      reloaded_season = watch_date |> Races.season_for_date(location_id)
 
-      if race do
-        # These are racers which need to be added if they don't already exist
-        # if Enum.any?(race.racers, &(&1.win_by == :position)) do
-        #   Logger.info("Racer profiles must be added to the season!")
+      state =
+        if reloaded_season do
+          reloaded_season
+          |> Races.league_races_for_season()
+          # Most recent league meetup
+          |> List.first()
+          |> Map.get(:races)
+          # Reset all practice/qualifiers/feature in order to reanalyze them given the current conditions, to dump any potentially bad analysis if data changed
+          |> reduce_races_to_state(%State{state | season: reloaded_season, practice: %{}, qualifiers: %{}, feature: %{}})
+        else
+          # No races exist for watching date yet
+          state
+        end
 
-        #   for racer <- race.racers do
-        #     Races.create_season_racer(season, racer.racer_profile_id)
-        #   end
-        # end
-
-        update_race(race, practice, Race.league_type_practice())
-        update_race(race, qualifiers, Race.league_type_qualifier())
-        update_race(race, feature, Race.league_type_feature())
-      end
-
-      {:noreply, %State{state | watching: true}}
+      {:noreply, state}
     else
-      {:noreply, %State{state | watching: false, watch_until: nil, practice: %{}, qualifiers: %{}, feature: %{}}}
+      {:noreply, %State{state | watching: nil, watch_until: nil, practice: %{}, qualifiers: %{}, feature: %{}}}
     end
   end
 
   # Ignore when not watching, just grab the last race ID to always track it
-  def handle_info(%Phoenix.Socket.Broadcast{event: "race_completed", payload: %RaceListener.State{current_race: current_race}}, state = %State{watching: false}) do
+  def handle_info(%Phoenix.Socket.Broadcast{event: "race_completed", payload: %RaceListener.State{current_race: current_race}}, state = %State{watching: nil}) do
     {:noreply, %State{state | last_race: current_race}}
   end
 
-  def handle_info(%Phoenix.Socket.Broadcast{}, state = %State{watching: false}) do
+  def handle_info(%Phoenix.Socket.Broadcast{}, state = %State{watching: nil}) do
     {:noreply, state}
   end
 
   # Ignore data while race is ongoing
   def handle_info(
         %Phoenix.Socket.Broadcast{event: "race_data", payload: %RaceListener.State{current_race: current_race, config: %RaceListener.Config{location_id: location_id}}},
-        state = %State{season: %Season{location_id: location_id}, watching: true}
+        state = %State{season: %Season{location_id: location_id}, watching: %Date{}}
       ) do
     {:noreply, %{state | last_race: current_race}}
   end
 
-  @minimum_racers 3
   def handle_info(
-        %Phoenix.Socket.Broadcast{event: "race_completed", payload: %RaceListener.State{current_race: current_race, config: %RaceListener.Config{location_id: location_id}, win_by: win_by}},
-        state = %State{season: %Season{location_id: location_id, season_racers: racers}, watching: true}
+        %Phoenix.Socket.Broadcast{event: "race_completed", payload: %RaceListener.State{current_race: current_race}},
+        state = %State{watching: %Date{}}
       ) do
-    profile_ids = racers |> Enum.map(& &1.id) |> MapSet.new()
-    race = Races.get_race_by_external_id!(current_race) |> Races.race_with_racers()
-
-    state =
-      if Enum.count(race.racers, &MapSet.member?(profile_ids, &1.racer_profile_id)) >= @minimum_racers || win_by == "position" do
-        state = update_state_for_race(state, race)
-
-        # Process now
-        send(self(), :analyze_season)
-
-        state
-      else
-        state
-      end
-
-    {:noreply, %State{state | last_race: current_race}}
+    {:noreply, %State{state | last_race: current_race} |> analyze_season()}
   end
 
   def handle_info(msg, state) do
@@ -162,17 +145,47 @@ defmodule KartVids.Races.Season.Analyzer do
     {:noreply, state}
   end
 
+  def reduce_races_to_state(races, analyzer_state = %State{}) do
+    races
+    |> Enum.sort_by(& &1.started_at, {:asc, DateTime})
+    |> Enum.reduce(analyzer_state, fn race, state -> update_state_for_race(state, race) end)
+  end
+
+  defp analyze_season(state = %State{last_race: last_race, season: season, watching: %Date{}}) do
+    race = Races.get_race_by_external_id(last_race) |> Races.race_with_racers()
+
+    state = update_state_for_race(state, race)
+
+    updated =
+      if race do
+        updated = update_race(race, state.practice, Race.league_type_practice(), season.id)
+        updated = updated || update_race(race, state.qualifiers, Race.league_type_qualifier(), season.id)
+        updated = updated || update_race(race, state.feature, Race.league_type_feature(), season.id)
+
+        updated
+      end
+
+    # These are racers which need to be added if they don't already exist
+    if updated do
+      for racer <- race.racers do
+        Races.create_season_racer(season, racer.racer_profile_id)
+      end
+    end
+
+    state
+  end
+
   # Only update if the league type is set to none
-  defp update_race(race = %Race{id: id, league_type: :none}, tracking, type) do
+  defp update_race(race = %Race{id: id, league_type: :none}, tracking, type, season_id) do
     tracking
     # Use find for early exit since no need to keep iterating
     |> Enum.find(fn
       {_profile_id, ^id} ->
-        Races.update_race(:system, race, %{league?: true, league_type: type})
+        Races.update_race(:system, race, %{league?: true, league_type: type, season_id: season_id})
 
       {_profile_id, race_ids = %MapSet{}} ->
         if MapSet.member?(race_ids, id) do
-          Races.update_race(:system, race, %{league?: true, league_type: type})
+          Races.update_race(:system, race, %{league?: true, league_type: type, season_id: season_id})
         end
 
       _ ->
@@ -180,16 +193,18 @@ defmodule KartVids.Races.Season.Analyzer do
     end)
   end
 
-  defp update_race(_race, _tracking, _type), do: nil
+  # League type is already set, no need to change anything
+  defp update_race(_race, _tracking, _type, _season_id), do: nil
 
   def season_watch?(season = %Season{location: %Location{}}) do
-    KartVids.Races.meetup_date(season, DateTime.utc_now()) != nil
+    KartVids.Races.meetup_date(season, DateTime.utc_now())
   end
 
+  @minimum_racers 3
   def update_state_for_race(state, race) do
     cond do
       # Less than minimum racers did not get their practice race and all racers are missing a qualifier
-      racers_in_map(race.racers, state.practice) < @minimum_racers && racers_in_mapset(race.racers, state.qualifiers, 1) == length(race.racers) ->
+      racers_in_map(race.racers, state.practice) == 0 ->
         Enum.reduce(race.racers, state, fn racer, state ->
           put_in(state, [Access.key!(:practice), racer.racer_profile_id], race.id)
         end)
@@ -212,7 +227,12 @@ defmodule KartVids.Races.Season.Analyzer do
         end)
 
       true ->
-        IO.puts("Unable to update state for race #{race.id}: #{inspect(race.racers |> Enum.map(& &1.win_by))}")
+        Logger.warning(
+          "Analyzer doesn't know what to do with race #{race.id}!\npratices: #{racers_in_map(race.racers, state.practice)}\nqualifiers: #{racers_in_mapset(race.racers, state.qualifiers, state.season.daily_qualifiers)} (dq: #{state.season.daily_qualifiers})\nfeature: #{racers_in_map(race.racers, state.feature)}\n#{inspect(race, pretty: true)}\n#{inspect(state, pretty: true)}"
+        )
+
+        raise "FAIL"
+
         state
     end
   end

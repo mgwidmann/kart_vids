@@ -5,7 +5,7 @@
     <%= if(@analyzer_state != nil, do: "ONLINE", else: "OFFLINE") %>
   </.pill>
   <.pill class="uppercase" type={if(@analyzer_state != nil && @analyzer_state.watching, do: :success, else: :warning)}>
-    <%= if @current_user.admin? do %>
+    <%= if @current_user && @current_user.admin? do %>
       <.admin_link navigate={~p"/locations/#{@location}/seasons/#{@season}?watch=true"} current_user={@current_user}>
         <%= if(@analyzer_state != nil && @analyzer_state.watching, do: "WATCHING", else: "IDLE") %>
       </.admin_link>

@@ -112,8 +112,8 @@ defmodule KartVids.RacesFixtures do
   def generate_start_day_and_time() do
     now = DateTime.utc_now() |> DateTime.shift_zone!("America/New_York")
     start_at = now |> DateTime.add(-3, :hour)
-    {start_at |> DateTime.to_date() |> Date.day_of_week() |> Season.weekly_start_day(), start_at |> DateTime.to_time()}
-    # # if tests are running 12:00 - 05:00 use yesterday's date
+    {start_at |> DateTime.to_date() |> Date.day_of_week() |> Season.weekly_start_day(), start_at, start_at |> DateTime.to_time()}
+    # if tests are running 12:00 - 05:00 use yesterday's date
     # if now.hour > 5 do
     #   {now |> DateTime.to_date() |> Date.day_of_week() |> Season.weekly_start_day(), now |> DateTime.add(-1, :hour) |> DateTime.to_time()}
     # else
@@ -128,14 +128,15 @@ defmodule KartVids.RacesFixtures do
   def season_fixture(attrs \\ %{}) do
     location = attrs[:location] || ContentFixtures.location_fixture()
 
-    {weekly_start_day, weekly_start_at} = generate_start_day_and_time()
+    {weekly_start_day, now, weekly_start_at} = generate_start_day_and_time()
 
     {:ok, season} =
       attrs
       |> Enum.into(%{
         ended: false,
         season: Enum.random(~w(winter spring summer autumn)a),
-        start_at: Date.utc_today() |> Date.add(-30),
+        # Exactly 4 weeks ago in days
+        start_at: now |> DateTime.to_date() |> Date.add(-28),
         weekly_start_at: weekly_start_at,
         weekly_start_day: weekly_start_day,
         number_of_meetups: 8,

@@ -22,7 +22,7 @@ defmodule KartVidsWeb.SeasonLive.Show do
     season = Races.get_season!(id) |> with_racers() |> augment_season_racers() |> sort_season_racers()
     leagues = Races.league_races_for_season(season)
 
-    if socket.assigns.current_user.admin? && params["watch"] == "true" do
+    if socket.assigns.current_user && socket.assigns.current_user.admin? && params["watch"] == "true" do
       Analyzer.start_watching(season)
     end
 
