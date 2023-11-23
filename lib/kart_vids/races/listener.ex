@@ -2,7 +2,6 @@ defmodule KartVids.Races.Listener do
   use WebSockex
   require Logger
   alias KartVids.Races
-  alias KartVids.Races.Race
   alias KartVids.Races.Kart
   alias KartVids.Content.Location
 
@@ -78,7 +77,10 @@ defmodule KartVids.Races.Listener do
             last_lap: float(),
             position: pos_integer(),
             laps: list(map()),
-            racer_profile_id: pos_integer() | nil
+            racer_profile_id: pos_integer() | nil,
+            ranking_by_rpm: pos_integer() | nil,
+            rpm: pos_integer() | nil,
+            rpm_change: integer() | nil
           }
     defstruct external_racer_id: nil,
               nickname: "",
@@ -89,7 +91,10 @@ defmodule KartVids.Races.Listener do
               last_lap: 999.99,
               position: 99,
               laps: [],
-              racer_profile_id: nil
+              racer_profile_id: nil,
+              ranking_by_rpm: nil,
+              rpm: nil,
+              rpm_change: nil
   end
 
   @fastest_speed_level 1
@@ -315,6 +320,18 @@ defmodule KartVids.Races.Listener do
     log_unexpected_keys(laps, "race.laps", @expected_lap_keys)
     race_by = Map.get(race, "race_by")
     win_by = Map.get(race, "win_by")
+
+    # TODO: Remove once this code is stable
+    {heat_status_id, heat_type_id} =
+      with {status_id, ""} <- Map.get(race, "heat_status_id") |> Integer.parse(),
+           {type_id, ""} <- Map.get(race, "heat_type_id") |> Integer.parse() do
+        {status_id, type_id}
+      else
+        err ->
+          Logger.warning("Unable to parse heat_status_id = '#{Map.get(race, "heat_status_id")}' or heat_type_id = '#{Map.get(race, "heat_type_id")}'; Error: #{inspect(err)}")
+          {nil, nil}
+      end
+
     speed = parse_speed_level(speed_level)
     racer_data = extract_racer_data(racers, win_by)
     scoreboard_by_kart = extract_scoreboard_data(scoreboard)
@@ -325,7 +342,7 @@ defmodule KartVids.Races.Listener do
 
         Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
 
-        race_info = persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, location)
+        race_info = persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, heat_status_id, heat_type_id, location)
 
         # Persist race information first so the data will be used in calculations for karts
         persist_kart_information(scoreboard_by_kart, location)
@@ -553,9 +570,9 @@ defmodule KartVids.Races.Listener do
   end
 
   # Do nothing if there are no laps
-  def persist_race_information(_name, _id, _started_at, _racers, [], _race_by, _location), do: %{}
+  def persist_race_information(_name, _id, _started_at, _racers, [], _race_by, _win_by, _heat_status_id, _heat_type_id, _location), do: %{}
 
-  def persist_race_information(name, id, started_at, racers, laps, race_by, win_by, %Location{
+  def persist_race_information(name, id, started_at, racers, laps, race_by, win_by, heat_status_id, heat_type_id, %Location{
         id: location_id
       }) do
     {:ok, race} =
@@ -565,7 +582,8 @@ defmodule KartVids.Races.Listener do
         external_race_id: id,
         started_at: started_at,
         ended_at: DateTime.utc_now(),
-        league?: Race.is_league_race?(name)
+        heat_status_id: heat_status_id,
+        heat_type_id: heat_type_id
       })
 
     if race_by != "laps" && race_by != "minutes" do
@@ -605,7 +623,10 @@ defmodule KartVids.Races.Listener do
                 race_by: race_by,
                 win_by: win_by,
                 external_racer_id: racer.external_racer_id,
-                location_id: location_id
+                location_id: location_id,
+                ranking_by_rpm: racer.ranking_by_rpm,
+                rpm: racer.rpm,
+                rpm_change: racer.rpm_change
               })
 
               {racer.kart_num, profile.id}
@@ -644,7 +665,7 @@ defmodule KartVids.Races.Listener do
           Map.put(karts, kart_num, %{lap_time: lap_time, rpm: rpm, position: position, external_racer_id: external_racer_id})
         else
           err ->
-            Logger.warning("Extract scoreboard parsing issue for #{lap_time}| #{kart_num} | #{rpm} | #{position} : #{inspect(err)}")
+            Logger.warning("Extract scoreboard parsing issue for: lap_time: #{lap_time} | kart_num: #{kart_num} | rpm: #{rpm} | position: #{position} -- Error message: #{inspect(err)}")
             karts
         end
 
@@ -689,7 +710,7 @@ defmodule KartVids.Races.Listener do
   def extract_racer_data(
         by_kart,
         [
-          racer = %{"id" => external_racer_id, "kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo}
+          racer = %{"id" => external_racer_id, "kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo, "ranking_by_rpm" => ranking_by_rpm, "rpm" => rpm_str, "rpm_change" => rpm_change_str}
           | racers
         ],
         win_by
@@ -698,7 +719,7 @@ defmodule KartVids.Races.Listener do
     {fastest_lap, average_lap, last_lap} = analyze_laps(laps)
 
     by_kart
-    |> add_racer(external_racer_id, kart_num, nickname, photo, fastest_lap, average_lap, last_lap, laps)
+    |> add_racer(external_racer_id, kart_num, nickname, photo, fastest_lap, average_lap, last_lap, laps, ranking_by_rpm, rpm_str, rpm_change_str)
     |> extract_racer_data(racers, win_by)
   end
 
@@ -706,24 +727,35 @@ defmodule KartVids.Races.Listener do
   def extract_racer_data(
         by_kart,
         [
-          racer = %{"id" => external_racer_id, "kart_number" => kart_num, "nickname" => nickname, "photo_url" => photo} | racers
+          racer = %{"id" => external_racer_id, "kart_number" => kart_num, "nickname" => nickname, "photo_url" => photo, "ranking_by_rpm" => ranking_by_rpm, "rpm" => rpm_str, "rpm_change" => rpm_change_str} | racers
         ],
         win_by
       ) do
     log_unexpected_keys(racer, "racers[*]", @expected_racer_keys)
 
     by_kart
-    |> add_racer(external_racer_id, kart_num, nickname, photo, nil, nil, nil, [])
+    |> add_racer(external_racer_id, kart_num, nickname, photo, nil, nil, nil, [], ranking_by_rpm, rpm_str, rpm_change_str)
     |> extract_racer_data(racers, win_by)
   end
 
   # Sometimes races are reset before they even begin, which results in nothing in these fields, so just skip it
-  defp add_racer(by_kart, _external_racer_id, nil, _nickname, _photo, nil, nil, nil, []) do
+  defp add_racer(by_kart, _external_racer_id, nil, _nickname, _photo, nil, nil, nil, [], _ranking_by_rpm, _rpm_str, _rpm_change_str) do
     by_kart
   end
 
-  defp add_racer(by_kart, external_racer_id, kart_num, nickname, photo, fastest_lap, average_lap, last_lap, laps) do
+  defp add_racer(by_kart, external_racer_id, kart_num, nickname, photo, fastest_lap, average_lap, last_lap, laps, ranking_by_rpm, rpm_str, rpm_change_str) do
     {kart_number, ""} = Integer.parse(kart_num)
+    {rpm, ""} = Integer.parse(rpm_str)
+
+    rpm_change =
+      case rpm_change_str do
+        nil ->
+          nil
+
+        i when is_binary(i) ->
+          {rpm_change, ""} = Integer.parse(rpm_change_str)
+          rpm_change
+      end
 
     by_kart
     |> Map.put(kart_num, %Racer{
@@ -734,7 +766,10 @@ defmodule KartVids.Races.Listener do
       fastest_lap: fastest_lap,
       average_lap: average_lap,
       last_lap: last_lap,
-      laps: laps
+      laps: laps,
+      ranking_by_rpm: ranking_by_rpm,
+      rpm: rpm,
+      rpm_change: rpm_change
     })
   end
 

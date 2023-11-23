@@ -437,15 +437,25 @@ defmodule KartVidsWeb.CoreComponents do
   attr(:timestamp, :map, required: true)
   attr(:timezone, :string, required: true)
   attr(:date, :boolean)
+  attr(:time, :boolean)
   attr(:rest, :global)
 
   def display_timestamp(assigns) do
-    [rest: rest] = assigns_to_attributes(assigns, [:timestamp, :timezone, :date])
+    [rest: rest] = assigns_to_attributes(assigns, [:timestamp, :timezone, :date, :time])
     assigns = assigns |> assign(:rest, rest)
+
+    format =
+      cond do
+        assigns[:date] -> "%A %B %-d"
+        assigns[:time] -> "%I:%M %p %Z"
+        true -> "%a %b %d, %Y %I:%M %p %Z"
+      end
+
+    assigns = assign(assigns, format: format)
 
     ~H"""
     <span {@rest}>
-      <%= Timex.Timezone.convert(@timestamp, @timezone) |> Calendar.strftime(if(assigns[:date], do: "%A %B %-d", else: "%a %b %d, %Y %I:%M %p %Z")) %>
+      <%= Timex.Timezone.convert(@timestamp, @timezone) |> Calendar.strftime(@format) %>
     </span>
     """
   end

@@ -231,8 +231,6 @@ defmodule KartVids.Races.Season.Analyzer do
           "Analyzer doesn't know what to do with race #{race.id}!\npratices: #{racers_in_map(race.racers, state.practice)}\nqualifiers: #{racers_in_mapset(race.racers, state.qualifiers, state.season.daily_qualifiers)} (dq: #{state.season.daily_qualifiers})\nfeature: #{racers_in_map(race.racers, state.feature)}\n#{inspect(race, pretty: true)}\n#{inspect(state, pretty: true)}"
         )
 
-        raise "FAIL"
-
         state
     end
   end

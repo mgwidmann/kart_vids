@@ -12,6 +12,14 @@ defmodule KartVids.Races.Race do
     field :ended_at, :utc_datetime
     field :league?, :boolean, source: :league, default: false
     field :league_type, Ecto.Enum, values: [none: 0, practice: 100, qualifier: 200, feature: 300], default: :none
+    # 2 : ??
+    # 3 : ??
+    field :heat_status_id, :integer
+    # 214 : Birthday party? (Junior Event)
+    # 212 : Regular Junior Race
+    # 231 : Adult event
+    # 178 : Regular Adult Race
+    field :heat_type_id, :integer
 
     belongs_to :location, Location
     belongs_to :season, Season
@@ -24,7 +32,7 @@ defmodule KartVids.Races.Race do
   @doc false
   def changeset(race, attrs) do
     race
-    |> cast(attrs, [:external_race_id, :name, :started_at, :ended_at, :location_id, :league?, :league_type, :season_id])
+    |> cast(attrs, [:external_race_id, :name, :started_at, :ended_at, :location_id, :league?, :league_type, :season_id, :heat_status_id, :heat_type_id])
     |> validate_required([:external_race_id, :name, :started_at, :ended_at, :location_id])
   end
 

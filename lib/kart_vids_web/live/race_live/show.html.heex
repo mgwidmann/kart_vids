@@ -1,37 +1,40 @@
-<.back position={:top} navigate={~p"/locations/#{@location}/races"}>Back to races</.back>
-
 <.header>
   <%= @race.name %>
   <:subtitle></:subtitle>
   <:actions>
+    <.admin_link patch={~p"/admin/locations/#{@location_id}/races/#{@race_id}/racers/new"} current_user={@current_user}>
+      <.button class="mx-5">New Racer</.button>
+    </.admin_link>
     <.admin_link patch={~p"/admin/locations/#{@location}/races/#{@race}/show/edit"} phx-click={JS.push_focus()} current_user={@current_user}>
       <.button>Edit race</.button>
     </.admin_link>
   </:actions>
 </.header>
-
-<.list>
-  <:item title="External race ID">
-    <%= @race.external_race_id %>
-  </:item>
-  <:item title="Name">
-    <%= @race.name %>
-  </:item>
-  <:item title="Is League Race?">
-    <%= if(@race.league?, do: "Yes", else: "No") %>
-  </:item>
-  <:item title="Win by?">
-    <%= @racers |> Enum.map(& &1.win_by) |> Enum.uniq() |> Enum.map(&Phoenix.Naming.humanize(&1)) |> Enum.join(", ") %>
-  </:item>
-  <:item title="Started at">
-    <.display_timestamp timestamp={@race.started_at} timezone={@location.timezone} />
-  </:item>
-  <:item title="Ended at">
-    <.display_timestamp timestamp={@race.ended_at} timezone={@location.timezone} />
-  </:item>
-</.list>
-
-<%= racer_table(%{racers: @racers, location_id: @location_id, race_id: @race_id, timezone: @location.timezone, current_user: @current_user}) %>
+<.tabs>
+  <:tab name="racers" title="Racers">
+    <%= racer_table(%{racers: @racers, location_id: @location_id, race_id: @race_id, timezone: @location.timezone, current_user: @current_user}) %>
+  </:tab>
+  <:tab name="stats" title="Info">
+    <.list>
+      <:item title="External race ID">
+        <%= @race.external_race_id %>
+      </:item>
+      <:item title="Name">
+        <%= @race.name %>
+      </:item>
+      <:item title="Is League Race?">
+        <%= if(@race.league?, do: "Yes", else: "No") %>
+      </:item>
+      <:item title="Win by?">
+        <%= @racers |> Enum.map(& &1.win_by) |> Enum.uniq() |> Enum.map(&Phoenix.Naming.humanize(&1)) |> Enum.join(", ") %>
+      </:item>
+      <:item title="Duration">
+        <%= Timex.diff(@race.started_at, @race.ended_at, :seconds) |> Timex.Duration.from_seconds() |> Timex.Format.Duration.Formatters.Humanized.format() %>&nbsp;(<.display_timestamp timestamp={@race.started_at} timezone={@location.timezone} /> to
+        <.display_timestamp timestamp={@race.ended_at} timezone={@location.timezone} time={true} /> )
+      </:item>
+    </.list>
+  </:tab>
+</.tabs>
 
 <.modal :if={@live_action == :edit} id="race-modal" show on_cancel={JS.patch(~p"/locations/#{@location}/races/#{@race}")}>
   <.live_component module={KartVidsWeb.RaceLive.FormComponent} id={@race.id} title={@page_title} action={@live_action} race={@race} navigate={~p"/locations/#{@location}/races/#{@race}"} current_user={@current_user} />

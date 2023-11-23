@@ -76,6 +76,9 @@
         <:col :let={lap} label="Average">
           <%= format_lap(lap.lap_average) %>
         </:col>
+        <:col :let={lap} label="RPMs">
+          <%= inspect(lap) %>
+        </:col>
       </.table>
     </div>
   </div>
@@ -94,7 +97,7 @@
 </h3>
 <.table id="racer-races" rows={@racer_races} row_click={&JS.push("select_race", value: %{race_id: &1.id})}>
   <:col :let={racer} label="Race">
-    <.link navigate={~p"/locations/#{@location_id}/races/#{racer.race_id}/racers"}><%= racer.race.name %></.link>
+    <.link navigate={~p"/locations/#{@location_id}/races/#{racer.race_id}"}><%= racer.race.name %></.link>
   </:col>
   <:col :let={racer} label="">
     <%= if racer.id == @selected_race.id do %>

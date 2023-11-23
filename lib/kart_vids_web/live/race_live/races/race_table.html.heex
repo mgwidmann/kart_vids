@@ -1,4 +1,4 @@
-<.table id="races" rows={@races} row_click={&JS.navigate(~p"/locations/#{@location_id}/races/#{&1}/racers")}>
+<.table id="races" rows={@races} row_click={&JS.navigate(~p"/locations/#{@location_id}/races/#{&1}")}>
   <:col :let={race} label="Name">
     <%= race.name %>
   </:col>

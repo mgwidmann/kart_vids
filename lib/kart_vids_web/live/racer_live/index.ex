@@ -22,6 +22,7 @@ defmodule KartVidsWeb.RacerLive.Index do
       |> assign(:location_id, location_id)
       |> assign(:location, location)
       |> assign(:race_id, race_id)
+      |> assign(:race, Races.get_race!(race_id))
       |> assign(:racers, list_racers(race_id))
       |> apply_action(socket.assigns.live_action, params)
     }

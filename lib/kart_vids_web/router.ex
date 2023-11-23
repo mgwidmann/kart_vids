@@ -166,7 +166,7 @@ defmodule KartVidsWeb.Router do
       live("/locations/:location_id/races/:id", RaceLive.Show, :show)
 
       # Racer
-      live("/locations/:location_id/races/:race_id/racers", RacerLive.Index, :index)
+      # live("/locations/:location_id/races/:race_id/racers", RacerLive.Index, :index)
       live("/locations/:location_id/racers/by_external/:external_racer_id", RacerLive.ShowDup, :show)
       live("/locations/:location_id/racers/by_nickname/:nickname", RacerLive.ShowDup, :show)
       live("/locations/:location_id/racers/:racer_profile_id", RacerLive.Show, :show)
