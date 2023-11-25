@@ -59,9 +59,11 @@ defmodule KartVids.Karts do
   def fastest_races(kart, location) do
     kart
     |> get_fastest_races(location)
-    |> compute_stats(location)
-    |> then(fn {new_records, dropped, _mean, _std_dev} -> {new_records, dropped} end)
+    |> Stream.with_index(1)
+    |> Enum.map(fn {racer, position} -> %{racer | position: position} end)
   end
+
+  @max_limit 10
 
   defp get_fastest_races(kart, location) do
     started_at = started_at(location, kart)
@@ -69,12 +71,14 @@ defmodule KartVids.Karts do
     from(r in Racer,
       join: race in Race,
       on: r.race_id == race.id,
-      where: r.location_id == ^location.id and r.kart_num == ^kart.kart_num and fragment("?::date >= ?", race.started_at, ^started_at),
+      where: r.location_id == ^location.id and r.disqualify_fastest_lap == false and r.fastest_lap > ^location.min_lap_time and r.kart_num == ^kart.kart_num and fragment("?::date >= ?", race.started_at, ^started_at),
       order_by: {:asc, r.fastest_lap},
-      # Some may be bad data
-      limit: @top_std_dev + 10
+      # Top 10
+      limit: @max_limit * @max_limit
     )
     |> Repo.all()
+    |> Stream.uniq_by(& &1.racer_profile_id)
+    |> Enum.take(@max_limit)
   end
 
   defp compute_stats(records, location) do

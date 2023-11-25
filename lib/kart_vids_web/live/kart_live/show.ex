@@ -17,11 +17,7 @@ defmodule KartVidsWeb.KartLive.Show do
     location = socket.assigns.location || Content.get_location!(location_id)
     kart = get_kart(params)
 
-    {[_top | top_records], top_excluded} = Karts.fastest_races(kart, location)
-
-    top_records = top_records |> Stream.uniq_by(&(&1.external_racer_id || {&1.nickname, &1.photo})) |> Stream.with_index() |> Enum.map(fn {r, i} -> Map.put(r, :position, i + 2) end)
-    # No need to show these
-    top_excluded = top_excluded |> Stream.map(&Map.put(&1, :position, nil)) |> Enum.reject(&(&1.fastest_lap > location.max_lap_time))
+    [fastest_racer | top_records] = list_fastest(kart, location)
 
     {
       :noreply,
@@ -30,10 +26,30 @@ defmodule KartVidsWeb.KartLive.Show do
       |> assign(:location, location)
       |> assign(:page_title, page_title(socket.assigns.live_action))
       |> assign(:kart, kart)
-      |> assign(:fastest_racer, kart.fastest_racer)
+      |> assign(:fastest_racer, fastest_racer)
       |> assign(:top_records, top_records)
-      |> assign(:top_excluded, top_excluded)
     }
+  end
+
+  @impl true
+  def handle_event("disqualify", %{"id" => racer_id, "for" => "fastest_lap"}, socket) do
+    Races.disqualify!(racer_id, :fastest_lap)
+
+    [fastest_racer | top_records] = list_fastest(socket.assigns.kart, socket.assigns.location)
+
+    {:ok, kart} = Races.update_kart(:system, socket.assigns.kart, %{"fastest_lap_time" => fastest_racer.fastest_lap, "fastest_racer_id" => fastest_racer.id})
+
+    {
+      :noreply,
+      socket
+      |> assign(:kart, kart)
+      |> assign(:fastest_racer, fastest_racer)
+      |> assign(:top_records, top_records)
+    }
+  end
+
+  def list_fastest(kart, location) do
+    Karts.fastest_races(kart, location)
   end
 
   defp page_title(:show), do: "Show Kart"

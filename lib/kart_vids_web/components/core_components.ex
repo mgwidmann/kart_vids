@@ -437,16 +437,18 @@ defmodule KartVidsWeb.CoreComponents do
   attr(:timestamp, :map, required: true)
   attr(:timezone, :string, required: true)
   attr(:date, :boolean)
+  attr(:date_with_year, :boolean)
   attr(:time, :boolean)
   attr(:rest, :global)
 
   def display_timestamp(assigns) do
-    [rest: rest] = assigns_to_attributes(assigns, [:timestamp, :timezone, :date, :time])
+    [rest: rest] = assigns_to_attributes(assigns, [:timestamp, :timezone, :date, :date_with_year, :time])
     assigns = assigns |> assign(:rest, rest)
 
     format =
       cond do
         assigns[:date] -> "%A %B %-d"
+        assigns[:date_with_year] -> "%A %B %-d %Y"
         assigns[:time] -> "%I:%M %p %Z"
         true -> "%a %b %d, %Y %I:%M %p %Z"
       end

@@ -174,6 +174,9 @@ defmodule KartVidsWeb.Router do
       # Seasons
       live("/locations/:location_id/seasons", SeasonLive.Index, :index)
       live("/locations/:location_id/seasons/:id", SeasonLive.Show, :show)
+
+      # Leaderboard
+      live("/locations/:location_id/leaderboard", LeaderboardLive.Index, :index)
     end
   end
 

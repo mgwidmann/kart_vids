@@ -604,10 +604,15 @@ defmodule KartVids.Races.Listener do
           case Races.upsert_racer_profile(%{
                  nickname: racer.nickname,
                  photo: racer.photo,
+                 # Will only stay the fastest lap if it is faster than the current fastest lap, same with kart
                  fastest_lap_time: racer.fastest_lap,
                  fastest_lap_kart: racer.kart_num,
                  fastest_lap_race_id: race.id,
-                 external_racer_id: racer.external_racer_id
+                 external_racer_id: racer.external_racer_id,
+                 # Will get merged with existing data and average_fastest_lap will be automatically updated
+                 overall_average_lap: racer.average_lap,
+                 lifetime_race_count: 1,
+                 location_id: location_id
                }) do
             {:ok, profile} ->
               Races.create_racer(:system, %{

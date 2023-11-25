@@ -431,6 +431,10 @@ defmodule KartVids.Races do
     end)
   end
 
+  def disqualify!(racer_id, :fastest_lap) do
+    update_racer(:system, get_racer!(racer_id), %{"disqualify_fastest_lap" => true})
+  end
+
   @doc """
   Returns the list of racers.
 
@@ -443,6 +447,69 @@ defmodule KartVids.Races do
   def list_racers(race_id) do
     from(r in Racer, where: r.race_id == ^race_id, order_by: r.position)
     |> Repo.all()
+  end
+
+  def fastest_lap(%Location{id: id, min_lap_time: min_lap_time, adult_kart_min: min_kart, adult_kart_max: max_kart}, :adult, after_date, limit) do
+    fastest_lap(id, min_lap_time, min_kart, max_kart, after_date, limit)
+  end
+
+  def fastest_lap(%Location{id: id, min_lap_time: min_lap_time, junior_kart_min: min_kart, junior_kart_max: max_kart}, :junior, after_date, limit) do
+    fastest_lap(id, min_lap_time, min_kart, max_kart, after_date, limit)
+  end
+
+  def fastest_lap(id, min_lap_time, min_kart, max_kart, after_date, limit) do
+    increased_limit = limit * limit
+
+    from(r in Racer,
+      where: r.location_id == ^id and r.disqualify_fastest_lap == false and fragment("?::date", r.inserted_at) > ^after_date and r.kart_num >= ^min_kart and r.kart_num <= ^max_kart and r.fastest_lap > ^min_lap_time,
+      order_by: {:asc, r.fastest_lap},
+      limit: ^increased_limit
+    )
+    |> Repo.all()
+    |> Stream.uniq_by(& &1.racer_profile_id)
+    |> Stream.take(limit)
+    |> Stream.with_index(1)
+    |> Stream.map(fn {racer, position} -> %{racer | position: position} end)
+  end
+
+  def most_races(%Location{id: id, adult_kart_min: min_kart, adult_kart_max: max_kart}, :adult, after_date, limit) do
+    most_races(id, min_kart, max_kart, after_date, limit)
+  end
+
+  def most_races(%Location{id: id, junior_kart_min: min_kart, junior_kart_max: max_kart}, :junior, after_date, limit) do
+    most_races(id, min_kart, max_kart, after_date, limit)
+  end
+
+  def most_races(id, min_kart, max_kart, after_date, limit) do
+    racer_profile_counts =
+      from(r in Racer,
+        select: {r.racer_profile_id, fragment("count(?) as race_count", r.id)},
+        where: r.location_id == ^id and fragment("?::date", r.inserted_at) > ^after_date and r.kart_num >= ^min_kart and r.kart_num <= ^max_kart,
+        group_by: r.racer_profile_id,
+        order_by: fragment("race_count DESC"),
+        limit: ^limit
+      )
+      |> Repo.all()
+      |> Enum.into(%{})
+
+    profile_ids = Map.keys(racer_profile_counts)
+
+    racer_profiles =
+      from(r in RacerProfile, where: r.id in ^profile_ids)
+      |> Repo.all()
+
+    racer_profiles
+    |> Stream.map(fn profile ->
+      # Not part of the struct, so need to augment the struct with additional keys
+      profile
+      |> Map.put_new(:total_races, racer_profile_counts[profile.id])
+    end)
+    |> Enum.sort_by(& &1.total_races, :desc)
+    |> Stream.with_index(1)
+    |> Enum.map(fn {profile, position} ->
+      profile
+      |> Map.put_new(:position, position)
+    end)
   end
 
   @doc """
@@ -621,9 +688,45 @@ defmodule KartVids.Races do
           attrs
         end
 
+      attrs =
+        if !force_update do
+          if Map.has_key?(attrs, "overall_average_lap") do
+            Map.put(attrs, "overall_average_lap", profile.overall_average_lap * profile.lifetime_race_count + attrs["overall_average_lap"] / profile.lifetime_race_count + 1)
+          else
+            Map.put(attrs, :overall_average_lap, profile.overall_average_lap * profile.lifetime_race_count + attrs[:overall_average_lap] / profile.lifetime_race_count + 1)
+          end
+        else
+          attrs
+        end
+
+      attrs =
+        if !force_update do
+          if Map.has_key?(attrs, "fastest_lap_time") do
+            # Match string keys with string keys
+            Map.put(attrs, "average_fastest_lap", profile.average_fastest_lap * profile.lifetime_race_count + attrs_fastest_lap / profile.lifetime_race_count + 1)
+          else
+            Map.put(attrs, :average_fastest_lap, profile.average_fastest_lap * profile.lifetime_race_count + attrs_fastest_lap / profile.lifetime_race_count + 1)
+          end
+        else
+          attrs
+        end
+
+      attrs_lifetime_race_count = attrs["lifetime_race_count"] || attrs[:lifetime_race_count]
+
+      attrs =
+        if !force_update do
+          if Map.has_key?(attrs, "lifetime_race_count") do
+            Map.put(attrs, "lifetime_race_count", attrs_lifetime_race_count + 1)
+          else
+            Map.put(attrs, :lifetime_race_count, attrs_lifetime_race_count + 1)
+          end
+        else
+          attrs
+        end
+
       update_racer_profile(profile, attrs)
     else
-      create_racer_profile(attrs)
+      create_racer_profile(Map.put_new(attrs, :average_fastest_lap, attrs[:fastest_lap_time]))
     end
   end
 
@@ -641,7 +744,7 @@ defmodule KartVids.Races do
   """
   def create_racer_profile(attrs) do
     %RacerProfile{}
-    |> RacerProfile.changeset(attrs)
+    |> RacerProfile.changeset(Map.merge(attrs, %{lifetime_race_count: 1}))
     |> Repo.insert()
   end
 

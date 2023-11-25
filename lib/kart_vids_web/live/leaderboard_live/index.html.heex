@@ -1,0 +1,37 @@
+<.header>
+  <%= Phoenix.Naming.humanize(@type) |> String.split(" ") |> Enum.map(&Phoenix.Naming.camelize(&1)) |> Enum.join(" ") %> Leaderboard from <.display_timestamp timestamp={@after_date} timezone={@location.timezone} date_with_year />
+  <:subheader>
+    <%= if @location.adult_kart_reset_on do %>
+      Adult Karts Reset: <.display_timestamp timestamp={@location.adult_kart_reset_on} timezone={@location.timezone} date_with_year />
+    <% end %>
+    <%= if @location.junior_kart_reset_on do %>
+      Junior Karts Reset: <.display_timestamp timestamp={@location.junior_kart_reset_on} timezone={@location.timezone} date />
+    <% end %>
+    <.simple_form :let={f} for={%{"date" => @after_date, "quick" => @quick_date}} as={:after_date} class="mt-1" phx-change="search" autocomplete="off">
+      <.input field={{f, :date}} label="Since" type="date" phx-change="date-change" autocomplete="off" />
+      <.input field={{f, :quick}} label="" type="select" options={quick_select_options(@location)} />
+    </.simple_form>
+  </:subheader>
+  <:actions>
+    <.simple_form :let={f} for={%{}} as={:leaderboard_type} phx-change="change_type" class="mr-2 min-w-[7rem]">
+      <.input field={{f, :type}} type="select" options={["Fastest Lap": :fastest_lap, "Most Races": :most_races]} value={@type} />
+    </.simple_form>
+  </:actions>
+</.header>
+
+<.tabs default_active={Atom.to_string(@tab)}>
+  <:tab name="adult" title="Adult">
+    <%= if @type == :fastest_lap do %>
+      <%= racer_table(%{racers: @adult_racers, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user, disqualify: @type}) %>
+    <% else %>
+      <%= most_races(%{racers: @adult_racers, location_id: @location_id, current_user: @current_user}) %>
+    <% end %>
+  </:tab>
+  <:tab name="junior" title="Junior">
+    <%= if @type == :fastest_lap do %>
+      <%= racer_table(%{racers: @junior_racers, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user, disqualify: @type}) %>
+    <% else %>
+      <%= most_races(%{racers: @junior_racers, location_id: @location_id, current_user: @current_user}) %>
+    <% end %>
+  </:tab>
+</.tabs>

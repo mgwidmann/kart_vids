@@ -28,7 +28,7 @@ defmodule KartVidsWeb.RacerLive.Show do
     }
   end
 
-  @recent_hours 24
+  @recent_days 7
 
   defp apply_action(socket, :show, %{"racer_profile_id" => racer_profile_id} = params) do
     racer_profile = Races.get_racer_profile!(racer_profile_id)
@@ -38,7 +38,7 @@ defmodule KartVidsWeb.RacerLive.Show do
     selected_race = races |> Enum.find(&(&1.race.id == selected_id)) || List.first(races)
     additional_assigns = select_race(selected_race)
 
-    recent_timeframe = Timex.now() |> Timex.subtract(Timex.Duration.from_hours(@recent_hours))
+    recent_timeframe = Timex.now() |> Timex.subtract(Timex.Duration.from_days(@recent_days))
 
     recent_best =
       races

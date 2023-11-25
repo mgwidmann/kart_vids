@@ -20,6 +20,7 @@ defmodule KartVids.Races.Racer do
     field :ranking_by_rpm, :integer
     field :rpm, :integer
     field :rpm_change, :integer
+    field :disqualify_fastest_lap, :boolean, default: false
 
     belongs_to :race, Race
     belongs_to :racer_profile, RacerProfile
@@ -33,8 +34,8 @@ defmodule KartVids.Races.Racer do
   @doc false
   def changeset(racer, attrs) do
     racer
-    |> cast(attrs, [:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id, :racer_profile_id, :race_by, :win_by, :location_id, :external_racer_id, :ranking_by_rpm, :rpm, :rpm_change])
+    |> cast(attrs, [:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id, :racer_profile_id, :race_by, :win_by, :location_id, :external_racer_id, :ranking_by_rpm, :rpm, :rpm_change, :disqualify_fastest_lap])
     |> cast_embed(:laps)
-    |> validate_required([:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id, :racer_profile_id, :race_by, :win_by])
+    |> validate_required([:nickname, :photo, :kart_num, :fastest_lap, :average_lap, :position, :race_id, :racer_profile_id])
   end
 end

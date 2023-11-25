@@ -38,4 +38,11 @@
       </.admin_link>
     <% end %>
   </:action>
+  <:action :let={racer}>
+    <%= if assigns[:disqualify] do %>
+      <.admin_link phx-click={JS.push("disqualify", value: %{id: racer.id, for: assigns[:disqualify]})} data-confirm="Are you sure?" current_user={@current_user}>
+        Disqualify
+      </.admin_link>
+    <% end %>
+  </:action>
 </.table>

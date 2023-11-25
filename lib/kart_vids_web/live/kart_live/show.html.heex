@@ -24,18 +24,14 @@
         <.racer_photo photo={@fastest_racer.photo} class="object-cover rounded-lg" />
         <span class="block text-md md:text-xl lg:text-2xl xl:text-4xl"><%= @fastest_racer.nickname %></span>
       </.link>
+      <.admin_link phx-click={JS.push("disqualify", value: %{id: @fastest_racer.id, for: :fastest_lap})} data-confirm="Are you sure?" current_user={@current_user}>
+        Disqualify
+      </.admin_link>
     <% end %>
   </:item>
 </.list>
 
-<.tabs>
-  <:tab name="top-records" title="Top Records">
-    <%= racer_table(%{racers: @top_records, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user}) %>
-  </:tab>
-  <:tab name="top-excluded" title="Top Excluded">
-    <%= racer_table(%{racers: @top_excluded, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user}) %>
-  </:tab>
-</.tabs>
+<%= racer_table(%{racers: @top_records, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user, disqualify: :fastest_lap}) %>
 
 <.modal :if={@live_action == :edit} id="kart-modal" show on_cancel={JS.patch(~p"/locations/#{@location_id}/karts/#{@kart}")}>
   <.live_component module={KartVidsWeb.KartLive.FormComponent} id={@kart.id} title={@page_title} action={@live_action} kart={@kart} navigate={~p"/locations/#{@location_id}/karts/#{@kart}"} current_user={@current_user} />
