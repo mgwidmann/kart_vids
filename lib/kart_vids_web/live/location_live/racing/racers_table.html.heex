@@ -21,16 +21,20 @@
       <.racer_photo photo={racer.photo} />
     </.link>
   </:col>
-  <:col :let={racer} label="Kart">
+  <:col :let={racer} label="Kart" help="The Kart number and its fastest time compared to the fastest time of the fastest kart in the race.">
     <.link navigate={~p"/locations/#{@location}/karts/by_number/#{racer.kart_num}"}>
-      <span class="mx-4 my-2 text-center text-md text-center md:text-xl">
+      <span class="mx-2 my-2 text-md text-center md:text-xl">
         <%= racer.kart_num %>
+        <%= if Map.get(assigns, :karts) do %>
+          <br />
+          <span class={"text-[0.5rem] md:text-xs #{kart_advantage_color(racer.kart_num, assigns[:karts])}"}><%= calculate_advantage(racer.kart_num, assigns[:karts]) %></span>
+        <% end %>
       </span>
     </.link>
   </:col>
   <:col :let={racer} label="Name" row_class="max-w-[200px]">
     <.link navigate={~p"/locations/#{@location}/racers/by_nickname/#{racer.nickname}"}>
-      <span class="text-md md:text-xl break-words"><%= racer.nickname %></span>
+      <span class="text-xs xs:text-md md:text-xl break-words"><%= racer.nickname %></span>
     </.link>
   </:col>
   <:col :let={racer} class="text-center" label="Best Lap" label_mobile="Best" row_class="px-1 text-center">

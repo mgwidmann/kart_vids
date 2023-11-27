@@ -14,6 +14,7 @@ defmodule KartVidsWeb.CoreComponents do
   alias Phoenix.LiveView.JS
   import KartVidsWeb.Gettext
   use KartVidsWeb, :verified_routes
+  import Phoenix.UI.Components.{Tooltip}
 
   @doc """
   Renders a modal.
@@ -513,26 +514,76 @@ defmodule KartVidsWeb.CoreComponents do
   attr(:row_add, :any, default: nil)
   attr(:row_remove, :any, default: nil)
   attr(:y_padding, :string, default: "py-2")
+  attr(:sort_by, :string)
+  attr(:sort_dir, :atom, default: :asc)
 
   slot :col, required: true do
+    attr(:id, :string)
     attr(:class, :string)
     attr(:row_class, :string)
     attr(:label, :string)
     attr(:label_mobile, :string)
     attr(:inner_div_class, :string)
+    attr(:sort_by, :any)
+    attr(:col_click, :any)
+    attr(:help, :string)
+    attr(:help_position, :string)
   end
 
   slot(:action, doc: "the slot for showing user actions in the last table column")
 
   def table(assigns) do
+    assigns =
+      if assigns[:sort_by] do
+        col = Enum.find(assigns[:col], &(&1[:id] == assigns[:sort_by]))
+
+        unless col do
+          raise "Unable to find column #{assigns[:sort_by]} in #{inspect(assigns[:col])}"
+        end
+
+        if col[:sort_by] && is_function(col[:sort_by], 1) do
+          Map.put(assigns, :rows, Enum.sort_by(assigns[:rows], col[:sort_by], assigns[:sort_dir] || :asc))
+        else
+          assigns
+        end
+      else
+        assigns
+      end
+
     ~H"""
-    <div id={@id} class={["overflow-y-auto sm:overflow-visible px-0", @container_class]}>
+    <div id={@id} class={["sm:overflow-visible px-0", @container_class]}>
       <table class={@class}>
         <thead class="text-left text-[0.8125rem] leading-6 text-zinc-500">
           <tr>
-            <th :for={col <- @col} class={["p-0 pb-4 sm:px-3 font-normal", col[:class]]}>
-              <span class="hidden sm:inline"><%= col[:label] %></span>
-              <span class="sm:hidden inline"><%= col[:label_mobile] || col[:label] %></span>
+            <th :for={{col, col_index} <- Enum.with_index(@col)} id={"col-#{col[:id] || col_index}"} class={["p-0 pb-4 sm:px-3 font-normal", col[:class]]} phx-click={col[:col_click] && col[:col_click].(col)}>
+              <span class="hidden sm:inline">
+                <%= col[:label] %>
+                <%= if is_function(col[:sort_by], 1) && assigns[:sort_dir] == :desc do %>
+                  <Heroicons.arrow_up mini class={["w-5 h-5 inline", if(assigns[:sort_by] == col[:id], do: "text-sky-600")]} />
+                <% end %>
+                <%= if is_function(col[:sort_by], 1) && assigns[:sort_dir] == :asc do %>
+                  <Heroicons.arrow_down mini class={["w-5 h-5 inline", if(assigns[:sort_by] == col[:id], do: "text-sky-600")]} />
+                <% end %>
+                <%= if col[:help] do %>
+                  <.tooltip content={col[:help]} variant="arrow" position={Map.get(col, :help_position, "top")} style="white-space: break-spaces; width: 150px;">
+                    <Heroicons.question_mark_circle class="h-5 w-5" />
+                  </.tooltip>
+                <% end %>
+              </span>
+              <span class="sm:hidden inline">
+                <%= col[:label_mobile] || col[:label] %>
+                <%= if is_function(col[:sort_by], 1) && assigns[:sort_dir] == :desc do %>
+                  <Heroicons.arrow_up mini class={["w-5 h-5 inline", if(assigns[:sort_by] == col[:id], do: "text-sky-600")]} />
+                <% end %>
+                <%= if is_function(col[:sort_by], 1) && assigns[:sort_dir] == :asc do %>
+                  <Heroicons.arrow_down mini class={["w-5 h-5 inline", if(assigns[:sort_by] == col[:id], do: "text-sky-600")]} />
+                <% end %>
+                <%= if col[:help] do %>
+                  <.tooltip content={col[:help]} variant="arrow" position={Map.get(col, :help_position, "top")} style="white-space: break-spaces; width: 150px;">
+                    <Heroicons.question_mark_circle class="h-5 w-5" />
+                  </.tooltip>
+                <% end %>
+              </span>
             </th>
             <th class="relative p-0 pb-4"><span class="sr-only"><%= gettext("Actions") %></span></th>
           </tr>
@@ -561,6 +612,12 @@ defmodule KartVidsWeb.CoreComponents do
     </div>
     """
   end
+
+  def opposite_sort(nil), do: :asc
+  def opposite_sort(:asc), do: :desc
+  def opposite_sort("asc"), do: "desc"
+  def opposite_sort(:desc), do: :asc
+  def opposite_sort("desc"), do: "asc"
 
   attr(:size, :atom, default: :large, values: ~w(small large)a)
   attr(:photo, :string)
@@ -614,6 +671,7 @@ defmodule KartVidsWeb.CoreComponents do
   end
 
   attr :default_active, :string
+  attr :tab_url, :any
 
   slot :tab, required: true do
     attr :name, :string, required: true
@@ -630,7 +688,7 @@ defmodule KartVidsWeb.CoreComponents do
       <li :for={tab <- @tab} role="presentation">
         <a
           id={tab.name}
-          phx-click={tabs_show_hide(tab, @tab)}
+          phx-click={tabs_show_hide(tab, @tab, assigns[:tab_url] && assigns[:tab_url].(tab))}
           class={[
             "cursor-pointer my-2 block border-x-0 border-t-0 border-b-2 px-7 pt-4 pb-3.5 text-xs font-medium uppercase leading-tight text-neutral-500 hover:isolate hover:bg-neutral-100 focus:isolate text-primary",
             if(@default_active == tab.name, do: "border-sky-400", else: "")
@@ -648,14 +706,21 @@ defmodule KartVidsWeb.CoreComponents do
     """
   end
 
-  defp tabs_show_hide(tab, tabs) do
+  defp tabs_show_hide(tab, tabs, patch) do
     commands =
       for t <- tabs, t.name != tab.name, reduce: JS.show(to: "##{tab.name}-tab") do
         js -> JS.hide(js, to: "##{t.name}-tab")
       end
 
-    for t <- tabs, t.name != tab.name, reduce: JS.add_class(commands, "border-sky-400", to: "##{tab.name}") do
-      js -> JS.remove_class(js, "border-sky-400", to: "##{t.name}")
+    js =
+      for t <- tabs, t.name != tab.name, reduce: JS.add_class(commands, "border-sky-400", to: "##{tab.name}") do
+        js -> JS.remove_class(js, "border-sky-400", to: "##{t.name}")
+      end
+
+    if patch do
+      JS.patch(js, patch)
+    else
+      js
     end
   end
 

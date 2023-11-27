@@ -7,50 +7,28 @@
   </:actions>
 </.header>
 
-<.tabs>
+<.tabs default_active={@tab} tab_url={&~p"/locations/#{@location_id}/karts?tab=#{&1[:name]}"}>
   <:tab name="adult" title="Adult Karts">
-    <.table id="karts" rows={@karts |> Enum.filter(&(&1.kart_num >= @location.adult_kart_min && &1.kart_num <= @location.adult_kart_max))} row_click={&JS.navigate(~p"/locations/#{@location_id}/karts/#{&1}")}>
-      <:col :let={kart} label="Kart Number"><%= kart.kart_num %></:col>
-      <:col :let={kart} label="Fastest lap time (Top 50)"><%= format_lap(kart.fastest_lap_time) %></:col>
-      <:col :let={kart} label="Average fastest lap time (Top 50)"><%= format_lap(kart.average_fastest_lap_time) %></:col>
-      <:col :let={kart} label="Std Dev (Top 50)"><%= format_lap(kart.std_dev, true) %></:col>
-      <:col :let={kart} label="Number of races"><%= kart.number_of_races %></:col>
-      <:col :let={kart} label="Average RPMs"><%= kart.average_rpms %></:col>
-      <:col :let={kart} label="Racer's Best Kart"><%= Map.get(@best_karts, kart.kart_num) %></:col>
-      <:action :let={kart}>
-        <div class="sr-only">
-          <.link navigate={~p"/locations/#{@location_id}/karts/#{kart}"}>Show</.link>
-        </div>
-        <.admin_link patch={~p"/admin/locations/#{@location_id}/karts/#{kart}/edit"} current_user={@current_user}>Edit</.admin_link>
-      </:action>
-      <:action :let={kart}>
-        <.admin_link phx-click={JS.push("delete", value: %{id: kart.id})} data-confirm="Are you sure?" current_user={@current_user}>
-          Delete
-        </.admin_link>
-      </:action>
-    </.table>
+    <%= kart_table(%{
+      location_id: @location_id,
+      sort_by: @sort_by,
+      sort_dir: @sort_dir,
+      best_karts: @best_karts,
+      karts: @karts |> Enum.filter(&(&1.kart_num >= @location.adult_kart_min && &1.kart_num <= @location.adult_kart_max)),
+      current_user: @current_user,
+      tab: "adult"
+    }) %>
   </:tab>
   <:tab name="junior" title="Junior Karts">
-    <.table id="karts" rows={@karts |> Enum.filter(&(&1.kart_num >= @location.junior_kart_min && &1.kart_num <= @location.junior_kart_max))} row_click={&JS.navigate(~p"/locations/#{@location_id}/karts/#{&1}")}>
-      <:col :let={kart} label="Kart Number"><%= kart.kart_num %></:col>
-      <:col :let={kart} label="Fastest lap time (Top 50)"><%= format_lap(kart.fastest_lap_time) %></:col>
-      <:col :let={kart} label="Average fastest lap time (Top 50)"><%= format_lap(kart.average_fastest_lap_time) %></:col>
-      <:col :let={kart} label="Std Dev (Top 50)"><%= format_lap(kart.std_dev, true) %></:col>
-      <:col :let={kart} label="Number of races"><%= kart.number_of_races %></:col>
-      <:col :let={kart} label="Average RPMs"><%= kart.average_rpms %></:col>
-      <:col :let={kart} label="Racer's Best Kart"><%= Map.get(@best_karts, kart.kart_num) %></:col>
-      <:action :let={kart}>
-        <div class="sr-only">
-          <.link navigate={~p"/locations/#{@location_id}/karts/#{kart}"}>Show</.link>
-        </div>
-        <.admin_link patch={~p"/admin/locations/#{@location_id}/karts/#{kart}/edit"} current_user={@current_user}>Edit</.admin_link>
-      </:action>
-      <:action :let={kart}>
-        <.admin_link phx-click={JS.push("delete", value: %{id: kart.id})} data-confirm="Are you sure?" current_user={@current_user}>
-          Delete
-        </.admin_link>
-      </:action>
-    </.table>
+    <%= kart_table(%{
+      location_id: @location_id,
+      sort_by: @sort_by,
+      sort_dir: @sort_dir,
+      best_karts: @best_karts,
+      karts: @karts |> Enum.filter(&(&1.kart_num >= @location.junior_kart_min && &1.kart_num <= @location.junior_kart_max)),
+      current_user: @current_user,
+      tab: "junior"
+    }) %>
   </:tab>
 </.tabs>
 

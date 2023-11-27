@@ -4,6 +4,8 @@ defmodule KartVidsWeb.KartLive.Index do
   alias KartVids.Races
   alias KartVids.Races.Kart
 
+  embed_templates("./karts/**")
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok, socket}
@@ -15,12 +17,19 @@ defmodule KartVidsWeb.KartLive.Index do
     |> Races.all_karts_topic_name()
     |> KartVidsWeb.Endpoint.subscribe()
 
+    tab = params["tab"] || "adult"
+    sort_by = params["sort"] || "kart-num"
+    sort_dir = String.to_existing_atom(params["dir"] || "asc")
+
     {
       :noreply,
       socket
       |> assign(:location_id, location_id)
       |> apply_action(socket.assigns.live_action, params)
       |> assign(:karts, list_karts(location_id))
+      |> assign(:tab, tab)
+      |> assign(:sort_by, sort_by)
+      |> assign(:sort_dir, sort_dir)
       |> assign(:best_karts, Races.get_racer_profile_best_karts_count())
     }
   end

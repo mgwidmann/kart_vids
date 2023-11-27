@@ -3,6 +3,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
   require Logger
 
   alias KartVids.Content
+  alias KartVids.Races
   alias KartVids.Races.Listener
   alias KartVids.Races.ListenerSupervisor
   alias KartVids.Races.ListenerSupervisor.Status, as: ListenerStatus
@@ -45,6 +46,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
       |> assign(:first_amb, 0.0)
       |> assign(:scoreboard, nil)
       |> assign(:win_by, nil)
+      |> assign(:karts, nil)
     }
   end
 
@@ -79,6 +81,8 @@ defmodule KartVidsWeb.LocationLive.Racing do
         %{}
       end
 
+    karts = socket.assigns.karts || sorted_racers |> Enum.map(& &1.kart_num) |> get_karts(socket.assigns.location.id)
+
     {
       :noreply,
       socket
@@ -91,6 +95,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
       |> assign(:race_type, race_type)
       |> assign(:win_by, win_by)
       |> assign(:racer_change, position_change)
+      |> assign(:karts, karts)
     }
   end
 
@@ -236,5 +241,11 @@ defmodule KartVidsWeb.LocationLive.Racing do
   def gap(_, _, _) do
     # Output ...
     format_lap(0.0)
+  end
+
+  def get_karts(kart_nums, location_id) when is_list(kart_nums) do
+    Races.get_karts(location_id, kart_nums)
+    # Sort so slowest numbers are first
+    |> Enum.sort_by(& &1.fastest_lap_time, :desc)
   end
 end

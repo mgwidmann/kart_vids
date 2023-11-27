@@ -12,7 +12,7 @@
 </.header>
 <.tabs>
   <:tab name="racers" title="Racers">
-    <%= racer_table(%{racers: @racers, location_id: @location_id, race_id: @race_id, timezone: @location.timezone, current_user: @current_user}) %>
+    <%= racer_table(%{racers: @racers, location_id: @location_id, race_id: @race_id, timezone: @location.timezone, current_user: @current_user, karts: @karts}) %>
   </:tab>
   <:tab name="stats" title="Info">
     <.list>

@@ -1,0 +1,48 @@
+<.table id="karts" sort_by={@sort_by} sort_dir={@sort_dir} rows={@karts} row_click={&JS.navigate(~p"/locations/#{@location_id}/karts/#{&1}")}>
+  <:col :let={kart} id="kart-num" class="cursor-pointer" label="Kart Number" sort_by={& &1.kart_num} col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}>
+    <%= kart.kart_num %>
+  </:col>
+  <:col :let={kart} id="fastest-lap" class="cursor-pointer" label="Fastest lap time" sort_by={& &1.fastest_lap_time} col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}>
+    <%= format_lap(kart.fastest_lap_time) %>
+  </:col>
+  <:col
+    :let={kart}
+    id="average-lap"
+    class="cursor-pointer"
+    label="Average fastest lap time (Top 50)"
+    sort_by={& &1.average_fastest_lap_time}
+    col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}
+  >
+    <%= format_lap(kart.average_fastest_lap_time) %>
+  </:col>
+  <:col :let={kart} id="std-dev" class="cursor-pointer" label="Std Dev (Top 50)" sort_by={& &1.std_dev} col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}>
+    <%= format_lap(kart.std_dev, true) %>
+  </:col>
+  <:col :let={kart} id="num-races" class="cursor-pointer" label="Number of races" sort_by={& &1.number_of_races} col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}>
+    <%= kart.number_of_races %>
+  </:col>
+  <:col :let={kart} id="average-rpms" class="cursor-pointer" label="Average RPMs" sort_by={& &1.average_rpms} col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}>
+    <%= kart.average_rpms %>
+  </:col>
+  <:col
+    :let={kart}
+    id="racers-best"
+    class="cursor-pointer"
+    label="Racer's Best Kart"
+    sort_by={&Map.get(@best_karts, &1.kart_num)}
+    col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}
+  >
+    <%= Map.get(@best_karts, kart.kart_num) %>
+  </:col>
+  <:action :let={kart}>
+    <div class="sr-only">
+      <.link navigate={~p"/locations/#{@location_id}/karts/#{kart}"}>Show</.link>
+    </div>
+    <.admin_link patch={~p"/admin/locations/#{@location_id}/karts/#{kart}/edit"} current_user={@current_user}>Edit</.admin_link>
+  </:action>
+  <:action :let={kart}>
+    <.admin_link phx-click={JS.push("delete", value: %{id: kart.id})} data-confirm="Are you sure?" current_user={@current_user}>
+      Delete
+    </.admin_link>
+  </:action>
+</.table>

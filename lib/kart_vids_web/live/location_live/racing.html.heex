@@ -25,7 +25,6 @@
     <%= race_state(@race_state) %> (Win By: <%= @win_by %>)
   </:subtitle>
 </.header>
-
 <div>
   <%= if @racers != nil do %>
     <%= if @race_state == :race_completed do %>
@@ -34,11 +33,11 @@
           <%= podium(%{location: @location, scoreboard: @scoreboard, racers: @racers}) %>
         </div>
         <div class="col-span-2">
-          <%= racers_table(%{location: @location, racers: @racers, racer_change: @racer_change, race_type: @race_type}) %>
+          <%= racers_table(%{location: @location, racers: @racers, racer_change: @racer_change, race_type: @race_type, karts: @karts}) %>
         </div>
       </div>
     <% else %>
-      <%= racers_table(%{location: @location, racers: @racers, racer_change: @racer_change, race_type: @race_type}) %>
+      <%= racers_table(%{location: @location, racers: @racers, racer_change: @racer_change, race_type: @race_type, karts: @karts}) %>
     <% end %>
   <% else %>
     <div class="flex justify-center items-center h-96">

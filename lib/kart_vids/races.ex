@@ -27,6 +27,11 @@ defmodule KartVids.Races do
     |> Repo.all()
   end
 
+  def get_karts(location_id, kart_nums) when is_list(kart_nums) do
+    from(k in Kart, where: k.location_id == ^location_id and k.kart_num in ^kart_nums)
+    |> Repo.all()
+  end
+
   @doc """
   Gets a single kart.
 
