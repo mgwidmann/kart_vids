@@ -511,8 +511,7 @@ defmodule KartVids.Races.Listener do
   end
 
   # This is not actually a GenServer...
-  def handle_info({:"$gen_call", caller, :ping}, state = %State{config: %Config{location_id: location_id}}) do
-    Logger.info("Listener (#{location_id}) answering :ping call")
+  def handle_info({:"$gen_call", caller, :ping}, %State{} = state) do
     GenServer.reply(caller, :pong)
     {:ok, state}
   end

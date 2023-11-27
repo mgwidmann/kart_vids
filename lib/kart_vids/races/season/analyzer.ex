@@ -35,7 +35,7 @@ defmodule KartVids.Races.Season.Analyzer do
             feature: %{pos_integer() => pos_integer()},
             timeout: pos_integer()
           }
-    defstruct season: nil, watching: nil, watch_until: nil, last_race: nil, practice: %{}, qualifiers: %{}, feature: %{}, timeout: :timer.seconds(5)
+    defstruct season: nil, watching: nil, watch_until: nil, last_race: nil, practice: %{}, qualifiers: %{}, feature: %{}, timeout: :timer.seconds(30)
   end
 
   def init({season, timeout}) do
