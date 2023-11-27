@@ -20,3 +20,4 @@ echo "Run the following commands to update the local user's password since the s
 echo "    import Ecto.Query"
 echo "    password = Bcrypt.hash_pwd_salt(\"password\")"
 echo "    from(u in User, where: u.id == 1) |> Repo.update_all(set: [email: "admin@kart-vids.com", hashed_password: password])"
+echo "    Ecto.Adapters.SQL.query!(Repo, \"UPDATE locations SET inserted_at = '2022-11-02T00:00:00.000';\", [])"

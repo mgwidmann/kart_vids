@@ -50,7 +50,7 @@ defmodule KartVidsWeb.RaceLive.Show do
     |> Enum.sort_by(& &1.fastest_lap_time, :desc)
   end
 
-  def reorder(racers, :lap_time) do
+  def reorder(racers, :laptime) do
     racers
   end
 
