@@ -16,7 +16,7 @@ defmodule KartVidsWeb.SeasonLive.RaceFormComponent do
       <.simple_form :let={f} for={@form} as={:assign_season} id="season-race-form" phx-target={@myself} phx-submit="save">
         <.input field={{f, :location_id}} type="hidden" />
         <.input field={{f, :race_id}} type="hidden" />
-        <.input field={{f, :season}} type="select" label="Season" options={@seasons |> Enum.map(&{season_name(&1), &1.id})} />
+        <.input field={{f, :season}} type="select" label="Season" options={[{"None", nil} | @seasons |> Enum.map(&{season_name(&1), &1.id})]} />
         <:actions>
           <.button phx-disable-with="Saving...">Assign</.button>
         </:actions>
@@ -36,8 +36,25 @@ defmodule KartVidsWeb.SeasonLive.RaceFormComponent do
   end
 
   @impl true
-  def handle_event("save", %{"assign_season" => %{"location_id" => _location_id, "race_id" => race_id, "season" => season_id}}, socket) when season_id != "" and race_id != "" and season_id != "" do
+  def handle_event("save", %{"assign_season" => %{"location_id" => _location_id, "race_id" => race_id, "season" => season_id}}, socket) when race_id != "" do
     save_race_to_season(socket, race_id, season_id)
+  end
+
+  defp save_race_to_season(socket, race_id, "") do
+    admin_redirect(socket) do
+      race = Races.get_race!(race_id)
+
+      {:ok, _race} = Races.update_race(socket.assigns.current_user, race, %{season_id: nil})
+
+      {
+        :noreply,
+        socket
+        |> put_flash(:info, "Race removed from season successfully")
+        |> push_navigate(to: socket.assigns.navigate)
+      }
+    else
+      {:noreply, socket}
+    end
   end
 
   defp save_race_to_season(socket, race_id, season_id) do

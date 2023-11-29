@@ -35,6 +35,9 @@
   <:col :let={league} label="Races">
     <%= league.races |> length() %>
   </:col>
+  <:col :let={league} label="Participants">
+    <%= league.racer_names |> length() %> (<%= (length(league.racer_names) / length(@season.season_racers) * 100) |> Decimal.from_float() |> Decimal.round(1) %>%)
+  </:col>
   <:col :let={league} label="Racers" row_class="max-w-[30vw] text-ellipsis">
     <%= league.racer_names |> Enum.sort() |> Enum.join(", ") %>
   </:col>

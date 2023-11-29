@@ -11,7 +11,7 @@
   </:tab>
 </.tabs>
 
-<.modal :if={@live_action in [:season]} id="season-modal" show on_cancel={JS.navigate(~p"/locations/#{@location_id}/leagues/#{%KartVids.Races.League{date: @date}}")}>
+<.modal :if={@live_action in [:season]} id="season-modal" show on_cancel={JS.navigate(~p"/locations/#{@location_id}/leagues/#{%KartVids.Races.League{date: @date}}?tab=races")}>
   <.live_component
     module={KartVidsWeb.SeasonLive.RaceFormComponent}
     id={@race.id}
