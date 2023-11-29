@@ -160,7 +160,12 @@ defmodule KartVids.Races.Season.Analyzer do
       if race do
         updated = update_race(race, state.practice, Race.league_type_practice(), season.id)
         updated = updated || update_race(race, state.qualifiers, Race.league_type_qualifier(), season.id)
+        practice_or_qualifier = updated
         updated = updated || update_race(race, state.feature, Race.league_type_feature(), season.id)
+
+        if updated && !practice_or_qualifier do
+          mark_win_by_position(race)
+        end
 
         updated
       end
@@ -196,6 +201,15 @@ defmodule KartVids.Races.Season.Analyzer do
   # League type is already set, no need to change anything
   defp update_race(_race, _tracking, _type, _season_id), do: nil
 
+  defp mark_win_by_position(race) do
+    for racer <- race.racers do
+      {:ok, _} = Races.update_racer(:system, racer, %{win_by: :position})
+    end
+  rescue
+    e ->
+      Logger.error("Ignoring failure to mark as win by position: #{e}")
+  end
+
   def season_watch?(season = %Season{location: %Location{}}) do
     KartVids.Races.meetup_date(season, DateTime.utc_now())
   end
@@ -220,16 +234,20 @@ defmodule KartVids.Races.Season.Analyzer do
           new_state
         end)
 
-      # Less than minimum racers did not get their feature race and all are win by position
-      racers_in_map(race.racers, state.feature) < @minimum_racers && race.racers |> Enum.all?(&(&1.win_by == :position)) ->
+      # Less than minimum racers did not get their feature race -- cannot use win by position as this is sometimes not set correctly
+      racers_in_map(race.racers, state.feature) < @minimum_racers ->
         Enum.reduce(race.racers, state, fn racer, state ->
           put_in(state, [Access.key!(:feature), racer.racer_profile_id], race.id)
         end)
 
       true ->
-        # Logger.warning(
-        #   "Analyzer doesn't know what to do with race #{race.id}!\npratices: #{racers_in_map(race.racers, state.practice)}\nqualifiers: #{racers_in_mapset(race.racers, state.qualifiers, state.season.daily_qualifiers)} (dq: #{state.season.daily_qualifiers})\nfeature: #{racers_in_map(race.racers, state.feature)}"
-        # )
+        Logger.warning([
+          "Analyzer doesn't know what to do with race #{race.id}!\n",
+          "pratices: #{racers_in_map(race.racers, state.practice)}\n",
+          "qualifiers: #{racers_in_mapset(race.racers, state.qualifiers, state.season.daily_qualifiers)} (dq: #{state.season.daily_qualifiers})\n",
+          "feature: #{racers_in_map(race.racers, state.feature)}\n",
+          "win? #{race.racers |> Enum.map(& &1.win_by) |> inspect()}"
+        ])
 
         state
     end

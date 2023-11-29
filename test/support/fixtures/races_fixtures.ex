@@ -66,7 +66,7 @@ defmodule KartVids.RacesFixtures do
   def racer_fixture(attrs \\ %{}) do
     location = attrs[:location] || ContentFixtures.location_fixture()
     race = attrs[:race] || race_fixture(%{location: location})
-    racer_profile = attrs[:racer_profile] || racer_profile_fixture(%{fastest_lap_race_id: race.id})
+    racer_profile = attrs[:racer_profile] || racer_profile_fixture(%{fastest_lap_race_id: race.id, location_id: location.id})
 
     fastest_lap = generate_lap_time()
 
@@ -102,7 +102,10 @@ defmodule KartVids.RacesFixtures do
         nickname: generate_nickname(),
         photo: "https://userphotos.com/photos/SomeonesPhoto.jpg",
         external_racer_id: (:rand.uniform() * 1_000_000_000) |> trunc() |> to_string(),
-        fastest_lap_race_id: attrs[:fastest_lap_race_id]
+        fastest_lap_race_id: attrs[:fastest_lap_race_id],
+        overall_average_lap: generate_lap_time(),
+        average_fastest_lap: generate_lap_time(),
+        location_id: attrs[:location_id]
       })
       |> KartVids.Races.create_racer_profile()
 
