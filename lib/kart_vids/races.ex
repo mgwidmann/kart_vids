@@ -950,6 +950,18 @@ defmodule KartVids.Races do
     end
   end
 
+  def delete_season_racer(racer_profile_id) do
+    id =
+      from(s in SeasonRacer, select: s.id, where: s.racer_profile_id == ^racer_profile_id, order_by: {:desc, s.inserted_at})
+      |> Repo.one()
+
+    if id do
+      SeasonRacer
+      |> Repo.get(id)
+      |> Repo.delete!()
+    end
+  end
+
   @doc """
   Updates a season.
 

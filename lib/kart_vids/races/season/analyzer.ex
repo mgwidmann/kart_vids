@@ -89,7 +89,7 @@ defmodule KartVids.Races.Season.Analyzer do
     end
   end
 
-  def handle_info(:analyze_season, state = %State{watching: watch_date, watch_until: watch_until, timeout: timeout, season: %Season{location_id: location_id}}) do
+  def handle_info(:analyze_season, state = %State{watching: watch_date, watch_until: watch_until, timeout: timeout, season: season = %Season{location_id: location_id}}) do
     Process.send_after(self(), :analyze_season, timeout)
 
     if watch_date && (is_nil(watch_until) || Timex.before?(DateTime.utc_now(), watch_until)) do
@@ -111,7 +111,7 @@ defmodule KartVids.Races.Season.Analyzer do
 
       {:noreply, state}
     else
-      {:noreply, %State{state | watching: nil, watch_until: nil, practice: %{}, qualifiers: %{}, feature: %{}}}
+      {:noreply, %State{state | watching: season_watch?(season), watch_until: nil, practice: %{}, qualifiers: %{}, feature: %{}}}
     end
   end
 
@@ -227,9 +227,9 @@ defmodule KartVids.Races.Season.Analyzer do
         end)
 
       true ->
-        Logger.warning(
-          "Analyzer doesn't know what to do with race #{race.id}!\npratices: #{racers_in_map(race.racers, state.practice)}\nqualifiers: #{racers_in_mapset(race.racers, state.qualifiers, state.season.daily_qualifiers)} (dq: #{state.season.daily_qualifiers})\nfeature: #{racers_in_map(race.racers, state.feature)}\n#{inspect(race, pretty: true)}\n#{inspect(state, pretty: true)}"
-        )
+        # Logger.warning(
+        #   "Analyzer doesn't know what to do with race #{race.id}!\npratices: #{racers_in_map(race.racers, state.practice)}\nqualifiers: #{racers_in_mapset(race.racers, state.qualifiers, state.season.daily_qualifiers)} (dq: #{state.season.daily_qualifiers})\nfeature: #{racers_in_map(race.racers, state.feature)}"
+        # )
 
         state
     end

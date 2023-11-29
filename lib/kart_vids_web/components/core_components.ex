@@ -978,6 +978,10 @@ defmodule KartVidsWeb.CoreComponents do
                   &nbsp;|&nbsp;
                 <% end %>
                 <.link href={~p"/users/settings"}>Settings</.link>
+                <%= if @current_user.admin? do %>
+                  &nbsp;|&nbsp;<.admin_link current_user={@current_user} navigate={~p"/admin/errors"}>Errors</.admin_link>
+                  &nbsp;|&nbsp;<.admin_link current_user={@current_user} navigate={~p"/admin/dashboard"}>Dashboard</.admin_link>
+                <% end %>
               </li>
               <li>
                 <.link href={~p"/users/log_out"} method="delete">Log out</.link>

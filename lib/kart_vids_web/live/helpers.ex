@@ -56,7 +56,7 @@ defmodule KartVidsWeb.Live.Helpers do
         fastest_diff == 0.0 || difference / fastest_diff >= 0.70 ->
           "text-green-500"
 
-        difference / fastest_diff >= 0.50 ->
+        difference / fastest_diff >= 0.30 ->
           "text-yellow-500"
 
         true ->

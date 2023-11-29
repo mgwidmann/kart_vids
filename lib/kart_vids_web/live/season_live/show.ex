@@ -57,6 +57,16 @@ defmodule KartVidsWeb.SeasonLive.Show do
     }
   end
 
+  @impl true
+  def handle_event("delete", %{"season_racer_id" => racer_profile_id}, socket) do
+    Races.delete_season_racer(racer_profile_id)
+
+    {
+      :noreply,
+      socket
+    }
+  end
+
   defp sort_season_racers(season) do
     racers =
       season.season_racers
@@ -100,5 +110,25 @@ defmodule KartVidsWeb.SeasonLive.Show do
       end
 
     analyzer_state
+  end
+
+  def check_or_x_link(location_id, analyzer_state, racer_id, qualifier_number \\ nil)
+
+  def check_or_x_link(location_id, analyzer_state, racer_id, qualifier_number) when not is_nil(qualifier_number) and qualifier_number >= 0 do
+    mapset = analyzer_state[racer_id] || MapSet.new()
+    race_id = Enum.at(MapSet.to_list(mapset), qualifier_number)
+    check_or_x_link(location_id, %{racer_id => race_id}, racer_id, nil)
+  end
+
+  def check_or_x_link(location_id, analyzer_state, racer_id, qualifier_number) do
+    assigns = %{location_id: location_id, analyzer_state: analyzer_state, racer_id: racer_id, qualifier_number: qualifier_number}
+
+    ~H"""
+    <%= if @analyzer_state[@racer_id] do %>
+      <.link id={@qualifier_number} navigate={~p"/locations/#{@location_id}/races/#{@analyzer_state[@racer_id]}"}>✔️</.link>
+    <% else %>
+      ❌
+    <% end %>
+    """
   end
 end
