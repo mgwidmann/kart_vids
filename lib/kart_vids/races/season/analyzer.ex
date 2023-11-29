@@ -218,13 +218,13 @@ defmodule KartVids.Races.Season.Analyzer do
   def update_state_for_race(state, race) do
     cond do
       # Less than minimum racers did not get their practice race and all racers are missing a qualifier
-      racers_in_map(race.racers, state.practice) == 0 ->
+      racers_in_map(race.racers, state.practice) == 0 && map_size(state.qualifiers) == 0 && map_size(state.feature) == 0 ->
         Enum.reduce(race.racers, state, fn racer, state ->
           put_in(state, [Access.key!(:practice), racer.racer_profile_id], race.id)
         end)
 
       # Any racer did not get all their qualifiers
-      racers_in_mapset(race.racers, state.qualifiers, state.season.daily_qualifiers) >= @minimum_racers ->
+      racers_in_mapset(race.racers, state.qualifiers, state.season.daily_qualifiers) >= @minimum_racers && map_size(state.feature) == 0 ->
         Enum.reduce(race.racers, state, fn racer, state ->
           {_, new_state} =
             get_and_update_in(state, [Access.key!(:qualifiers), racer.racer_profile_id], fn v ->
