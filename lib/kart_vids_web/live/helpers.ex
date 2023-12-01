@@ -29,6 +29,8 @@ defmodule KartVidsWeb.Live.Helpers do
     |> Calendar.strftime("%I:%M %p")
   end
 
+  def calculate_advantage(_kart_num, []), do: "+0.000"
+
   def calculate_advantage(kart_num, [%Kart{} | _] = karts) do
     difference = kart_diff(kart_num, karts)
 
@@ -44,6 +46,8 @@ defmodule KartVidsWeb.Live.Helpers do
       Decimal.sub(Decimal.from_float(slowest_kart.fastest_lap_time), Decimal.from_float(kart.fastest_lap_time)) |> Decimal.to_float()
     end
   end
+
+  def kart_advantage_color(_kart_num, []), do: "text-green-500"
 
   def kart_advantage_color(kart_num, [%Kart{} | _] = karts) do
     difference = kart_diff(kart_num, karts)

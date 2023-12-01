@@ -16,7 +16,12 @@
   <:col :let={racer} label="" row_class="w-[80px] md:w-[160px]" inner_div_class="sm:py-0 sm:px-0">
     <.racer_photo photo={racer.photo} />
   </:col>
-  <:col :let={racer} label="Kart" row_class={&if(match?("external-" <> _, &1.id), do: "highlight")} help="The Kart number and its fastest time compared to the fastest time of the fastest kart in the race.">
+  <:col
+    :let={racer}
+    label="Kart"
+    row_class={&if(match?("external-" <> _, &1.id), do: "highlight")}
+    help={if(assigns[:hide_kart_help], do: nil, else: "The Kart number and its fastest time compared to the fastest time of the fastest kart in the race.")}
+  >
     <span class="text-md text-center md:text-xl lg:text-2xl xl:text-4xl">
       <%= racer.kart_num %>
     </span>

@@ -2,6 +2,12 @@ defmodule KartVids.Content.Location do
   use Ecto.Schema
   import Ecto.Changeset
 
+  # TODO: Add locations
+  # https://autobahn-livescore.herokuapp.com/?track=1&location=aismanassas adult min: 12 max: 24
+  # https://autobahn-livescore.herokuapp.com/?track=1&location=aisbaltimore adult min: 18 max: 40
+  # https://autobahn-livescore.herokuapp.com/?track=2&location=aisbaltimore (fast track) adult min: 12 max: 47
+  # https://autobahn-livescore.herokuapp.com/?track=1&location=aiswhitemarsh adult min: 10 max: 23
+
   schema "locations" do
     field :city, :string
     field :code, :string

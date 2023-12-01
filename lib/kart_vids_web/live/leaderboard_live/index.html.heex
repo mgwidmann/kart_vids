@@ -22,7 +22,7 @@
 <.tabs default_active={Atom.to_string(@tab)}>
   <:tab name="adult" title="Adult">
     <%= if @type == :fastest_lap do %>
-      <%= racer_table(%{racers: @adult_racers, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user, disqualify: @type}) %>
+      <%= racer_table(%{racers: @adult_racers, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user, disqualify: @type, hide_kart_help: true}) %>
     <% else %>
       <%= most_races(%{racers: @adult_racers, location_id: @location_id, current_user: @current_user}) %>
     <% end %>
