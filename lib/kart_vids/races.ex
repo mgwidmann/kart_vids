@@ -685,6 +685,8 @@ defmodule KartVids.Races do
     if profile do
       fastest_lap_time = profile.fastest_lap_time
       attrs_fastest_lap = attrs["fastest_lap_time"] || attrs[:fastest_lap_time]
+      # :overall_average_lap is actually the average lap of the last race
+      attrs_average_lap = attrs["overall_average_lap"] || attrs[:overall_average_lap]
 
       attrs =
         if !force_update && fastest_lap_time > Karts.minimum_lap_time() && fastest_lap_time < attrs_fastest_lap do
@@ -696,9 +698,9 @@ defmodule KartVids.Races do
       attrs =
         if !force_update do
           if Map.has_key?(attrs, "overall_average_lap") do
-            Map.put(attrs, "overall_average_lap", profile.overall_average_lap * profile.lifetime_race_count + attrs["overall_average_lap"] / profile.lifetime_race_count + 1)
+            Map.put(attrs, "overall_average_lap", (profile.overall_average_lap * profile.lifetime_race_count + attrs_average_lap) / (profile.lifetime_race_count + 1))
           else
-            Map.put(attrs, :overall_average_lap, profile.overall_average_lap * profile.lifetime_race_count + attrs[:overall_average_lap] / profile.lifetime_race_count + 1)
+            Map.put(attrs, :overall_average_lap, (profile.overall_average_lap * profile.lifetime_race_count + attrs_average_lap) / (profile.lifetime_race_count + 1))
           end
         else
           attrs
@@ -708,22 +710,22 @@ defmodule KartVids.Races do
         if !force_update do
           if Map.has_key?(attrs, "fastest_lap_time") do
             # Match string keys with string keys
-            Map.put(attrs, "average_fastest_lap", profile.average_fastest_lap * profile.lifetime_race_count + attrs_fastest_lap / profile.lifetime_race_count + 1)
+            Map.put(attrs, "average_fastest_lap", (profile.average_fastest_lap * profile.lifetime_race_count + attrs_fastest_lap) / (profile.lifetime_race_count + 1))
           else
-            Map.put(attrs, :average_fastest_lap, profile.average_fastest_lap * profile.lifetime_race_count + attrs_fastest_lap / profile.lifetime_race_count + 1)
+            Map.put(attrs, :average_fastest_lap, (profile.average_fastest_lap * profile.lifetime_race_count + attrs_fastest_lap) / (profile.lifetime_race_count + 1))
           end
         else
           attrs
         end
 
-      attrs_lifetime_race_count = attrs["lifetime_race_count"] || attrs[:lifetime_race_count]
+      lifetime_race_count = profile.lifetime_race_count || attrs["lifetime_race_count"] || attrs[:lifetime_race_count]
 
       attrs =
         if !force_update do
           if Map.has_key?(attrs, "lifetime_race_count") do
-            Map.put(attrs, "lifetime_race_count", attrs_lifetime_race_count + 1)
+            Map.put(attrs, "lifetime_race_count", lifetime_race_count + 1)
           else
-            Map.put(attrs, :lifetime_race_count, attrs_lifetime_race_count + 1)
+            Map.put(attrs, :lifetime_race_count, lifetime_race_count + 1)
           end
         else
           attrs
