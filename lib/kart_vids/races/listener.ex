@@ -30,8 +30,9 @@ defmodule KartVids.Races.Listener do
     @type t :: %State{
             config: Config.t(),
             current_race: nil | Stirng.t(),
-            current_race_started_at: nil | String.t(),
+            current_race_started_at: nil | DateTime.t(),
             last_race: nil | String.t(),
+            last_race_ended_at: nil | DateTime.t(),
             race_name: nil | String.t(),
             fastest_speed_level: nil | pos_integer(),
             speed_level: nil | pos_integer(),
@@ -45,6 +46,7 @@ defmodule KartVids.Races.Listener do
               current_race: nil,
               current_race_started_at: nil,
               last_race: nil,
+              last_race_ended_at: nil,
               race_name: nil,
               fastest_speed_level: nil,
               speed_level: nil,
@@ -336,24 +338,24 @@ defmodule KartVids.Races.Listener do
     racer_data = extract_racer_data(racers, win_by)
     scoreboard_by_kart = extract_scoreboard_data(scoreboard)
 
-    profile_id_by_kart =
+    {race, profile_id_by_kart} =
       if current_race == id do
         Logger.info("Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
 
         Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
 
-        race_info = persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, heat_status_id, heat_type_id, location)
+        {race, race_info} = persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, heat_status_id, heat_type_id, location)
 
         # Persist race information first so the data will be used in calculations for karts
         persist_kart_information(scoreboard_by_kart, location)
 
-        race_info
+        {race, race_info}
       else
         if unquote(Mix.env()) == :prod do
           Logger.info("Race #{current_race} #{name} Complete! Started at #{started_at || "(unknown)"} with #{length(racers)} racers")
         end
 
-        get_profile_ids_for_racer_data(racer_data)
+        {Races.get_race_by_external_id!(id), get_profile_ids_for_racer_data(racer_data)}
       end
 
     racer_data = augment_racer_data(racer_data, profile_id_by_kart)
@@ -367,7 +369,8 @@ defmodule KartVids.Races.Listener do
       fastest_speed_level: fastest_speed_level,
       speed_level: speed,
       scoreboard: scoreboard_by_kart,
-      win_by: win_by
+      win_by: win_by,
+      last_race_ended_at: race.ended_at
     })
     |> broadcast("race_completed")
 
@@ -461,6 +464,7 @@ defmodule KartVids.Races.Listener do
     |> Map.merge(%{
       current_race: id,
       current_race_started_at: DateTime.utc_now(),
+      last_race_ended_at: nil,
       race_name: name,
       fastest_speed_level: speed,
       speed_level: speed,
@@ -544,13 +548,13 @@ defmodule KartVids.Races.Listener do
       stats = KartVids.Karts.compute_stats_for_kart(kart, location)
 
       cond do
-        kart ->
-          Races.update_kart(:system, kart, Map.merge(stats, %{average_rpms: div(kart.average_rpms * kart.number_of_races + performance[:rpm], kart.number_of_races + 1), type: Kart.kart_type(kart_num, location)}))
+        kart && stats ->
+          Races.update_kart(:system, kart, Map.merge(stats, %{max_average_rpms: Enum.max([kart.max_average_rpms, performance[:rpm]]), type: Kart.kart_type(kart_num, location)}))
 
         !kart && performance[:lap_time] ->
           Races.create_kart(:system, %{
             average_fastest_lap_time: performance[:lap_time],
-            average_rpms: performance[:rpm],
+            max_average_rpms: performance[:rpm],
             fastest_lap_time: performance[:lap_time],
             kart_num: kart_num,
             number_of_races: 1,
@@ -561,7 +565,7 @@ defmodule KartVids.Races.Listener do
         true ->
           Logger.info("Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect(performance)}")
 
-          if performance.lap_time < stats.fastest_lap_time do
+          if stats && performance.lap_time < stats.fastest_lap_time do
             Logger.warning("Kart #{kart_num} was excluded because performance data was too low out of bounds: #{inspect(performance)}")
           end
       end
@@ -650,6 +654,7 @@ defmodule KartVids.Races.Listener do
     end
     |> Stream.filter(fn {_key, v} -> v end)
     |> Enum.into(%{})
+    |> then(fn profile_by_karts -> {race, profile_by_karts} end)
   end
 
   def extract_scoreboard_data(results) when is_list(results) do

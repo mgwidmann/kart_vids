@@ -22,7 +22,7 @@
   <%= @race_name %>
   <br class="block sm:hidden" />
   <:subtitle>
-    <%= race_state(@race_state) %> (Win By: <%= @win_by %>)
+    <%= race_state(@race_state, @location.timezone, @started_at, @ended_at) %> (Win By: <%= @win_by %>)
   </:subtitle>
 </.header>
 <div>

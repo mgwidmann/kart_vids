@@ -474,7 +474,8 @@ defmodule KartVids.Races do
     |> Stream.uniq_by(& &1.racer_profile_id)
     |> Stream.take(limit)
     |> Stream.with_index(1)
-    |> Stream.map(fn {racer, position} -> %{racer | position: position} end)
+    |> Enum.map(fn {racer, position} -> %{racer | position: position} end)
+    |> Repo.preload(:race)
   end
 
   def most_races(%Location{id: id, adult_kart_min: min_kart, adult_kart_max: max_kart}, :adult, after_date, limit) do
@@ -827,8 +828,10 @@ defmodule KartVids.Races do
     |> Repo.all()
   end
 
-  def get_racer_profile_best_karts_count() do
-    from(r in RacerProfile, select: %{kart_num: r.fastest_lap_kart, count: count(r.id)}, distinct: r.fastest_lap_kart, group_by: r.fastest_lap_kart)
+  def get_racer_profile_best_karts_count(%Location{id: id}), do: get_racer_profile_best_karts_count(id)
+
+  def get_racer_profile_best_karts_count(id) do
+    from(r in RacerProfile, where: r.location_id == ^id, select: %{kart_num: r.fastest_lap_kart, count: count(r.id)}, distinct: r.fastest_lap_kart, group_by: r.fastest_lap_kart)
     |> Repo.all()
     |> Enum.reduce(%{}, fn %{count: count, kart_num: kart_num}, acc ->
       Map.put(acc, kart_num, count)

@@ -30,7 +30,7 @@ defmodule KartVidsWeb.KartLive.Index do
       |> assign(:tab, tab)
       |> assign(:sort_by, sort_by)
       |> assign(:sort_dir, sort_dir)
-      |> assign(:best_karts, Races.get_racer_profile_best_karts_count())
+      |> assign(:best_karts, Races.get_racer_profile_best_karts_count(location_id))
     }
   end
 

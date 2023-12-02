@@ -39,19 +39,18 @@
   <:col :let={racer} label="Average Lap" label_mobile="Avg" row_class={&if(match?("external-" <> _, &1.id), do: "highlight")}>
     <span class="text-md md:text-xl lg:text-2xl xl:text-4xl"><%= format_lap(racer.average_lap) %></span>
   </:col>
+  <:col :let={racer} hide={!assigns[:show_date]} label="Date" row_class={&if(match?("external-" <> _, &1.id), do: "highlight")}>
+    <span class="text-sm md:text-md lg:text-lg xl:text-xl"><.display_timestamp timestamp={racer.race.ended_at} timezone={@timezone} /></span>
+  </:col>
   <:action :let={racer}>
     <%= if assigns[:race_id] do %>
       <.admin_link patch={~p"/admin/locations/#{@location_id}/races/#{assigns[:race_id]}/racers/#{racer}/edit"} current_user={@current_user}>Edit</.admin_link>
     <% end %>
-  </:action>
-  <:action :let={racer}>
     <%= if assigns[:race_id] do %>
       <.admin_link phx-click={JS.push("delete", value: %{id: racer.id})} data-confirm="Are you sure?" current_user={@current_user}>
         Delete
       </.admin_link>
     <% end %>
-  </:action>
-  <:action :let={racer}>
     <%= if assigns[:disqualify] do %>
       <.admin_link phx-click={JS.push("disqualify", value: %{id: racer.id, for: assigns[:disqualify]})} data-confirm="Are you sure?" current_user={@current_user}>
         Disqualify

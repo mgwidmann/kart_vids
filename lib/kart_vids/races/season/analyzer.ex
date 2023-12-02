@@ -177,7 +177,7 @@ defmodule KartVids.Races.Season.Analyzer do
   end
 
   defp analyze_season(state = %State{last_race: last_race, season: season, watching: %Date{}}) do
-    race = Races.get_race_by_external_id(last_race) |> Races.race_with_racers()
+    race = Races.get_race_by_external_id!(last_race) |> Races.race_with_racers()
 
     season_racers = season.season_racers |> Enum.reduce(MapSet.new(), &MapSet.put(&2, &1.id))
 

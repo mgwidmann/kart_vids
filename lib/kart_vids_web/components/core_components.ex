@@ -435,6 +435,18 @@ defmodule KartVidsWeb.CoreComponents do
     """
   end
 
+  def display_timestamp_string(timestamp, timezone, type \\ nil) do
+    format =
+      case type do
+        :date -> "%A %B %-d"
+        :date_with_year -> "%A %B %-d %Y"
+        :time -> "%I:%M %p %Z"
+        _ -> "%a %b %d, %Y %I:%M %p %Z"
+      end
+
+    Timex.Timezone.convert(timestamp, timezone) |> Calendar.strftime(format)
+  end
+
   attr(:timestamp, :map, required: true)
   attr(:timezone, :string, required: true)
   attr(:date, :boolean)
@@ -446,19 +458,12 @@ defmodule KartVidsWeb.CoreComponents do
     [rest: rest] = assigns_to_attributes(assigns, [:timestamp, :timezone, :date, :date_with_year, :time])
     assigns = assigns |> assign(:rest, rest)
 
-    format =
-      cond do
-        assigns[:date] -> "%A %B %-d"
-        assigns[:date_with_year] -> "%A %B %-d %Y"
-        assigns[:time] -> "%I:%M %p %Z"
-        true -> "%a %b %d, %Y %I:%M %p %Z"
-      end
-
-    assigns = assign(assigns, format: format)
+    timestamp_string = display_timestamp_string(assigns[:timestamp], assigns[:timezone], (assigns[:date] && :date) || (assigns[:date_with_year] && :date_with_year) || (assigns[:time] && :time))
+    assigns = assign(assigns, timestamp_string: timestamp_string)
 
     ~H"""
     <span {@rest}>
-      <%= Timex.Timezone.convert(@timestamp, @timezone) |> Calendar.strftime(@format) %>
+      <%= @timestamp_string %>
     </span>
     """
   end
@@ -520,6 +525,7 @@ defmodule KartVidsWeb.CoreComponents do
   slot :col, required: true do
     attr(:id, :string)
     attr(:class, :string)
+    attr(:hide, :boolean)
     attr(:row_class, :string)
     attr(:label, :string)
     attr(:label_mobile, :string)
@@ -555,7 +561,7 @@ defmodule KartVidsWeb.CoreComponents do
       <table class={@class}>
         <thead class="text-left text-[0.8125rem] leading-6 text-zinc-500">
           <tr>
-            <th :for={{col, col_index} <- Enum.with_index(@col)} id={"col-#{col[:id] || col_index}"} class={["p-0 pb-4 sm:px-3 font-normal", col[:class]]} phx-click={col[:col_click] && col[:col_click].(col)}>
+            <th :for={{col, col_index} <- Enum.with_index(@col)} :if={!col[:hide]} id={"col-#{col[:id] || col_index}"} class={["p-0 pb-4 sm:px-3 font-normal", col[:class]]} phx-click={col[:col_click] && col[:col_click].(col)}>
               <span class="hidden sm:inline">
                 <%= col[:label] %>
                 <%= if is_function(col[:sort_by], 1) && assigns[:sort_dir] == :desc do %>
@@ -590,7 +596,12 @@ defmodule KartVidsWeb.CoreComponents do
         </thead>
         <tbody class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
           <tr :for={row <- @rows} id={"#{@id}-#{Phoenix.Param.to_param(row)}"} class="group hover:bg-zinc-50" phx-mounted={is_function(@row_add, 1) && @row_add.(row)} phx-remove={is_function(@row_remove, 1) && @row_remove.(row)}>
-            <td :for={{col, i} <- Enum.with_index(@col)} phx-click={@row_click && @row_click.(row)} class={["relative p-0", @row_click && "hover:cursor-pointer", if(is_function(col[:row_class]), do: col[:row_class].(row), else: col[:row_class])]}>
+            <td
+              :for={{col, i} <- Enum.with_index(@col)}
+              :if={!col[:hide]}
+              phx-click={@row_click && @row_click.(row)}
+              class={["relative p-0", @row_click && "hover:cursor-pointer", if(is_function(col[:row_class]), do: col[:row_class].(row), else: col[:row_class])]}
+            >
               <div class={["block #{@y_padding} sm:px-3 overflow-auto h-full", col[:inner_div_class]]}>
                 <span class="absolute right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
                 <div class={["relative", i == 0 && "font-semibold text-zinc-900"]}>

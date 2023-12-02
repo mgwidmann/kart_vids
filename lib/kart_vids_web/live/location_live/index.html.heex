@@ -7,7 +7,7 @@
   </:actions>
 </.header>
 
-<div class="grid grid-cols-3 md:grid-cols-3 gap-4 pt-5">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-5">
   <div :for={location <- @locations}>
     <div class="inline-block max-w-sm rounded overflow-hidden shadow-lg cursor-pointer" phx-click={JS.navigate(~p"/locations/#{location}/racing")}>
       <img class="w-full bg-slate-400" src={location.image_url} />

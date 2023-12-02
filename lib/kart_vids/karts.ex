@@ -15,7 +15,7 @@ defmodule KartVids.Karts do
     records = get_fastest_races(kart, location)
 
     if length(records) < @min_karts_to_compute do
-      Logger.info("Refusing to compute data when less than #{@min_karts_to_compute}, data: #{inspect(Enum.map(records, & &1.fastest_lap))}")
+      Logger.warning("Location: #{location.id} -- Refusing to compute data when less than #{@min_karts_to_compute}, data: #{inspect(Enum.map(records, & &1.fastest_lap))}")
 
       %{
         average_fastest_lap_time: nil,
@@ -34,11 +34,15 @@ defmodule KartVids.Karts do
       fastest_time = get_fastest_kart_time_for_type(location, kart.kart_num, kart.type)
       {records, _dropped, mean, std_dev} = compute_stats(records, fastest_time, location)
 
-      %Racer{id: racer_id, fastest_lap: fastest_time} = records |> Enum.min_by(& &1.fastest_lap)
+      %Racer{id: racer_id, fastest_lap: fastest_lap} = records |> Enum.min_by(& &1.fastest_lap)
+
+      if kart.fastest_lap_time && kart.fastest_lap_time > fastest_lap do
+        Logger.warning("Location #{location.id} -- Fastest racer #{racer_id} for kart #{kart.kart_num} being updated to #{fastest_lap}")
+      end
 
       %{
         average_fastest_lap_time: mean,
-        fastest_lap_time: fastest_time,
+        fastest_lap_time: fastest_lap,
         std_dev: std_dev,
         number_of_races: total_races,
         fastest_racer_id: racer_id
@@ -54,6 +58,10 @@ defmodule KartVids.Karts do
   def get_fastest_kart_time_for_type(%Location{junior_kart_min: junior_kart_min, junior_kart_max: junior_kart_max}, kart_num, :junior) do
     from(k in Kart, join: r in Racer, on: r.id == k.fastest_racer_id, where: k.kart_num != ^kart_num and k.kart_num >= ^junior_kart_min and k.kart_num <= ^junior_kart_max, order_by: r.fastest_lap, limit: 1, select: r.fastest_lap)
     |> Repo.one()
+  end
+
+  defp started_at(%Location{}, nil) do
+    Date.from_iso8601!("2022-11-01")
   end
 
   defp started_at(%Location{adult_kart_reset_on: adult_kart_reset_on, junior_kart_reset_on: junior_kart_reset_on}, kart) do
@@ -75,6 +83,8 @@ defmodule KartVids.Karts do
   end
 
   @max_limit 10
+
+  def get_fastest_races(nil, _location), do: []
 
   def get_fastest_races(kart, location) do
     started_at = started_at(location, kart)

@@ -9,7 +9,7 @@
     <% end %>
     <.simple_form :let={f} for={%{"date" => @after_date, "quick" => @quick_date}} as={:after_date} class="mt-1" phx-change="search" autocomplete="off">
       <.input field={{f, :date}} label="Since" type="date" phx-change="date-change" autocomplete="off" />
-      <.input field={{f, :quick}} label="" type="select" options={quick_select_options(@location)} />
+      <.input field={{f, :quick}} label="" type="select" options={quick_select_options(@location)} value={quick_select_value(@location, @after_date)} />
     </.simple_form>
   </:subheader>
   <:actions>
@@ -19,17 +19,17 @@
   </:actions>
 </.header>
 
-<.tabs default_active={Atom.to_string(@tab)}>
+<.tabs default_active={Atom.to_string(@tab)} tab_url={&~p"/locations/#{@location_id}/leaderboard?type=#{@type}&tab=#{&1[:name]}&after=#{Date.to_iso8601(@after_date)}"}>
   <:tab name="adult" title="Adult">
     <%= if @type == :fastest_lap do %>
-      <%= racer_table(%{racers: @adult_racers, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user, disqualify: @type, hide_kart_help: true}) %>
+      <%= racer_table(%{racers: @adult_racers, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user, disqualify: @type, hide_kart_help: true, show_date: true}) %>
     <% else %>
       <%= most_races(%{racers: @adult_racers, location_id: @location_id, current_user: @current_user}) %>
     <% end %>
   </:tab>
   <:tab name="junior" title="Junior">
     <%= if @type == :fastest_lap do %>
-      <%= racer_table(%{racers: @junior_racers, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user, disqualify: @type}) %>
+      <%= racer_table(%{racers: @junior_racers, location_id: @location_id, race_id: nil, timezone: @location.timezone, current_user: @current_user, disqualify: @type, hide_kart_help: true, show_date: true}) %>
     <% else %>
       <%= most_races(%{racers: @junior_racers, location_id: @location_id, current_user: @current_user}) %>
     <% end %>

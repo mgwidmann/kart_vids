@@ -42,7 +42,7 @@ defmodule KartVidsWeb.Live.Helpers do
   defp kart_diff(kart_num, [slowest_kart = %Kart{} | _] = karts) do
     kart = Enum.find(karts, &(&1.kart_num == kart_num))
 
-    if kart do
+    if kart && kart.fastest_lap_time && slowest_kart.fastest_lap_time do
       Decimal.sub(Decimal.from_float(slowest_kart.fastest_lap_time), Decimal.from_float(kart.fastest_lap_time)) |> Decimal.to_float()
     end
   end

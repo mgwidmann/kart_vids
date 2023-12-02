@@ -18,7 +18,7 @@ defmodule KartVidsWeb.KartLive.FormComponent do
         <.input field={{f, :fastest_lap_time}} type="number" label="Fastest Lap Time Ever" step="any" />
         <.input field={{f, :average_fastest_lap_time}} type="number" label="Average Fastest Lap Time in One Race" step="any" />
         <.input field={{f, :number_of_races}} type="number" label="Number of Races" />
-        <.input field={{f, :average_rpms}} type="number" label="Average RPMs" />
+        <.input field={{f, :max_average_rpms}} type="number" label="Max Average RPMs" />
         <.input field={{f, :type}} type="select" label="Kart Type" options={Ecto.Enum.mappings(KartVids.Races.Kart, :type) |> Enum.map(fn {key, value} -> {Atom.to_string(key) |> Phoenix.Naming.humanize(), value} end)} />
         <:actions>
           <.button phx-disable-with="Saving...">Save Kart</.button>

@@ -10,6 +10,7 @@
     id="average-lap"
     class="cursor-pointer"
     label="Average fastest lap time (Top 50)"
+    label_mobile="Avg fastest (Top 50)"
     sort_by={& &1.average_fastest_lap_time}
     col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}
   >
@@ -18,11 +19,27 @@
   <:col :let={kart} id="std-dev" class="cursor-pointer" label="Std Dev (Top 50)" sort_by={& &1.std_dev} col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}>
     <%= format_lap(kart.std_dev, true) %>
   </:col>
-  <:col :let={kart} id="num-races" class="cursor-pointer" label="Number of races" sort_by={& &1.number_of_races} col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}>
+  <:col
+    :let={kart}
+    id="num-races"
+    class="cursor-pointer"
+    label="Number of races"
+    label_mobile="Num races"
+    sort_by={& &1.number_of_races}
+    col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}
+  >
     <%= kart.number_of_races %>
   </:col>
-  <:col :let={kart} id="average-rpms" class="cursor-pointer" label="Average RPMs" sort_by={& &1.average_rpms} col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}>
-    <%= kart.average_rpms %>
+  <:col
+    :let={kart}
+    id="average-rpms"
+    class="cursor-pointer"
+    label="Max Average RPMs"
+    label_mobile="Max Avg RPMs"
+    sort_by={& &1.max_average_rpms}
+    col_click={&JS.navigate(~p"/locations/#{@location_id}/karts?sort=#{&1[:id]}&dir=#{opposite_sort(@sort_dir)}&tab=#{@tab}")}
+  >
+    <%= kart.max_average_rpms %>
   </:col>
   <:col
     :let={kart}

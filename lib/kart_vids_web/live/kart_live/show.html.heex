@@ -17,7 +17,7 @@
   <:item title="Average fastest lap time (Top 50)"><%= format_lap(@kart.average_fastest_lap_time) %></:item>
   <:item title="Standard Deviation (Top 50)"><%= format_lap(@kart.std_dev, true) %></:item>
   <:item title="Number of races"><%= @kart.number_of_races %></:item>
-  <:item title="Average RPMs"><%= @kart.average_rpms %></:item>
+  <:item title="Max Average RPMs"><%= @kart.max_average_rpms %></:item>
   <:item title="Fastest Racer">
     <%= if @fastest_racer do %>
       <.link href={~p"/locations/#{@location_id}/racers/#{@fastest_racer.racer_profile_id}?selected=#{@fastest_racer.race_id}"}>

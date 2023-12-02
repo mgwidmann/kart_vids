@@ -47,6 +47,8 @@ defmodule KartVidsWeb.LocationLive.Racing do
       |> assign(:scoreboard, nil)
       |> assign(:win_by, nil)
       |> assign(:karts, nil)
+      |> assign(:started_at, nil)
+      |> assign(:ended_at, nil)
     }
   end
 
@@ -63,7 +65,19 @@ defmodule KartVidsWeb.LocationLive.Racing do
   @impl true
   @spec handle_info(Phoenix.Socket.Broadcast.t(), Phoenix.LiveView.Socket.t()) :: {:noreply, Phoenix.LiveView.Socket.t()}
   def handle_info(
-        %Phoenix.Socket.Broadcast{event: event, payload: %KartVids.Races.Listener.State{racers: racers, fastest_speed_level: fastest_speed_level, speed_level: speed_level, race_name: race_name, scoreboard: scoreboard, win_by: win_by}},
+        %Phoenix.Socket.Broadcast{
+          event: event,
+          payload: %KartVids.Races.Listener.State{
+            racers: racers,
+            current_race_started_at: started_at,
+            last_race_ended_at: ended_at,
+            fastest_speed_level: fastest_speed_level,
+            speed_level: speed_level,
+            race_name: race_name,
+            scoreboard: scoreboard,
+            win_by: win_by
+          }
+        },
         socket
       )
       when event in ["race_data", "race_completed"] and win_by in ["laptime", "position"] do
@@ -95,6 +109,8 @@ defmodule KartVidsWeb.LocationLive.Racing do
       |> assign(:race_type, race_type)
       |> assign(:win_by, win_by)
       |> assign(:racer_change, position_change)
+      |> assign(:started_at, started_at)
+      |> assign(:ended_at, ended_at)
       |> assign(:karts, karts)
     }
   end
@@ -193,9 +209,9 @@ defmodule KartVidsWeb.LocationLive.Racing do
     end)
   end
 
-  defp race_state(:race_data), do: "Race in progress"
-  defp race_state(:race_completed), do: "Race Completed!"
-  defp race_state(nil), do: nil
+  defp race_state(:race_data, timezone, started_at, _ended_at), do: "Race in progress since #{display_timestamp_string(started_at, timezone, :time)}"
+  defp race_state(:race_completed, timezone, _started_at, ended_at), do: "Race Completed at #{display_timestamp_string(ended_at, timezone, :time)}!"
+  defp race_state(nil, _timezone, _started_at, _ended_at), do: nil
 
   def lap_count(%Racer{laps: []}), do: 0
 
