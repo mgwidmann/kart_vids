@@ -48,7 +48,7 @@ defmodule KartVidsWeb.LeaderboardLive.Index do
       :noreply,
       socket
       |> assign(:type, :fastest_lap)
-      |> push_navigate(to: ~p"/locations/#{socket.assigns.location}/leaderboard?type=#{socket.assigns.type}&tab=#{socket.assigns.tab}&after=#{Date.to_iso8601(socket.assigns.after_date)}")
+      |> push_navigate(to: ~p"/locations/#{socket.assigns.location}/leaderboard?type=fastest_lap&tab=#{socket.assigns.tab}&after=#{Date.to_iso8601(socket.assigns.after_date)}")
     }
   end
 
@@ -57,7 +57,7 @@ defmodule KartVidsWeb.LeaderboardLive.Index do
       :noreply,
       socket
       |> assign(:type, :most_races)
-      |> push_navigate(to: ~p"/locations/#{socket.assigns.location}/leaderboard?type=#{socket.assigns.type}&tab=#{socket.assigns.tab}&after=#{Date.to_iso8601(socket.assigns.after_date)}")
+      |> push_navigate(to: ~p"/locations/#{socket.assigns.location}/leaderboard?type=most_races&tab=#{socket.assigns.tab}&after=#{Date.to_iso8601(socket.assigns.after_date)}")
     }
   end
 
