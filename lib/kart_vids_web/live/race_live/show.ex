@@ -1,6 +1,7 @@
 defmodule KartVidsWeb.RaceLive.Show do
   use KartVidsWeb, :live_view
 
+  require Logger
   alias KartVids.Races
   alias KartVids.Races.Racer
   alias KartVids.Content
@@ -64,5 +65,10 @@ defmodule KartVidsWeb.RaceLive.Show do
     |> Enum.map(fn {racer, position} ->
       %Racer{racer | position: position}
     end)
+  end
+
+  def reorder(racers, other) do
+    Logger.warning("Unexpected function call: #{__MODULE__}.reorder(racers, #{inspect(other)})")
+    racers
   end
 end
