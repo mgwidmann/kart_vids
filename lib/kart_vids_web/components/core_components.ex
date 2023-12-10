@@ -964,6 +964,7 @@ defmodule KartVidsWeb.CoreComponents do
   end
 
   attr(:current_user, :any)
+  attr(:location, :any)
 
   def navigation_header(assigns) do
     ~H"""
@@ -973,7 +974,12 @@ defmodule KartVidsWeb.CoreComponents do
           <a href={~p"/"}>
             <image src={~p"/images/KartVids-64.png"} />
           </a>
-          <span class="font-mono text-2xl">KART VIDS</span>
+          <span class="font-mono text-2xl">
+            KART VIDS
+            <div :if={assigns[:location]} class="text-xs">
+              <%= @location.name %>
+            </div>
+          </span>
         </div>
         <div class="flex items-center gap-4 text-right">
           <ul>

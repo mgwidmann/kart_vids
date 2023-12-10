@@ -224,15 +224,22 @@ defmodule KartVids.Races do
 
   ## Examples
 
-      iex> get_race_by_external_id!("123")
+      iex> get_race_by_external_id!("123", 1)
       %Race{}
 
-      iex> get_race_by_external_id!("456")
+      iex> get_race_by_external_id!("456", 1)
       ** (Ecto.NoResultsError)
 
   """
-  def get_race_by_external_id!(id), do: Repo.get_by!(Race, external_race_id: id)
-  def get_race_by_external_id(id), do: Repo.get_by(Race, external_race_id: id)
+  @get_race_by_external_id_ttl :timer.hours(1)
+  @decorate cacheable(cache: RacerProfileCache, key: {Race, {:external_race_id, id, location_id}}, opts: [ttl: @get_race_by_external_id_ttl])
+  def get_race_by_external_id!(id, %Location{id: location_id}), do: get_race_by_external_id!(id, location_id)
+
+  def get_race_by_external_id!(id, location_id), do: Repo.get_by!(Race, external_race_id: id, location_id: location_id)
+
+  @decorate cacheable(cache: RacerProfileCache, key: {Race, {:external_race_id, id, location_id}}, opts: [ttl: @get_race_by_external_id_ttl])
+  def get_race_by_external_id(id, %Location{id: location_id}), do: get_race_by_external_id(id, location_id)
+  def get_race_by_external_id(id, location_id), do: Repo.get_by(Race, external_race_id: id, location_id: location_id)
 
   def race_with_racers(nil), do: nil
 
@@ -685,9 +692,9 @@ defmodule KartVids.Races do
 
     if profile do
       fastest_lap_time = profile.fastest_lap_time
-      attrs_fastest_lap = attrs["fastest_lap_time"] || attrs[:fastest_lap_time]
+      attrs_fastest_lap = attrs["fastest_lap_time"] || attrs[:fastest_lap_time] || 0.0
       # :overall_average_lap is actually the average lap of the last race
-      attrs_average_lap = attrs["overall_average_lap"] || attrs[:overall_average_lap]
+      attrs_average_lap = attrs["overall_average_lap"] || attrs[:overall_average_lap] || 0.0
 
       attrs =
         if !force_update && fastest_lap_time > Karts.minimum_lap_time() && fastest_lap_time < attrs_fastest_lap do

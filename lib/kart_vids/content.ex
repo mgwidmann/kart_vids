@@ -136,7 +136,8 @@ defmodule KartVids.Content do
 
   """
   def list_locations do
-    Repo.all(Location)
+    from(l in Location, order_by: l.inserted_at)
+    |> Repo.all()
   end
 
   @doc """

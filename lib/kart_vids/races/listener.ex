@@ -186,7 +186,7 @@ defmodule KartVids.Races.Listener do
   end
 
   def handle_connect(_conn, %State{config: %Config{location_id: id}} = state) do
-    Logger.info("Connected to websocket for location #{id}!")
+    Logger.info("Location: #{id} Connected to websocket for location!")
 
     Agent.start_link(fn -> state end, name: agent_via_tuple(id))
 
@@ -236,7 +236,15 @@ defmodule KartVids.Races.Listener do
       ) do
     clock = DateTime.utc_now() |> DateTime.to_time()
 
-    {:ok, time} = Time.from_iso8601(time)
+    time =
+      case Time.from_iso8601(time) do
+        {:ok, time} ->
+          time
+
+        {:error, :invalid_format} ->
+          Logger.warning("Location #{location_id} invalid timestamp format: #{time}")
+          DateTime.utc_now() |> DateTime.to_time()
+      end
 
     delta = Time.diff(clock, time, :microsecond)
 
@@ -340,9 +348,9 @@ defmodule KartVids.Races.Listener do
 
     {race, profile_id_by_kart} =
       if current_race == id do
-        Logger.info("Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
+        Logger.info("Location: #{location.id} Race (#{current_race}) #{name} Complete! Started at #{started_at} with #{length(racers)} racers and scoreboard was")
 
-        Logger.info("Scoreboard: #{inspect(scoreboard_by_kart)}")
+        Logger.info("Location: #{location.id} Scoreboard: #{inspect(scoreboard_by_kart)}")
 
         {race, race_info} = persist_race_information(name, id, started_at, racer_data, laps, race_by, win_by, heat_status_id, heat_type_id, location)
 
@@ -352,10 +360,19 @@ defmodule KartVids.Races.Listener do
         {race, race_info}
       else
         if unquote(Mix.env()) == :prod do
-          Logger.info("Race #{current_race} #{name} Complete! Started at #{started_at || "(unknown)"} with #{length(racers)} racers")
+          Logger.info("Location: #{location.id} Race #{current_race} #{name} Complete! Started at #{started_at || "(unknown)"} with #{length(racers)} racers")
         end
 
-        {Races.get_race_by_external_id!(id), get_profile_ids_for_racer_data(racer_data)}
+        # When a new location is added, this throws an exception because there is no data recorded yet
+        try do
+          {Races.get_race_by_external_id!(id, location), get_profile_ids_for_racer_data(racer_data)}
+        rescue
+          _e in Ecto.NoResultsError ->
+            {%{ended_at: DateTime.utc_now()}, %{}}
+
+          _e in Ecto.MultipleResultsError ->
+            {%{ended_at: DateTime.utc_now()}, %{}}
+        end
       end
 
     racer_data = augment_racer_data(racer_data, profile_id_by_kart)
@@ -409,7 +426,7 @@ defmodule KartVids.Races.Listener do
     log_unexpected_keys(race, "race", @expected_race_keys)
 
     if unquote(Mix.env()) == :prod do
-      Logger.info("Race #{name} (#{id}) continues with #{length(racers)} racers")
+      Logger.info("Location: #{state.config.location.id} Race #{name} (#{id}) continues with #{length(racers)} racers")
     end
 
     speed = parse_speed_level(speed_level)
@@ -417,7 +434,7 @@ defmodule KartVids.Races.Listener do
     new_speed = min(speed, fastest_speed_level || 99)
 
     if new_speed != speed do
-      Logger.info("Speed changed from #{speed} to #{new_speed}!")
+      Logger.info("Location: #{state.config.location.id} Speed changed from #{speed} to #{new_speed}!")
     end
 
     state
@@ -454,7 +471,7 @@ defmodule KartVids.Races.Listener do
     speed = parse_speed_level(speed_level)
     win_by = Map.get(race, "win_by")
 
-    Logger.info("Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers")
+    Logger.info("Location: #{state.config.location_id} Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers")
 
     racer_data = extract_racer_data(racers, win_by)
     profile_ids_by_kart = get_profile_ids_for_racer_data(racer_data)
@@ -557,13 +574,13 @@ defmodule KartVids.Races.Listener do
             max_average_rpms: performance[:rpm],
             fastest_lap_time: performance[:lap_time],
             kart_num: kart_num,
-            number_of_races: 1,
+            number_of_races: Map.get(stats || %{}, :number_of_races, 1),
             location_id: location_id,
             type: Kart.kart_type(kart_num, location)
           })
 
         true ->
-          Logger.info("Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect(performance)}")
+          Logger.info("Loaction: #{location_id} Kart #{kart_num} was excluded because performance data was out of bounds: #{inspect(performance)}")
 
           if stats && performance.lap_time < stats.fastest_lap_time do
             Logger.warning("Kart #{kart_num} was excluded because performance data was too low out of bounds: #{inspect(performance)}")

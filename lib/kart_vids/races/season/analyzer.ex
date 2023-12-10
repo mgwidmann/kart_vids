@@ -177,38 +177,45 @@ defmodule KartVids.Races.Season.Analyzer do
   end
 
   defp analyze_season(state = %State{last_race: last_race, season: season, watching: %Date{}}) do
-    race = Races.get_race_by_external_id!(last_race) |> Races.race_with_racers()
+    race = Races.get_race_by_external_id(last_race, season.location)
 
-    season_racers = season.season_racers |> Enum.reduce(MapSet.new(), &MapSet.put(&2, &1.id))
+    state =
+      if race do
+        race = Races.race_with_racers(race)
 
-    if Enum.count(race.racers, &MapSet.member?(season_racers, &1.racer_profile_id)) >= @minimum_racers do
-      state = update_state_for_race(state, race)
+        season_racers = season.season_racers |> Enum.reduce(MapSet.new(), &MapSet.put(&2, &1.id))
 
-      updated =
-        if race do
-          updated = update_race(race, state.practice, Race.league_type_practice(), season.id)
-          updated = updated || update_race(race, state.qualifiers, Race.league_type_qualifier(), season.id)
-          practice_or_qualifier = updated
-          updated = updated || update_race(race, state.feature, Race.league_type_feature(), season.id)
+        state =
+          if Enum.count(race.racers, &MapSet.member?(season_racers, &1.racer_profile_id)) >= @minimum_racers do
+            state = update_state_for_race(state, race)
 
-          if updated && !practice_or_qualifier do
-            mark_win_by_position(race)
+            updated = update_race(race, state.practice, Race.league_type_practice(), season.id)
+            updated = updated || update_race(race, state.qualifiers, Race.league_type_qualifier(), season.id)
+            practice_or_qualifier = updated
+            updated = updated || update_race(race, state.feature, Race.league_type_feature(), season.id)
+
+            if updated && !practice_or_qualifier do
+              mark_win_by_position(race)
+            end
+
+            # These are racers which need to be added if they don't already exist
+            if updated do
+              for racer <- race.racers do
+                Races.create_season_racer(season, racer.racer_profile_id)
+              end
+            end
+
+            state
+          else
+            state
           end
 
-          updated
-        end
-
-      # These are racers which need to be added if they don't already exist
-      if updated do
-        for racer <- race.racers do
-          Races.create_season_racer(season, racer.racer_profile_id)
-        end
+        state
+      else
+        state
       end
 
-      state
-    else
-      state
-    end
+    state
   end
 
   # Only update if the league type is set to none

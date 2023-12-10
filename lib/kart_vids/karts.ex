@@ -15,13 +15,11 @@ defmodule KartVids.Karts do
     records = get_fastest_races(kart, location)
 
     if length(records) < @min_karts_to_compute do
-      Logger.warning("Location: #{location.id} -- Refusing to compute data when less than #{@min_karts_to_compute}, data: #{inspect(Enum.map(records, & &1.fastest_lap))}")
-
       %{
         average_fastest_lap_time: nil,
         fastest_lap_time: nil,
         std_dev: nil,
-        number_of_races: 0,
+        number_of_races: length(records),
         fastest_racer_id: nil
       }
     else
@@ -37,7 +35,7 @@ defmodule KartVids.Karts do
       %Racer{id: racer_id, fastest_lap: fastest_lap} = records |> Enum.min_by(& &1.fastest_lap)
 
       if kart.fastest_lap_time && kart.fastest_lap_time > fastest_lap do
-        Logger.warning("Location #{location.id} -- Fastest racer #{racer_id} for kart #{kart.kart_num} being updated to #{fastest_lap}")
+        Logger.warning("Location #{location.id} -- Fastest racer #{racer_id} for kart #{kart.kart_num} being updated from #{kart.fastest_lap_time} to #{fastest_lap}")
       end
 
       %{

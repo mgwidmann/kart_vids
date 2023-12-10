@@ -4,6 +4,8 @@ defmodule KartVids.Races.RacerProfileMigrator do
   require Logger
   alias KartVids.Repo
   alias KartVids.Races
+  alias KartVids.Races.Racer
+  alias KartVids.Races.SeasonRacer
   alias KartVids.Content
   alias KartVids.Content.Location
   alias KartVids.Races.RacerProfile
@@ -15,7 +17,10 @@ defmodule KartVids.Races.RacerProfileMigrator do
     location = Content.get_location!(location_id)
 
     for s <- 0..count//@step do
-      profiles = Repo.all(from(rp in RacerProfile, limit: @step, offset: ^s, order_by: rp.id)) |> Repo.preload(:races)
+      profiles =
+        Repo.all(from(rp in RacerProfile, limit: @step, offset: ^s, order_by: rp.id))
+        |> remove_duplicate_profiles()
+        |> Repo.preload(:races)
 
       for profile <- profiles do
         migrate_profile(location, profile)
@@ -23,18 +28,56 @@ defmodule KartVids.Races.RacerProfileMigrator do
     end
   end
 
+  def remove_duplicate_profiles(profiles, return_profiles \\ [])
+
+  def remove_duplicate_profiles(%RacerProfile{} = profile, return_profiles), do: remove_duplicate_profiles([profile], return_profiles)
+  def remove_duplicate_profiles([], return_profiles), do: Enum.reverse(return_profiles)
+
+  def remove_duplicate_profiles([profile | other_profiles], return_profiles) do
+    dupes_with_original =
+      from(p in RacerProfile, join: p2 in RacerProfile, on: p.external_racer_id == p2.external_racer_id, select: p2, where: p.id == ^profile.id, order_by: p2.inserted_at)
+      |> Repo.all()
+
+    if length(dupes_with_original) > 1 do
+      [original | dupes] = dupes_with_original
+
+      additional_races =
+        for dup <- dupes do
+          from(r in Racer, where: r.racer_profile_id == ^dup.id)
+          |> Repo.update_all(set: [racer_profile_id: original.id])
+          |> elem(0)
+        end
+        |> Enum.sum()
+
+      dup_ids = Enum.map(dupes, & &1.id)
+
+      from(s in SeasonRacer, where: s.racer_profile_id in ^dup_ids)
+      |> Repo.delete_all()
+
+      Races.update_racer_profile(original, %{lifetime_race_count: original.lifetime_race_count + additional_races})
+
+      for dup <- dupes, do: Races.delete_racer_profile(dup)
+
+      remove_duplicate_profiles(other_profiles, return_profiles)
+    else
+      remove_duplicate_profiles(other_profiles, [profile | return_profiles])
+    end
+  end
+
+  defmodule CannotMigrateProfile do
+    defexception message: "", racer_profile_id: nil
+  end
+
   def migrate_profile(%Location{min_lap_time: min_lap_time} = location, %RacerProfile{} = profile) do
     profile = migrate_profile_races(profile, location)
 
     fastest_lap_time =
-      if profile.fastest_lap_time <= min_lap_time do
-        profile.races
-        |> Stream.reject(&(&1.fastest_lap <= min_lap_time))
-        |> Stream.map(& &1.fastest_lap)
-        |> Enum.min(&<=/2, fn -> raise "Unable to migrate profile: #{inspect(profile, pretty: true)}" end)
-      else
-        profile.fastest_lap_time
-      end
+      profile.races
+      |> Stream.reject(&(&1.fastest_lap <= min_lap_time || &1.disqualify_fastest_lap))
+      |> Stream.map(& &1.fastest_lap)
+      |> Enum.min(&<=/2, fn ->
+        raise CannotMigrateProfile, message: "Unable to migrate profile: #{inspect(profile, pretty: true)}", racer_profile_id: profile.id
+      end)
 
     overall_average_lap_count = Stream.reject(profile.races, &(&1.average_lap <= min_lap_time)) |> Enum.count()
 
@@ -78,6 +121,9 @@ defmodule KartVids.Races.RacerProfileMigrator do
       },
       true
     )
+  rescue
+    e in CannotMigrateProfile ->
+      Logger.warning(e)
   end
 
   def migrate_profile_races(%RacerProfile{races: races} = profile, %Location{min_lap_time: min_lap_time}) do
