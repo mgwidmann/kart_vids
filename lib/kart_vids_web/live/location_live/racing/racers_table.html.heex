@@ -33,7 +33,7 @@
     </.link>
   </:col>
   <:col :let={racer} label="Name" row_class="max-w-[200px]">
-    <.link navigate={~p"/locations/#{@location}/racers/by_nickname/#{racer.nickname}"}>
+    <.link navigate={if(racer.external_racer_id, do: ~p"/locations/#{@location}/racers/by_external/#{racer.external_racer_id}", else: ~p"/locations/#{@location}/racers/by_nickname/#{racer.nickname}")}>
       <span class="text-xs xs:text-md md:text-xl break-words"><%= racer.nickname %></span>
     </.link>
   </:col>

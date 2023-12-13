@@ -343,7 +343,7 @@ defmodule KartVids.Races.Listener do
       end
 
     speed = parse_speed_level(speed_level)
-    racer_data = extract_racer_data(racers, win_by)
+    racer_data = extract_racer_data(racers, laps, win_by)
     scoreboard_by_kart = extract_scoreboard_data(scoreboard)
 
     {race, profile_id_by_kart} =
@@ -437,13 +437,15 @@ defmodule KartVids.Races.Listener do
       Logger.info("Location: #{state.config.location.id} Speed changed from #{speed} to #{new_speed}!")
     end
 
+    laps = Map.get(race, "laps", [])
+
     state
     |> Map.merge(%{
       current_race: id,
       fastest_speed_level: new_speed,
       speed_level: speed,
       race_name: name,
-      racers: extract_racer_data(racers, win_by),
+      racers: extract_racer_data(racers, laps, win_by),
       scoreboard: nil,
       win_by: win_by
     })
@@ -470,10 +472,11 @@ defmodule KartVids.Races.Listener do
     log_unexpected_keys(race, "race", @expected_race_keys)
     speed = parse_speed_level(speed_level)
     win_by = Map.get(race, "win_by")
+    laps = Map.get(race, "laps", [])
 
     Logger.info("Location: #{state.config.location_id} Race: #{name} started at #{starts_at} is running at speed #{speed_level} with #{length(racers)} racers")
 
-    racer_data = extract_racer_data(racers, win_by)
+    racer_data = extract_racer_data(racers, laps, win_by)
     profile_ids_by_kart = get_profile_ids_for_racer_data(racer_data)
     racer_data = augment_racer_data(racer_data, profile_ids_by_kart)
 
@@ -568,13 +571,13 @@ defmodule KartVids.Races.Listener do
         kart && stats ->
           Races.update_kart(:system, kart, Map.merge(stats, %{max_average_rpms: Enum.max([kart.max_average_rpms, performance[:rpm]]), type: Kart.kart_type(kart_num, location)}))
 
-        !kart && performance[:lap_time] ->
+        !kart && performance[:lap_time] && stats ->
           Races.create_kart(:system, %{
             average_fastest_lap_time: performance[:lap_time],
             max_average_rpms: performance[:rpm],
             fastest_lap_time: performance[:lap_time],
             kart_num: kart_num,
-            number_of_races: Map.get(stats || %{}, :number_of_races, 1),
+            number_of_races: Map.get(stats, :number_of_races, 1),
             location_id: location_id,
             type: Kart.kart_type(kart_num, location)
           })
@@ -701,10 +704,10 @@ defmodule KartVids.Races.Listener do
   end
 
   @typep racer :: %{String.t() => String.t(), String.t() => list(lap()), String.t() => String.t()}
-  @spec extract_racer_data(%{String.t() => Racer.t()}, list(racer()), String.t()) :: %{String.t() => racer()}
-  def extract_racer_data(by_kart \\ %{}, racers, win_by)
+  @spec extract_racer_data(%{String.t() => Racer.t()}, list(racer()), list(lap()), String.t()) :: %{String.t() => racer()}
+  def extract_racer_data(by_kart \\ %{}, racers, all_laps, win_by)
 
-  def extract_racer_data(by_kart, [], "laptime") do
+  def extract_racer_data(by_kart, [], _all_laps, "laptime") do
     by_kart
     |> Enum.to_list()
     |> Enum.sort_by(fn {_kart_num, %Racer{fastest_lap: fastest_lap}} ->
@@ -718,7 +721,7 @@ defmodule KartVids.Races.Listener do
     |> Enum.into(%{})
   end
 
-  def extract_racer_data(by_kart, [], "position") do
+  def extract_racer_data(by_kart, [], _all_laps, "position") do
     by_kart
     |> Enum.to_list()
     |> Enum.sort_by(fn {_kart_num, %Racer{laps: laps}} ->
@@ -739,6 +742,7 @@ defmodule KartVids.Races.Listener do
           racer = %{"id" => external_racer_id, "kart_number" => kart_num, "laps" => laps, "nickname" => nickname, "photo_url" => photo, "ranking_by_rpm" => ranking_by_rpm, "rpm" => rpm_str, "rpm_change" => rpm_change_str}
           | racers
         ],
+        all_laps,
         win_by
       ) do
     log_unexpected_keys(racer, "racers[*]", @expected_racer_keys)
@@ -746,7 +750,7 @@ defmodule KartVids.Races.Listener do
 
     by_kart
     |> add_racer(external_racer_id, kart_num, nickname, photo, fastest_lap, average_lap, last_lap, laps, ranking_by_rpm, rpm_str, rpm_change_str)
-    |> extract_racer_data(racers, win_by)
+    |> extract_racer_data(racers, all_laps, win_by)
   end
 
   # No lap data, use nil for all lap related fields
@@ -755,13 +759,16 @@ defmodule KartVids.Races.Listener do
         [
           racer = %{"id" => external_racer_id, "kart_number" => kart_num, "nickname" => nickname, "photo_url" => photo, "ranking_by_rpm" => ranking_by_rpm, "rpm" => rpm_str, "rpm_change" => rpm_change_str} | racers
         ],
+        all_laps,
         win_by
       ) do
     log_unexpected_keys(racer, "racers[*]", @expected_racer_keys)
+    kart_laps = all_laps |> Enum.filter(&(&1["kart_number"] == kart_num))
+    {fastest_lap, average_lap, last_lap} = analyze_laps(kart_laps)
 
     by_kart
-    |> add_racer(external_racer_id, kart_num, nickname, photo, nil, nil, nil, [], ranking_by_rpm, rpm_str, rpm_change_str)
-    |> extract_racer_data(racers, win_by)
+    |> add_racer(external_racer_id, kart_num, nickname, photo, fastest_lap, average_lap, last_lap, kart_laps, ranking_by_rpm, rpm_str, rpm_change_str)
+    |> extract_racer_data(racers, all_laps, win_by)
   end
 
   # Sometimes races are reset before they even begin, which results in nothing in these fields, so just skip it

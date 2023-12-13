@@ -117,7 +117,7 @@ defmodule KartVidsWeb.RaceLive.League do
     |> assign(:qualifying, calculate_qualifying(races))
   end
 
-  defp apply_action(socket, :season, %{"race_id" => race_id}) do
+  defp apply_action(socket, :season, params = %{"race_id" => race_id}) do
     admin_redirect(socket) do
       races = Races.league_races_on_date(socket.assigns.date, socket.assigns.location_id)
 
@@ -126,6 +126,7 @@ defmodule KartVidsWeb.RaceLive.League do
       |> assign(:races, Races.league_races_on_date(socket.assigns.date, socket.assigns.location_id))
       |> assign(:seasons, Races.list_seasons())
       |> assign(:race, Races.get_race!(race_id))
+      |> assign(:tab, Map.get(params, "tab", "races"))
       |> assign(:qualifying, calculate_qualifying(races))
     end
   end

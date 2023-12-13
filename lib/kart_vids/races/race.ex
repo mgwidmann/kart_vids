@@ -15,10 +15,49 @@ defmodule KartVids.Races.Race do
     # 2 : ??
     # 3 : ??
     field :heat_status_id, :integer
-    # 214 : Birthday party? (Junior Event)
-    # 212 : Regular Junior Race
-    # 231 : Adult event
-    # 178 : Regular Adult Race
+    # 18  : Qualifier - Pro League   Adult Qualifier                          3
+    # 29  : 12 Lap Junior - Group                                             2
+    # 52  : 10 Lap Group Race                                                 3
+    # 54  : 10 Lap Monaco                                                     2
+    # 55  : 8 lap                                                             2
+    # 56  : 10 Lap Group Race         12 Lap Race                             2, 3
+    # 57  : 12 Lap Race - Event       AEKC Race (Adult Feature)               2, 3
+    # 58  : 8 lap                                                             2, 3
+    # 59  : 8 lap                                                             2, 3
+    # 68  : 12 Lap Race                                                       2, 3
+    # 69  : 12 Lap Race                                                       2, 3
+    # 70  : 12 Lap Race - Event                                               2, 3
+    # 71  : 12 Lap Race - Event                                               2, 3
+    # 72  : 12 Lap Race                                                       2, 3
+    # 73  : 12 Lap Race - Event                                               2, 3
+    # 94  : 5 Min Junior Race                                                 2
+    # 96  : 5 Min Junior Race - Event                                         2
+    # 99  : PRIVATE Res Adult                                                 2, 3
+    # 105 : 10 Lap Jr Position                                                2
+    # 107 : PRIVATE Res Adult                                                 3
+    # 111 : 12 Lap Private Race                                               2, 3
+    # 112 : 5 Min Junior Heat                                                 2
+    # 113 : 5 Min Junior Heat                                                 2
+    # 116 : 5 Min Junior Heat - Event                                         2
+    # 117 : 5 Min Junior Heat - Event                                         2, 3
+    # 126 : 10 Lap Pro Position                                               2, 3
+    # 128 : 10 Lap Group Race                                                 2, 3
+    # 132 : 5 Min Junior Heat                                                 2, 3
+    # 133 : 10 Lap JR Position                                                2, 3
+    # 136 : 10 Lap JR Position                                                2, 3
+    # 163 : 10 Lap Group Event            Adult Qualifier                     2, 3
+    # 166 : AEKC Race                     Adult Feature                       2
+    # 168 : 8 Lap                                                             2
+    # 178 : 12 Lap Race                   Regular Adult Race
+    # 179 : 12 Lap Race Group             Adult Practice/Qualifier
+    # 181 : 10 Lap Junior Group                                               2
+    # 204 : PRIVATE 12 Lap Race                                               2, 3
+    # 212 : 5 Min Junior Heat             Regular Junior Race                 2, 3
+    # 213 : PRIVATE 5 Min Junior Heat                                         2
+    # 214 : 5 Min Junior Heat - Event                                         2
+    # 221 : 10 Lap JR Position            Junior position qualifier?          2
+    # 222 : 10 Lap Pro Position           Adult position qualifier            2, 3
+    # 231 : 12 Lap Race - Event           Adult                               2, 3
     field :heat_type_id, :integer
 
     belongs_to :location, Location

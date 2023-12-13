@@ -34,9 +34,26 @@ defmodule KartVids.Karts do
 
       %Racer{id: racer_id, fastest_lap: fastest_lap} = records |> Enum.min_by(& &1.fastest_lap)
 
-      if kart.fastest_lap_time && kart.fastest_lap_time > fastest_lap do
+      if kart.fastest_lap_time && fastest_lap && Decimal.compare(Decimal.from_float(fastest_lap), Decimal.from_float(kart.fastest_lap_time)) != :eq do
         Logger.warning("Location #{location.id} -- Fastest racer #{racer_id} for kart #{kart.kart_num} being updated from #{kart.fastest_lap_time} to #{fastest_lap}")
       end
+
+      alternate_fastest =
+        case get_fastest_races(kart, location, 1) do
+          [alternate_fastest] ->
+            alternate_fastest
+
+          [] ->
+            nil
+        end
+
+      {racer_id, fastest_lap} =
+        if alternate_fastest && alternate_fastest.fastest_lap < fastest_lap do
+          Logger.warning("Location #{location.id} -- ALTERNATE method fastest racer #{racer_id} for kart #{kart.kart_num} being updated from #{kart.fastest_lap_time} to #{alternate_fastest.fastest_lap} instead of #{fastest_lap}")
+          {alternate_fastest.id, alternate_fastest.fastest_lap}
+        else
+          {racer_id, fastest_lap}
+        end
 
       %{
         average_fastest_lap_time: mean,
@@ -58,8 +75,10 @@ defmodule KartVids.Karts do
     |> Repo.one()
   end
 
+  @started_at_date Date.from_iso8601!("2022-11-01")
+
   defp started_at(%Location{}, nil) do
-    Date.from_iso8601!("2022-11-01")
+    @started_at_date
   end
 
   defp started_at(%Location{adult_kart_reset_on: adult_kart_reset_on, junior_kart_reset_on: junior_kart_reset_on}, kart) do
@@ -70,7 +89,7 @@ defmodule KartVids.Karts do
       :junior ->
         junior_kart_reset_on
     end
-    |> Kernel.||(Date.from_iso8601!("2022-11-01"))
+    |> Kernel.||(@started_at_date)
   end
 
   def fastest_races(kart, location) do
@@ -82,9 +101,11 @@ defmodule KartVids.Karts do
 
   @max_limit 10
 
-  def get_fastest_races(nil, _location), do: []
+  def get_fastest_races(kart, location, limit \\ @max_limit)
 
-  def get_fastest_races(kart, location) do
+  def get_fastest_races(nil, _location, _limit), do: []
+
+  def get_fastest_races(kart, location, limit) when limit <= @max_limit do
     started_at = started_at(location, kart)
 
     from(r in Racer,
@@ -93,11 +114,11 @@ defmodule KartVids.Karts do
       where: r.location_id == ^location.id and r.disqualify_fastest_lap == false and r.fastest_lap > ^location.min_lap_time and r.kart_num == ^kart.kart_num and fragment("?::date >= ?", race.started_at, ^started_at),
       order_by: {:asc, r.fastest_lap},
       # Top 10
-      limit: @max_limit * @max_limit
+      limit: ^Enum.max([@max_limit, limit * limit])
     )
     |> Repo.all()
     |> Stream.uniq_by(& &1.racer_profile_id)
-    |> Enum.take(@max_limit)
+    |> Enum.take(limit)
   end
 
   def compute_stats(records, fastest_time, location) do
