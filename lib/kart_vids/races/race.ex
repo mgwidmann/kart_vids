@@ -15,7 +15,7 @@ defmodule KartVids.Races.Race do
     # 2 : ??
     # 3 : ??
     field :heat_status_id, :integer
-    # 18  : Qualifier - Pro League   Adult Qualifier                          3
+    # 18  : Qualifier - Pro League    Adult Qualifier                         3
     # 29  : 12 Lap Junior - Group                                             2
     # 52  : 10 Lap Group Race                                                 3
     # 54  : 10 Lap Monaco                                                     2

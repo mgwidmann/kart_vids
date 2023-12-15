@@ -964,7 +964,7 @@ defmodule KartVids.Races do
 
   def delete_season_racer(racer_profile_id) do
     id =
-      from(s in SeasonRacer, select: s.id, where: s.racer_profile_id == ^racer_profile_id, order_by: {:desc, s.inserted_at})
+      from(s in SeasonRacer, select: s.id, where: s.racer_profile_id == ^racer_profile_id, order_by: {:desc, s.inserted_at}, limit: 1)
       |> Repo.one()
 
     if id do

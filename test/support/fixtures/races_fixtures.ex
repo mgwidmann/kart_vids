@@ -176,12 +176,13 @@ defmodule KartVids.RacesFixtures do
     season_racer
   end
 
-  def create_season_race(name, race_by, win_by, season_racers) when is_binary(name) and race_by in [:laps, :minutes] and win_by in [:laptime, :position] do
-    race = race_fixture(%{name: name})
+  def create_season_race(name, started_at, race_by, win_by, season_racers, location) when is_binary(name) and race_by in [:laps, :minutes] and win_by in [:laptime, :position] do
+    race = race_fixture(%{name: name, location: location, started_at: started_at})
 
     profile_ids =
       for {racer, i} <- season_racers |> Enum.with_index() do
         racer_fixture(%{
+          location: location,
           nickname: racer.nickname,
           photo: racer.photo,
           position: i + 1,

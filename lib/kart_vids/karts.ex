@@ -30,29 +30,22 @@ defmodule KartVids.Karts do
         |> Repo.one()
 
       fastest_time = get_fastest_kart_time_for_type(location, kart.kart_num, kart.type)
-      {records, _dropped, mean, std_dev} = compute_stats(records, fastest_time, location)
-
-      %Racer{id: racer_id, fastest_lap: fastest_lap} = records |> Enum.min_by(& &1.fastest_lap)
-
-      if kart.fastest_lap_time && fastest_lap && Decimal.compare(Decimal.from_float(fastest_lap), Decimal.from_float(kart.fastest_lap_time)) != :eq do
-        Logger.warning("Location #{location.id} -- Fastest racer #{racer_id} for kart #{kart.kart_num} being updated from #{kart.fastest_lap_time} to #{fastest_lap}")
-      end
+      {_records, _dropped, mean, std_dev} = compute_stats(records, fastest_time, location)
 
       alternate_fastest =
-        case get_fastest_races(kart, location, 1) do
-          [alternate_fastest] ->
-            alternate_fastest
+        case get_fastest_races(kart, location, 5) do
+          alternate_fastest = [_ | _] ->
+            alternate_fastest |> quality_filter(location, kart.std_dev || @large_std_dev, fastest_time) |> List.first()
 
           [] ->
             nil
         end
 
       {racer_id, fastest_lap} =
-        if alternate_fastest && alternate_fastest.fastest_lap < fastest_lap do
-          Logger.warning("Location #{location.id} -- ALTERNATE method fastest racer #{racer_id} for kart #{kart.kart_num} being updated from #{kart.fastest_lap_time} to #{alternate_fastest.fastest_lap} instead of #{fastest_lap}")
+        if alternate_fastest do
           {alternate_fastest.id, alternate_fastest.fastest_lap}
         else
-          {racer_id, fastest_lap}
+          {nil, nil}
         end
 
       %{

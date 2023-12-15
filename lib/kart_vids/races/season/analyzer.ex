@@ -128,6 +128,7 @@ defmodule KartVids.Races.Season.Analyzer do
           |> Map.get(:races)
           # Reset all practice/qualifiers/feature in order to reanalyze them given the current conditions, to dump any potentially bad analysis if data changed
           |> reduce_races_to_state(%State{state | season: reloaded_season, practice: %{}, qualifiers: %{}, feature: %{}})
+          |> analyze_season()
         else
           # No races exist for watching date yet
           state
@@ -151,10 +152,10 @@ defmodule KartVids.Races.Season.Analyzer do
 
   # Ignore data while race is ongoing
   def handle_info(
-        %Phoenix.Socket.Broadcast{event: "race_data", payload: %RaceListener.State{current_race: current_race, config: %RaceListener.Config{location_id: location_id}}},
+        %Phoenix.Socket.Broadcast{event: "race_data", payload: %RaceListener.State{config: %RaceListener.Config{location_id: location_id}}},
         state = %State{season: %Season{location_id: location_id}, watching: %Date{}}
       ) do
-    {:noreply, %{state | last_race: current_race}}
+    {:noreply, state}
   end
 
   def handle_info(
@@ -173,49 +174,52 @@ defmodule KartVids.Races.Season.Analyzer do
   def reduce_races_to_state(races, analyzer_state = %State{}) do
     races
     |> Enum.sort_by(& &1.started_at, {:asc, DateTime})
-    |> Enum.reduce(analyzer_state, fn race, state -> update_state_for_race(state, race) end)
+    |> Enum.reduce(analyzer_state, fn race, state ->
+      case update_state_for_race(state, race) do
+        {:ok, new_state} -> new_state
+        :ignore -> state
+      end
+    end)
   end
 
   defp analyze_season(state = %State{last_race: last_race, season: season, watching: %Date{}}) do
     race = Races.get_race_by_external_id(last_race, season.location)
 
-    state =
+    new_state =
       if race do
         race = Races.race_with_racers(race)
 
         season_racers = season.season_racers |> Enum.reduce(MapSet.new(), &MapSet.put(&2, &1.id))
 
-        state =
-          if Enum.count(race.racers, &MapSet.member?(season_racers, &1.racer_profile_id)) >= @minimum_racers do
-            state = update_state_for_race(state, race)
+        if Enum.count(race.racers, &MapSet.member?(season_racers, &1.racer_profile_id)) >= @minimum_racers do
+          case update_state_for_race(state, race) do
+            {:ok, state} ->
+              updated = update_race(race, state.practice, Race.league_type_practice(), season.id)
+              updated = updated || update_race(race, state.qualifiers, Race.league_type_qualifier(), season.id)
+              practice_or_qualifier = updated
+              updated = updated || update_race(race, state.feature, Race.league_type_feature(), season.id)
 
-            updated = update_race(race, state.practice, Race.league_type_practice(), season.id)
-            updated = updated || update_race(race, state.qualifiers, Race.league_type_qualifier(), season.id)
-            practice_or_qualifier = updated
-            updated = updated || update_race(race, state.feature, Race.league_type_feature(), season.id)
-
-            if updated && !practice_or_qualifier do
-              mark_win_by_position(race)
-            end
-
-            # These are racers which need to be added if they don't already exist
-            if updated do
-              for racer <- race.racers do
-                Races.create_season_racer(season, racer.racer_profile_id)
+              if updated && !practice_or_qualifier do
+                mark_win_by_position(race)
               end
-            end
 
-            state
-          else
-            state
+              # These are racers which need to be added if they don't already exist
+              if updated do
+                for racer <- race.racers do
+                  Races.create_season_racer(season, racer.racer_profile_id)
+                end
+              end
+
+              state
+
+            :ignore ->
+              nil
           end
-
-        state
-      else
-        state
+        end
       end
 
-    state
+    # If state was updated return otherwise return existing state
+    new_state || state
   end
 
   # Only update if the league type is set to none
@@ -234,6 +238,7 @@ defmodule KartVids.Races.Season.Analyzer do
       _ ->
         false
     end)
+    |> then(&(!!&1))
   end
 
   # League type is already set, no need to change anything
@@ -255,47 +260,50 @@ defmodule KartVids.Races.Season.Analyzer do
   def update_state_for_race(state, race) do
     cond do
       # Less than minimum racers did not get their practice race and all racers are missing a qualifier
-      racers_in_map(race.racers, state.practice) == 0 && map_size(state.qualifiers) == 0 && map_size(state.feature) == 0 ->
-        Enum.reduce(race.racers, state, fn racer, state ->
-          put_in(state, [Access.key!(:practice), racer.racer_profile_id], race.id)
-        end)
+      racers_in_map(race.racers, state.practice, race.id) == 0 && map_size(state.qualifiers) == 0 && map_size(state.feature) == 0 ->
+        state =
+          Enum.reduce(race.racers, state, fn racer, state ->
+            put_in(state, [Access.key!(:practice), racer.racer_profile_id], race.id)
+          end)
+
+        {:ok, state}
 
       # Any racer did not get all their qualifiers
-      racers_in_mapset(race.racers, state.qualifiers, state.season.daily_qualifiers) >= @minimum_racers && map_size(state.feature) == 0 ->
-        Enum.reduce(race.racers, state, fn racer, state ->
-          {_, new_state} =
-            get_and_update_in(state, [Access.key!(:qualifiers), racer.racer_profile_id], fn v ->
-              {v, MapSet.put(v || MapSet.new(), race.id)}
-            end)
+      racers_in_mapset(race.racers, state.qualifiers, state.season.daily_qualifiers, race.id) >= @minimum_racers && map_size(state.feature) == 0 ->
+        state =
+          Enum.reduce(race.racers, state, fn racer, state ->
+            {_, new_state} =
+              get_and_update_in(state, [Access.key!(:qualifiers), racer.racer_profile_id], fn v ->
+                {v, MapSet.put(v || MapSet.new(), race.id)}
+              end)
 
-          new_state
-        end)
+            new_state
+          end)
+
+        {:ok, state}
 
       # Less than minimum racers did not get their feature race -- cannot use win by position as this is sometimes not set correctly
-      racers_in_map(race.racers, state.feature) < @minimum_racers ->
-        Enum.reduce(race.racers, state, fn racer, state ->
-          put_in(state, [Access.key!(:feature), racer.racer_profile_id], race.id)
-        end)
+      racers_in_map(race.racers, state.feature, race.id) < @minimum_racers ->
+        state =
+          Enum.reduce(race.racers, state, fn racer, state ->
+            put_in(state, [Access.key!(:feature), racer.racer_profile_id], race.id)
+          end)
+
+        {:ok, state}
 
       true ->
-        Logger.warning([
-          "Analyzer doesn't know what to do with race #{race.id}!\n",
-          "pratices: #{racers_in_map(race.racers, state.practice)}\n",
-          "qualifiers: #{racers_in_mapset(race.racers, state.qualifiers, state.season.daily_qualifiers)} (dq: #{state.season.daily_qualifiers})\n",
-          "feature: #{racers_in_map(race.racers, state.feature)}\n",
-          "win? #{race.racers |> Enum.map(& &1.win_by) |> inspect()}"
-        ])
-
-        state
+        # This is not a race we should be considering since it did not fit anywhere into the bucketing strategy
+        # Usually these are races after the final feature race so just ignore it
+        :ignore
     end
   end
 
-  def racers_in_map(racers, practice_feature_map) do
-    Enum.count(racers, &Map.get(practice_feature_map, &1.racer_profile_id))
+  def racers_in_map(racers, practice_feature_map, race_id) do
+    Enum.count(racers, &(Map.get(practice_feature_map, &1.racer_profile_id, race_id) != race_id))
   end
 
-  def racers_in_mapset(racers, qualifying_map, qualifiers) do
-    Enum.count(racers, &(Map.get(qualifying_map, &1.racer_profile_id, MapSet.new()) |> MapSet.size() < qualifiers))
+  def racers_in_mapset(racers, qualifying_map, qualifiers, race_id) do
+    Enum.count(racers, &(Map.get(qualifying_map, &1.racer_profile_id, MapSet.new()) |> Enum.filter(fn qual_race_id -> qual_race_id != race_id end) |> length() < qualifiers))
   end
 
   defp watching_for_dates(watch_date, watch_until) do

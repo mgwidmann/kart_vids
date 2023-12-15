@@ -11,7 +11,8 @@ if [[ -z "$file" ]]; then
 fi
 
 mix ecto.drop
-mix ecto.setup
+mix ecto.create
+mix ecto.migrate
 
 echo Restoring $file...
 psql -U postgres -W -h localhost -p 5432 -d kart_vids_dev -f $file > /dev/null

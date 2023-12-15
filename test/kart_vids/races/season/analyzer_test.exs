@@ -55,8 +55,10 @@ defmodule KartVids.Races.Season.AnalyzerTest do
 
   describe "counting races" do
     test "adds practice", %{season: season} do
+      location = season.location
       season_racers = season.season_racers |> Enum.shuffle() |> Enum.take(5)
-      {race, profile_ids} = RacesFixtures.create_season_race("10 Lap Junior Practice Race", :laps, :laptime, season_racers)
+      now = DateTime.utc_now() |> DateTime.shift_zone!("America/New_York")
+      {race, profile_ids} = RacesFixtures.create_season_race("10 Lap Junior Practice Race", now, :laps, :laptime, season_racers, location)
 
       last_race = race.external_race_id
       practice = profile_ids |> Stream.map(fn id -> {id, race.id} end) |> Enum.into(%{})
@@ -76,9 +78,11 @@ defmodule KartVids.Races.Season.AnalyzerTest do
     end
 
     test "adds qualifier", %{season: season} do
+      location = season.location
       season_racers = season.season_racers |> Enum.shuffle() |> Enum.take(5)
-      {practice_race, _profile_ids} = RacesFixtures.create_season_race("Practice Race", :laps, :laptime, season_racers)
-      {qualifying_race, profile_ids} = RacesFixtures.create_season_race("Qualifying Race", :laps, :laptime, season_racers)
+      now = DateTime.utc_now() |> DateTime.shift_zone!("America/New_York")
+      {practice_race, _profile_ids} = RacesFixtures.create_season_race("Practice Race", now, :laps, :laptime, season_racers, location)
+      {qualifying_race, profile_ids} = RacesFixtures.create_season_race("Qualifying Race", DateTime.add(now, 5, :minute), :laps, :laptime, season_racers, location)
 
       last_race = qualifying_race.external_race_id
       # These racers already did a practice race
@@ -101,10 +105,12 @@ defmodule KartVids.Races.Season.AnalyzerTest do
     end
 
     test "adds 2nd qualifier", %{season: season} do
+      location = season.location
       season_racers = season.season_racers |> Enum.shuffle() |> Enum.take(5)
-      {practice_race, _profile_ids} = RacesFixtures.create_season_race("Practice Race", :laps, :laptime, season_racers)
-      {qualifying_race, _profile_ids} = RacesFixtures.create_season_race("Qualifying Race", :laps, :laptime, season_racers)
-      {qualifying_race_2, profile_ids} = RacesFixtures.create_season_race("Qualifying Race", :laps, :laptime, season_racers)
+      now = DateTime.utc_now() |> DateTime.shift_zone!("America/New_York")
+      {practice_race, _profile_ids} = RacesFixtures.create_season_race("Practice Race", now, :laps, :laptime, season_racers, location)
+      {qualifying_race, _profile_ids} = RacesFixtures.create_season_race("Qualifying Race", DateTime.add(now, 5, :minute), :laps, :laptime, season_racers, location)
+      {qualifying_race_2, profile_ids} = RacesFixtures.create_season_race("Qualifying Race", DateTime.add(now, 10, :minute), :laps, :laptime, season_racers, location)
 
       last_race = qualifying_race_2.external_race_id
       # These racers already did a practice and a single qualifying race
@@ -128,11 +134,13 @@ defmodule KartVids.Races.Season.AnalyzerTest do
     end
 
     test "adds feature", %{season: season} do
+      location = season.location
       season_racers = season.season_racers |> Enum.shuffle() |> Enum.take(5)
-      {practice_race, _profile_ids} = RacesFixtures.create_season_race("Practice Race", :laps, :laptime, season_racers)
-      {qualifying_race, _profile_ids} = RacesFixtures.create_season_race("Qualifying Race", :laps, :laptime, season_racers)
-      {qualifying_race_2, _profile_ids} = RacesFixtures.create_season_race("Qualifying Race", :laps, :laptime, season_racers)
-      {feature_race, profile_ids} = RacesFixtures.create_season_race("AEKC Race", :laps, :position, season_racers)
+      now = DateTime.utc_now() |> DateTime.shift_zone!("America/New_York")
+      {practice_race, _profile_ids} = RacesFixtures.create_season_race("Practice Race", now, :laps, :laptime, season_racers, location)
+      {qualifying_race, _profile_ids} = RacesFixtures.create_season_race("Qualifying Race", DateTime.add(now, 5, :minute), :laps, :laptime, season_racers, location)
+      {qualifying_race_2, _profile_ids} = RacesFixtures.create_season_race("Qualifying Race", DateTime.add(now, 10, :minute), :laps, :laptime, season_racers, location)
+      {feature_race, profile_ids} = RacesFixtures.create_season_race("AEKC Race", DateTime.add(now, 15, :minute), :laps, :position, season_racers, location)
 
       last_race = feature_race.external_race_id
       # These racers already did a practice and qualifying race
@@ -157,9 +165,11 @@ defmodule KartVids.Races.Season.AnalyzerTest do
 
   describe "updating the race" do
     test "updates practice", %{season: season} do
+      location = season.location
       season_id = season.id
       season_racers = season.season_racers |> Enum.shuffle() |> Enum.take(5)
-      {practice_race, profile_ids} = RacesFixtures.create_season_race("10 Lap Junior Practice Race", :laps, :laptime, season_racers)
+      now = DateTime.utc_now() |> DateTime.shift_zone!("America/New_York")
+      {practice_race, profile_ids} = RacesFixtures.create_season_race("10 Lap Junior Practice Race", now, :laps, :laptime, season_racers, location)
 
       last_race = practice_race.external_race_id
       practice = profile_ids |> Stream.map(fn id -> {id, practice_race.id} end) |> Enum.into(%{})
@@ -167,7 +177,8 @@ defmodule KartVids.Races.Season.AnalyzerTest do
       assert {:noreply, %Analyzer.State{last_race: ^last_race, practice: ^practice, qualifiers: %{}, feature: %{}}} =
                Analyzer.handle_info(
                  %Phoenix.Socket.Broadcast{event: "race_completed", payload: %Listener.State{current_race: last_race}},
-                 %Analyzer.State{last_race: last_race, season: season, practice: practice, qualifiers: %{}, feature: %{}, watching: Date.utc_today(), timeout: :timer.seconds(30)}
+                 # Empty practice because it should analyze the last race
+                 %Analyzer.State{last_race: last_race, season: season, practice: %{}, qualifiers: %{}, feature: %{}, watching: Date.utc_today(), timeout: :timer.seconds(30)}
                )
 
       assert %Races.Race{league?: true, league_type: :practice, season_id: ^season_id} = Races.get_race!(practice_race.id)
@@ -183,10 +194,14 @@ defmodule KartVids.Races.Season.AnalyzerTest do
     end
 
     test "updates qualifier", %{season: season} do
+      location = season.location
       season_id = season.id
       season_racers = season.season_racers |> Enum.shuffle() |> Enum.take(5)
-      {practice_race, _profile_ids} = RacesFixtures.create_season_race("Practice Race", :laps, :laptime, season_racers)
-      {qualifying_race, profile_ids} = RacesFixtures.create_season_race("Qualifying Race", :laps, :laptime, season_racers)
+      now = DateTime.utc_now() |> DateTime.shift_zone!("America/New_York")
+      {practice_race, _profile_ids} = RacesFixtures.create_season_race("Practice Race", now, :laps, :laptime, season_racers, location)
+      Races.update_race(:system, practice_race, %{league?: true, league_type: :practice, season_id: season_id})
+      # Not yet updated as a league race
+      {qualifying_race, profile_ids} = RacesFixtures.create_season_race("Qualifying Race", DateTime.add(now, 5, :minute), :laps, :laptime, season_racers, location)
 
       last_race = qualifying_race.external_race_id
       # These racers already did a practice race
@@ -197,7 +212,8 @@ defmodule KartVids.Races.Season.AnalyzerTest do
       assert {:noreply, %Analyzer.State{last_race: ^last_race, practice: ^practice, qualifiers: ^qualifiers, feature: ^feature}} =
                Analyzer.handle_info(
                  %Phoenix.Socket.Broadcast{event: "race_completed", payload: %Listener.State{current_race: last_race}},
-                 %Analyzer.State{last_race: last_race, season: season, practice: practice, qualifiers: qualifiers, feature: %{}, watching: Date.utc_today(), timeout: :timer.seconds(30)}
+                 # Empty qualifiers because it should analyze the last race
+                 %Analyzer.State{last_race: last_race, season: season, practice: practice, qualifiers: %{}, feature: %{}, watching: Date.utc_today(), timeout: :timer.seconds(30)}
                )
 
       assert %Races.Race{league?: true, league_type: :qualifier, season_id: ^season_id} = Races.get_race!(qualifying_race.id)
@@ -213,11 +229,15 @@ defmodule KartVids.Races.Season.AnalyzerTest do
     end
 
     test "updates 2nd qualifier", %{season: season} do
+      location = season.location
       season_id = season.id
       season_racers = season.season_racers |> Enum.shuffle() |> Enum.take(5)
-      {practice_race, _profile_ids} = RacesFixtures.create_season_race("Practice Race", :laps, :laptime, season_racers)
-      {qualifying_race, _profile_ids} = RacesFixtures.create_season_race("Qualifying Race 1", :laps, :laptime, season_racers)
-      {qualifying_race_2, profile_ids} = RacesFixtures.create_season_race("Qualifying Race 2", :laps, :laptime, season_racers)
+      now = DateTime.utc_now() |> DateTime.shift_zone!("America/New_York")
+      {practice_race, _profile_ids} = RacesFixtures.create_season_race("Practice Race", now, :laps, :laptime, season_racers, location)
+      Races.update_race(:system, practice_race, %{league?: true, league_type: :practice, season_id: season_id})
+      {qualifying_race, _profile_ids} = RacesFixtures.create_season_race("Qualifying Race 1", DateTime.add(now, 5, :minute), :laps, :laptime, season_racers, location)
+      Races.update_race(:system, qualifying_race, %{league?: true, league_type: :qualifier, season_id: season_id})
+      {qualifying_race_2, profile_ids} = RacesFixtures.create_season_race("Qualifying Race 2", DateTime.add(now, 10, :minute), :laps, :laptime, season_racers, location)
 
       last_race = qualifying_race_2.external_race_id
       # These racers already did a practice and both qualifying races
@@ -245,12 +265,17 @@ defmodule KartVids.Races.Season.AnalyzerTest do
     end
 
     test "updates feature", %{season: season} do
+      location = season.location
       season_id = season.id
       season_racers = season.season_racers |> Enum.shuffle() |> Enum.take(5)
-      {practice_race, _profile_ids} = RacesFixtures.create_season_race("Practice Race", :laps, :laptime, season_racers)
-      {qualifying_race, _profile_ids} = RacesFixtures.create_season_race("Qualifying Race 1", :laps, :laptime, season_racers)
-      {qualifying_race_2, _profile_ids} = RacesFixtures.create_season_race("Qualifying Race 2", :laps, :laptime, season_racers)
-      {feature_race, profile_ids} = RacesFixtures.create_season_race("AEKC Race", :laps, :position, season_racers)
+      now = DateTime.utc_now() |> DateTime.shift_zone!("America/New_York")
+      {practice_race, _profile_ids} = RacesFixtures.create_season_race("Practice Race", now, :laps, :laptime, season_racers, location)
+      Races.update_race(:system, practice_race, %{league?: true, league_type: :practice, season_id: season_id})
+      {qualifying_race, _profile_ids} = RacesFixtures.create_season_race("Qualifying Race 1", DateTime.add(now, 5, :minute), :laps, :laptime, season_racers, location)
+      Races.update_race(:system, qualifying_race, %{league?: true, league_type: :qualifier, season_id: season_id})
+      {qualifying_race_2, _profile_ids} = RacesFixtures.create_season_race("Qualifying Race 2", DateTime.add(now, 10, :minute), :laps, :laptime, season_racers, location)
+      Races.update_race(:system, qualifying_race_2, %{league?: true, league_type: :qualifier, season_id: season_id})
+      {feature_race, profile_ids} = RacesFixtures.create_season_race("AEKC Race", DateTime.add(now, 15, :minute), :laps, :position, season_racers, location)
 
       last_race = feature_race.external_race_id
       # These racers already did a practice and qualifying race
