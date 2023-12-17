@@ -67,6 +67,11 @@ defmodule KartVidsWeb.RaceLive.Show do
     end)
   end
 
+  # nil happens for older records
+  def reorder(racers, nil) do
+    reorder(racers, :laptime)
+  end
+
   def reorder(racers, other) do
     Logger.warning("Unexpected function call: #{__MODULE__}.reorder(racers, #{inspect(other)}); racers[0] = #{Enum.at(racers, 0) |> inspect()}")
     reorder(racers, :laptime)

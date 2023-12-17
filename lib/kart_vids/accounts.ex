@@ -361,6 +361,16 @@ defmodule KartVids.Accounts do
     |> Repo.delete_all()
   end
 
+  def count_users() do
+    from(u in User, select: count(u.id), limit: 1)
+    |> Repo.one!()
+  end
+
+  def count_users_metric() do
+    count = count_users()
+    :telemetry.execute([:kart_vids, :users], %{count: count})
+  end
+
   if Mix.env() == :dev do
     def make_admin!(%User{} = user) do
       User.admin_changeset(user, %{

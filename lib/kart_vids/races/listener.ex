@@ -590,6 +590,10 @@ defmodule KartVids.Races.Listener do
           end
       end
     end
+  rescue
+    e ->
+      # Just log but dont fail
+      Logger.error(Exception.format(:error, e, __STACKTRACE__))
   end
 
   # Do nothing if there are no laps
@@ -623,6 +627,8 @@ defmodule KartVids.Races.Listener do
       if Enum.empty?(racer_laps) do
         {"-1", false}
       else
+        racer = fix_racer_data(racer, racer_laps)
+
         try do
           case Races.upsert_racer_profile(%{
                  nickname: racer.nickname,
@@ -675,6 +681,18 @@ defmodule KartVids.Races.Listener do
     |> Stream.filter(fn {_key, v} -> v end)
     |> Enum.into(%{})
     |> then(fn profile_by_karts -> {race, profile_by_karts} end)
+  end
+
+  # In cases where the individual racer has no lap data but the list of all laps in the race does
+  # have info for that kart, use the information provided in the all laps data instead to prevent
+  # losing some data
+  def fix_racer_data(racer = %{fastest_lap: nil, average_lap: nil}, racer_laps) do
+    {fastest_lap, average_lap, _last_lap_time} = analyze_laps(racer_laps)
+    %{racer | fastest_lap: fastest_lap, average_lap: average_lap}
+  end
+
+  def fix_racer_data(racer, _racer_laps) do
+    racer
   end
 
   def extract_scoreboard_data(results) when is_list(results) do

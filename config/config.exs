@@ -79,6 +79,9 @@ config :kart_vids,
   aws_region: "us-east-1"
 
 config :kart_vids, KartVids.Races.RacerProfile.Cache,
+  stats: true,
+  telemetry: true,
+  telemetry_prefix: [:kart_vids, :racer_profile_cache],
   backend: :shards,
   gc_interval: :timer.hours(12),
   # Max entries in cache

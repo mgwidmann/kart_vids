@@ -27,15 +27,6 @@ defmodule KartVids.Races.Kart do
     kart
     |> cast(attrs, [:kart_num, :fastest_lap_time, :average_fastest_lap_time, :number_of_races, :max_average_rpms, :type, :std_dev, :location_id, :fastest_racer_id])
     |> validate_required([:kart_num, :number_of_races, :max_average_rpms, :type, :location_id])
-    |> then(fn cs ->
-      if cs.valid? && Map.get(cs.changes, :fastest_lap_time) do
-        Logger.warning(
-          "Valid changeset changing fastest_lap_time on\n#{inspect(kart, pretty: true)}\n#{inspect(attrs, pretty: true)}\n#{inspect(cs, pretty: true)}\n#{Process.info(self(), :current_stacktrace) |> elem(1) |> Exception.format_stacktrace()}"
-        )
-      end
-
-      cs
-    end)
   end
 
   def kart_type(num, %Location{adult_kart_min: min, adult_kart_max: max}) when is_number(num) and num >= min and num <= max, do: :adult

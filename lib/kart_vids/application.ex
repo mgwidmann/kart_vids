@@ -16,14 +16,15 @@ defmodule KartVids.Application do
 
     children = [
       {Registry, keys: :unique, name: KartVids.Registry},
-      # Start the Telemetry supervisor
-      KartVidsWeb.Telemetry,
       # Start the Ecto repository
       KartVids.Repo,
+      # Caches before telemetry
+      KartVids.Races.RacerProfile.Cache,
+      # Start the Telemetry supervisor
+      KartVidsWeb.Telemetry,
       Flames.Supervisor,
       # Start the PubSub system
       {Phoenix.PubSub, name: KartVids.PubSub},
-      KartVids.Races.RacerProfile.Cache,
       # Start the Endpoint (http/https)
       KartVidsWeb.Endpoint,
       # Start a worker by calling: KartVids.Worker.start_link(arg)

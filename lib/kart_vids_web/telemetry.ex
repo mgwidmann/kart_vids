@@ -52,15 +52,27 @@ defmodule KartVidsWeb.Telemetry do
         description: "The time the connection spent waiting before being checked out for the query"
       ),
 
+      # Users
+      last_value("kart_vids.users.count"),
+
       # Race Listener Metrics
-      # distribution("kart_vids.location_listener.clock_delta"), # Doesn't seem to work, page hangs
+      # Doesn't seem to work, page hangs
+      # distribution("kart_vids.location_listener.clock_delta"),
       summary("kart_vids.location_listener.clock_delta"),
 
       # VM Metrics
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),
-      summary("vm.total_run_queue_lengths.io")
+      summary("vm.total_run_queue_lengths.io"),
+
+      # Nebulex
+      last_value("kart_vids.racer_profile_cache.stats.hits", tags: [:cache]),
+      last_value("kart_vids.racer_profile_cache.stats.misses", tags: [:cache]),
+      last_value("kart_vids.racer_profile_cache.stats.writes", tags: [:cache]),
+      last_value("kart_vids.racer_profile_cache.stats.updates", tags: [:cache]),
+      last_value("kart_vids.racer_profile_cache.stats.evictions", tags: [:cache]),
+      last_value("kart_vids.racer_profile_cache.stats.expirations", tags: [:cache])
     ]
   end
 
@@ -68,7 +80,8 @@ defmodule KartVidsWeb.Telemetry do
     [
       # A module, function and arguments to be invoked periodically.
       # This function must call :telemetry.execute/3 and a metric must be added above.
-      # {KartVidsWeb, :count_users, []}
+      {KartVids.Accounts, :count_users_metric, []},
+      {KartVids.Races.RacerProfile.Cache, :dispatch_stats, []}
     ]
   end
 end

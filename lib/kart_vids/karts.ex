@@ -14,7 +14,7 @@ defmodule KartVids.Karts do
   def compute_stats_for_kart(kart, %Location{} = location) do
     records = get_fastest_races(kart, location)
 
-    if length(records) < @min_karts_to_compute do
+    if length(records) < @min_karts_to_compute || kart.type == :unknown do
       %{
         average_fastest_lap_time: nil,
         fastest_lap_time: nil,
@@ -81,6 +81,10 @@ defmodule KartVids.Karts do
 
       :junior ->
         junior_kart_reset_on
+
+      # Either :unknown or some other value
+      _ ->
+        @started_at_date
     end
     |> Kernel.||(@started_at_date)
   end
@@ -112,6 +116,11 @@ defmodule KartVids.Karts do
     |> Repo.all()
     |> Stream.uniq_by(& &1.racer_profile_id)
     |> Enum.take(limit)
+  end
+
+  def compute_stats(records, nil, location) do
+    fastest_time = Enum.min_by(records, & &1.fastest_lap).fastest_lap
+    compute_stats(records, fastest_time, location)
   end
 
   def compute_stats(records, fastest_time, location) do
@@ -183,6 +192,10 @@ defmodule KartVids.Karts do
     else
       @large_std_dev
     end
+  rescue
+    e ->
+      Logger.error(Exception.format(:error, e, __STACKTRACE__))
+      @large_std_dev
   end
 
   def compute_mean(times, location, std_dev, fastest_kart_time, mapper \\ fn x -> x end) do
