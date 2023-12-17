@@ -182,7 +182,7 @@ defmodule KartVids.Races.Season.Analyzer do
     end)
   end
 
-  defp analyze_season(state = %State{last_race: nil, season: season, watching: %Date{}}) do
+  defp analyze_season(state = %State{last_race: nil, watching: %Date{}}) do
     Logger.warning("Cannot analyze without latest race information!")
     state
   end
