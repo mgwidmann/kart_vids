@@ -11,6 +11,10 @@ defmodule KartVids.Karts do
   @min_time 15.0
   @min_karts_to_compute 10
 
+  defmodule KartStatComputeError do
+    defexception message: nil
+  end
+
   def compute_stats_for_kart(kart, %Location{} = location) do
     records = get_fastest_races(kart, location)
 
@@ -34,8 +38,8 @@ defmodule KartVids.Karts do
 
       alternate_fastest =
         case get_fastest_races(kart, location, 5) do
-          alternate_fastest = [_ | _] ->
-            alternate_fastest |> quality_filter(location, kart.std_dev || @large_std_dev, fastest_time) |> List.first()
+          [alternate_fastest | _] ->
+            alternate_fastest
 
           [] ->
             nil
@@ -45,7 +49,7 @@ defmodule KartVids.Karts do
         if alternate_fastest do
           {alternate_fastest.id, alternate_fastest.fastest_lap}
         else
-          {nil, nil}
+          raise KartStatComputeError, message: "Attempt to update kart stats but after #{@min_karts_to_compute} races no fastest lap found!\nKart: #{inspect(kart)}"
         end
 
       %{
