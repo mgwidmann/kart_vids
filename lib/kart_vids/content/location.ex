@@ -2,6 +2,7 @@ defmodule KartVids.Content.Location do
   use Ecto.Schema
   import Ecto.Changeset
 
+  # https://autobahn-livescore.herokuapp.com/?track=1&location=aisdulles
   # TODO: Add locations
   # https://autobahn-livescore.herokuapp.com/?track=1&location=aismanassas adult min: 1 max: 39, junior min: 40 max: 50
   # https://autobahn-livescore.herokuapp.com/?track=1&location=aisbaltimore adult min: 1 max: 49, junior min: 50 max: 69, adult extras: 71, 72, 73, 74

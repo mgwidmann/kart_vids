@@ -126,7 +126,7 @@ defmodule KartVidsWeb.LocationLive.Racing do
   end
 
   def handle_info(msg, socket) do
-    Logger.debug("Undefined handle_info for messge: #{inspect(msg, pretty: true)}")
+    Logger.debug("#{__MODULE__} Undefined handle_info for messge: #{inspect(msg, pretty: true)}")
     {:noreply, socket}
   end
 
