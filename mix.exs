@@ -20,7 +20,7 @@ defmodule KartVids.MixProject do
   def application do
     [
       mod: {KartVids.Application, []},
-      extra_applications: [:logger, :wx, :observer, :runtime_tools, :os_mon]
+      extra_applications: [:logger, :observer, :runtime_tools, :os_mon]
     ]
   end
 
